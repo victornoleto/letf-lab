@@ -17,6 +17,9 @@ dependencies = [
     "apscheduler>=3.10",
     "httpx>=0.27",
     "python-dateutil>=2.9",
+    "psycopg[binary]>=3.2",
+    "passlib[bcrypt]>=1.7",
+    "pyjwt>=2.9",
 ]
 
 [project.optional-dependencies]

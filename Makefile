@@ -1,4 +1,4 @@
-.PHONY: help install install-backend install-frontend migrate seed dev backend frontend test test-backend test-frontend refresh clean
+.PHONY: help install install-backend install-frontend migrate seed dev backend frontend test test-backend test-frontend refresh clean db-up db-down db-logs db-reset
 
 # Use the venv's bin/ directly so we don't need to source `.venv/bin/activate`
 # in every recipe. If the venv doesn't exist yet, install-backend will create it.
@@ -14,8 +14,12 @@ help:
 	@echo "  install         install backend + frontend deps"
 	@echo "  install-backend install backend deps in backend/.venv (uv preferred)"
 	@echo "  install-frontend install frontend deps (npm)"
+	@echo "  db-up           start Postgres via docker-compose"
+	@echo "  db-down         stop Postgres"
+	@echo "  db-logs         tail Postgres logs"
+	@echo "  db-reset        wipe Postgres volume and recreate"
 	@echo "  migrate         alembic upgrade head"
-	@echo "  seed            create example strategies + indicators"
+	@echo "  seed            create default user + example strategies + indicators"
 	@echo "  dev             backend + frontend in parallel (foreground)"
 	@echo "  backend         FastAPI dev server (port 8000)"
 	@echo "  frontend        Angular dev server (port 4200)"
@@ -42,6 +46,21 @@ install-backend:
 
 install-frontend:
 	cd frontend && npm install
+
+db-up:
+	docker compose up -d
+	@echo "Postgres up at localhost:5432 (user=ai_swing db=ai_swing). Run \`make migrate seed\` next."
+
+db-down:
+	docker compose down
+
+db-logs:
+	docker compose logs -f db
+
+db-reset:
+	docker compose down -v
+	docker compose up -d
+	@echo "Postgres volume wiped. Run \`make migrate seed\` to repopulate."
 
 migrate:
 	cd backend && ../$(ALEMBIC) upgrade head

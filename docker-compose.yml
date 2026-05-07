@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ai-swing-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ai_swing
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: ai_swing
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_swing"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
