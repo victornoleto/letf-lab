@@ -2,10 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
+  CohortReport,
+  CrisisAttribution,
+  DeployScore,
   Indicator,
   IndicatorTypeInfo,
   PortfolioSummary,
   RefreshStatus,
+  RollingStress,
   SignalSnapshot,
   SignalTransition,
   Strategy,
@@ -104,6 +108,28 @@ export class ApiService {
 
   regenerateReport(strategyId: number): Observable<StrategyReport> {
     return this.http.post<StrategyReport>(`${BASE_URL}/strategies/${strategyId}/report`, {});
+  }
+
+  crisisAttribution(strategyId: number): Observable<CrisisAttribution> {
+    return this.http.get<CrisisAttribution>(
+      `${BASE_URL}/strategies/${strategyId}/crisis-attribution`
+    );
+  }
+
+  deployScore(strategyId: number, bonusPts = 0, rangeYears = 10): Observable<DeployScore> {
+    const url = `${BASE_URL}/strategies/${strategyId}/deploy-score`
+      + `?range_years=${rangeYears}&bonus_pts=${bonusPts}`;
+    return this.http.get<DeployScore>(url);
+  }
+
+  rollingStress(strategyId: number, stepMonths = 3): Observable<RollingStress> {
+    const url = `${BASE_URL}/backtest/${strategyId}/rolling-stress?step_months=${stepMonths}`;
+    return this.http.post<RollingStress>(url, {});
+  }
+
+  cohortEntry(strategyId: number, forwardYears = 5): Observable<CohortReport> {
+    const url = `${BASE_URL}/strategies/${strategyId}/cohort-entry?forward_years=${forwardYears}`;
+    return this.http.get<CohortReport>(url);
   }
 
   // Transactions / portfolio

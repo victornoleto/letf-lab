@@ -4,9 +4,19 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from ai_swing.backtest.cohorts import compute_cohort_entries
+from ai_swing.backtest.crisis import attribution_score, compute_crisis_attribution
 from ai_swing.db import get_db
 from ai_swing.db.models import Strategy, StrategyIndicator
+from ai_swing.schemas.cohorts import CohortEntryDTO, CohortReportDTO
+from ai_swing.schemas.crisis import (
+    CrisisAttributionDTO,
+    CrisisPointDTO,
+    CrisisResultDTO,
+)
+from ai_swing.schemas.deploy_score import CriterionScoreDTO, DeployScoreDTO
 from ai_swing.schemas.strategy import StrategyCreate, StrategyDTO, StrategyUpdate
+from ai_swing.scoring.deploy_score import compute_deploy_score
 from ai_swing.services import ai_reports
 from ai_swing.schemas.strategy import StrategyReportDTO
 from ai_swing.services.indicator_series import build_indicator_series
@@ -175,6 +185,117 @@ def latest_report_endpoint(
         raise HTTPException(status_code=404, detail="Strategy not found")
     row = ai_reports.latest_report(db, s.id)
     return StrategyReportDTO.model_validate(row) if row else None
+
+
+@router.get("/{strategy_id}/deploy-score", response_model=DeployScoreDTO)
+def deploy_score_endpoint(
+    strategy_id: int,
+    range_years: int = 10,
+    bonus_pts: float = 0.0,
+    db: Session = Depends(get_db),
+) -> DeployScoreDTO:
+    """Replicate the study's 7-criterion scoring (v2) on the strategy.
+
+    Phase 2 implements criteria 1, 2, 5, 6, 7. Criteria 3 (gates) and 4 (DSR)
+    are returned as `status="pending"` with 0 pts until Fase 3 ships the
+    walk-forward + bootstrap pipelines.
+    """
+    s = get_strategy(db, strategy_id)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    try:
+        score = compute_deploy_score(s, range_years=range_years, bonus_pts=bonus_pts)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return DeployScoreDTO(
+        asof_date=score.asof_date,
+        range_start=score.range_start,
+        range_end=score.range_end,
+        total=score.total,
+        tier_label=score.tier_label,
+        winner_conditions_met=score.winner_conditions_met,
+        criteria=[
+            CriterionScoreDTO(
+                key=c.key,
+                label=c.label,
+                points=c.points,
+                max_points=c.max_points,
+                status=c.status,
+                note=c.note,
+            )
+            for c in score.criteria
+        ],
+    )
+
+
+@router.get("/{strategy_id}/cohort-entry", response_model=CohortReportDTO)
+def cohort_entry_endpoint(
+    strategy_id: int,
+    forward_years: int = 5,
+    db: Session = Depends(get_db),
+) -> CohortReportDTO:
+    """Run the strategy starting at 8 canonical entry dates and return forward metrics."""
+    s = get_strategy(db, strategy_id)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    try:
+        report = compute_cohort_entries(s, forward_years=forward_years)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return CohortReportDTO(
+        asof_date=report.asof_date,
+        forward_years=report.forward_years,
+        entries=[
+            CohortEntryDTO(
+                entry_date=e.entry_date,
+                label=e.label,
+                forward_years=e.forward_years,
+                has_data=e.has_data,
+                n_days=e.n_days,
+                cagr=e.cagr,
+                sharpe=e.sharpe,
+                max_drawdown=e.max_drawdown,
+            )
+            for e in report.entries
+        ],
+    )
+
+
+@router.get("/{strategy_id}/crisis-attribution", response_model=CrisisAttributionDTO)
+def crisis_attribution_endpoint(
+    strategy_id: int, db: Session = Depends(get_db)
+) -> CrisisAttributionDTO:
+    """Replay the strategy across the 4 canonical crisis windows.
+
+    Returns per-window equity points (strategy + SPY, both renormalised to
+    100 at the window start) plus a verdict (beats / loses / insufficient_data)
+    and an aggregate "N of M" score for the criterion-6 read on the deploy
+    score card.
+    """
+    s = get_strategy(db, strategy_id)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+
+    results = compute_crisis_attribution(s)
+    n_beats, n_eligible = attribution_score(results)
+    return CrisisAttributionDTO(
+        results=[
+            CrisisResultDTO(
+                name=r.name,
+                label=r.label,
+                start=r.start,
+                end=r.end,
+                verdict=r.verdict,
+                pct_above_spy=r.pct_above_spy,
+                end_ratio=r.end_ratio,
+                points=[CrisisPointDTO(date=p.date, strategy=p.strategy, spy=p.spy)
+                        for p in r.points],
+            )
+            for r in results
+        ],
+        n_beats=n_beats,
+        n_eligible=n_eligible,
+    )
 
 
 @router.post("/{strategy_id}/report", response_model=StrategyReportDTO)

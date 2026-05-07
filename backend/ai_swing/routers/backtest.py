@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from ai_swing.backtest import cache as bt_cache
 from ai_swing.backtest.engine import run_backtest
+from ai_swing.backtest.rolling_stress import compute_rolling_stress
 from ai_swing.data import get_price_service
 from ai_swing.db import get_db
 from ai_swing.schemas.backtest import (
@@ -15,6 +16,11 @@ from ai_swing.schemas.backtest import (
     BacktestPoint,
     BacktestResultDTO,
     BacktestTransition,
+)
+from ai_swing.schemas.rolling_stress import (
+    RollingCellDTO,
+    RollingRowDTO,
+    RollingStressDTO,
 )
 from ai_swing.services.strategy_service import get_strategy
 
@@ -84,3 +90,39 @@ def run_endpoint(
 
     bt_cache.store(db, strategy, range_years, asof, result, config_hash)
     return _result_to_dto(result, cached=False)
+
+
+@router.post("/{strategy_id}/rolling-stress", response_model=RollingStressDTO)
+def rolling_stress_endpoint(
+    strategy_id: int,
+    step_months: int = Query(default=3, ge=1, le=12),
+    db: Session = Depends(get_db),
+) -> RollingStressDTO:
+    """Compute rolling-window Sharpe heatmap (3y/5y/10y/20y × entry dates)."""
+    strategy = get_strategy(db, strategy_id)
+    if strategy is None:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    try:
+        result = compute_rolling_stress(strategy, step_months=step_months)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return RollingStressDTO(
+        asof_date=result.asof_date,
+        history_start=result.history_start,
+        window_years=result.window_years,
+        entry_dates=result.entry_dates,
+        rows=[
+            RollingRowDTO(
+                window_years=row.window_years,
+                cells=[
+                    RollingCellDTO(
+                        entry_date=c.entry_date,
+                        sharpe=c.sharpe,
+                        pct_above_spy=c.pct_above_spy,
+                    )
+                    for c in row.cells
+                ],
+            )
+            for row in result.rows
+        ],
+    )

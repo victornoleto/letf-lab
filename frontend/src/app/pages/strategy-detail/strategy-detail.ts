@@ -13,6 +13,10 @@ import { catchError, of } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { Strategy } from '../../core/models';
 import { BacktestPanelComponent, BacktestResult } from './backtest-panel';
+import { CohortEntriesComponent } from './cohort-entries';
+import { CrisisLabComponent } from './crisis-lab';
+import { DeployScoreCardComponent } from './deploy-score-card';
+import { RobustnessHeatmapComponent } from './robustness-heatmap';
 import { SignalHistoryTableComponent } from './signal-history-table';
 import { IndicatorsTabComponent } from './indicators-tab';
 import { stateLabel, stateOf } from '../../shared/strategy-state';
@@ -28,6 +32,10 @@ const BACKEND_URL = 'http://localhost:8000/api';
     CommonModule,
     RouterLink,
     BacktestPanelComponent,
+    CohortEntriesComponent,
+    CrisisLabComponent,
+    DeployScoreCardComponent,
+    RobustnessHeatmapComponent,
     SignalHistoryTableComponent,
     IndicatorsTabComponent,
   ],
@@ -85,6 +93,8 @@ const BACKEND_URL = 'http://localhost:8000/api';
           </div>
         </div>
 
+        <app-deploy-score-card [strategyId]="strategy()!.id" />
+
         @if (strategy()!.report; as rep) {
           <section class="report-card" [ngClass]="reportCls(rep.proximity_state)">
             <div class="report-card__head">
@@ -123,6 +133,9 @@ const BACKEND_URL = 'http://localhost:8000/api';
             (rangeChange)="onRangeChange($event)"
             (forceRerun)="loadBacktest(true)"
           />
+          <app-crisis-lab [strategyId]="strategy()!.id" />
+          <app-robustness-heatmap [strategyId]="strategy()!.id" />
+          <app-cohort-entries [strategyId]="strategy()!.id" />
           <app-signal-history-table [strategyId]="strategy()!.id" />
         } @else {
           <app-indicators-tab [strategyId]="strategy()!.id" />

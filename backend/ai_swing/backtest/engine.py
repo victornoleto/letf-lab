@@ -67,13 +67,37 @@ def _downsample(series: pd.Series, max_points: int = 1500) -> pd.Series:
     return sampled
 
 
-def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
-    """Run a backtest of the strategy's vote-of-K rotation between risk_on and risk_off.
+@dataclass
+class StrategyCurves:
+    """Daily series produced by the rotation engine — pre-downsampling.
 
-    Position logic:
-      - At end of day t, compute composite gate using indicators on benchmark prices up to t.
-      - Hold the resulting position from day t+1 onward (until the gate flips on a later day).
-      - Daily return on day t+1 = position[t]·return_riskon[t+1] + (1-position[t])·return_riskoff[t+1].
+    Reused by Deploy Score, rolling-stress and any other consumer that needs
+    the raw series instead of the API-shaped EquityPoint lists.
+    """
+    range_start: date
+    range_end: date
+    asof_date: date
+    df: pd.DataFrame  # columns: bench, risk_on, risk_off, aligned + dropna'd
+    composite: pd.Series  # 0/1 signal, indexed to df.index
+    positions: pd.Series  # ffilled & T+1-lagged version of composite
+    strategy_returns: pd.Series
+    equity_strategy: pd.Series
+    equity_bench: pd.Series
+    equity_riskon: pd.Series
+
+
+def compute_strategy_curves(strategy: Strategy, range_years: int = 10) -> StrategyCurves:
+    """Run the rotation engine and return the raw daily curves.
+
+    Public helper used by both `run_backtest` (which downsamples for the API
+    response) and downstream analytics (deploy-score, rolling-stress) that
+    need the full daily series. Position logic:
+
+      - At end of day t, compute composite gate from indicators on benchmark
+        prices up to t.
+      - Hold the resulting position from day t+1 onward.
+      - Daily return on day t+1 = position[t] · return_riskon[t+1]
+                                  + (1 - position[t]) · return_riskoff[t+1].
     """
     ps: PriceService = get_price_service()
 
@@ -90,7 +114,6 @@ def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
     if not indicators:
         raise ValueError("Strategy has no indicators")
 
-    # Align prices on the intersection of trading days (so all three series exist)
     df = pd.concat(
         [bench.rename("bench"), risk_on.rename("risk_on"), risk_off.rename("risk_off")],
         axis=1,
@@ -99,9 +122,6 @@ def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
     if df.empty:
         raise ValueError("No overlapping price data across the three tickers")
 
-    # Trim to last range_years if we have enough; otherwise fall back to all
-    # available history. Tickers with short trade histories (recent IPOs, fresh
-    # LETFs) shouldn't 400 — we just backtest what we have.
     cutoff = df.index[-1] - pd.Timedelta(days=int(range_years * 365.25))
     df_trimmed = df[df.index >= cutoff]
     if len(df_trimmed) >= 60:
@@ -109,10 +129,6 @@ def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
     if len(df) < 5:
         raise ValueError(f"Too few bars to backtest ({len(df)})")
 
-    bench_returns = df["bench"].pct_change()
-
-    # Compute each indicator's gate using full benchmark history (so warmups use
-    # data prior to range_start when possible), then reindex to the backtest range.
     gates: list[pd.Series] = []
     for ind in indicators:
         try:
@@ -123,20 +139,14 @@ def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
     if not gates:
         raise ValueError("No usable indicators")
 
-    composite = vote_of_k(gates, k=strategy.k_threshold)
-    composite = composite.reindex(df.index)
-
-    # T+1 execution: today's signal is held tomorrow. shift(1) so positions[t]
-    # is yesterday's signal — applied to today's returns.
+    composite = vote_of_k(gates, k=strategy.k_threshold).reindex(df.index)
     positions = composite.shift(1)
     positions_filled = positions.ffill().fillna(0.0)
 
     risk_on_ret = df["risk_on"].pct_change()
     risk_off_ret = df["risk_off"].pct_change()
-
     strategy_returns = positions_filled * risk_on_ret + (1 - positions_filled) * risk_off_ret
 
-    # Equity curves start at 1 from the first valid day
     valid_idx = strategy_returns.dropna().index
     if valid_idx.empty:
         raise ValueError("No valid strategy returns")
@@ -145,13 +155,29 @@ def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
     equity_bench = (1 + df["bench"].pct_change().loc[valid_idx]).cumprod()
     equity_riskon = (1 + df["risk_on"].pct_change().loc[valid_idx]).cumprod()
 
-    # Ratio strategy/benchmark — ≥1 means strategy is ahead, <1 means behind.
-    # Both equity curves start at 1.0 on the same valid_idx[0], so ratio[0] == 1.
-    equity_ratio = equity_strategy / equity_bench
+    return StrategyCurves(
+        range_start=valid_idx[0].date(),
+        range_end=valid_idx[-1].date(),
+        asof_date=df.index[-1].date(),
+        df=df,
+        composite=composite,
+        positions=positions_filled,
+        strategy_returns=strategy_returns,
+        equity_strategy=equity_strategy,
+        equity_bench=equity_bench,
+        equity_riskon=equity_riskon,
+    )
 
-    # Transitions on the *signal* (composite), not the lagged position
+
+def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
+    """API-facing backtest: returns BacktestResult with downsampled equity points."""
+    curves = compute_strategy_curves(strategy, range_years=range_years)
+
+    valid_idx = curves.equity_strategy.index
+    equity_ratio = curves.equity_strategy / curves.equity_bench
+
     transitions: list[BacktestTransition] = []
-    composite_clean = composite.dropna().astype(int)
+    composite_clean = curves.composite.dropna().astype(int)
     if not composite_clean.empty:
         flips = composite_clean.diff().fillna(0)
         for ts, change in flips[flips != 0].items():
@@ -164,22 +190,26 @@ def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
             )
 
     metrics_strategy = compute_metrics(
-        equity_strategy,
-        strategy_returns.loc[valid_idx],
-        benchmark_equity=equity_bench,
-        positions=positions_filled.loc[valid_idx],
+        curves.equity_strategy,
+        curves.strategy_returns.loc[valid_idx],
+        benchmark_equity=curves.equity_bench,
+        positions=curves.positions.loc[valid_idx],
     )
-    metrics_benchmark = compute_metrics(equity_bench, df["bench"].pct_change().loc[valid_idx])
-    metrics_riskon = compute_metrics(equity_riskon, df["risk_on"].pct_change().loc[valid_idx])
+    metrics_benchmark = compute_metrics(
+        curves.equity_bench, curves.df["bench"].pct_change().loc[valid_idx]
+    )
+    metrics_riskon = compute_metrics(
+        curves.equity_riskon, curves.df["risk_on"].pct_change().loc[valid_idx]
+    )
 
     return BacktestResult(
-        range_start=valid_idx[0].date(),
-        range_end=valid_idx[-1].date(),
+        range_start=curves.range_start,
+        range_end=curves.range_end,
         range_years=range_years,
-        asof_date=df.index[-1].date(),
-        equity_strategy=_to_equity_points(_downsample(equity_strategy)),
-        equity_benchmark_buyhold=_to_equity_points(_downsample(equity_bench)),
-        equity_riskon_buyhold=_to_equity_points(_downsample(equity_riskon)),
+        asof_date=curves.asof_date,
+        equity_strategy=_to_equity_points(_downsample(curves.equity_strategy)),
+        equity_benchmark_buyhold=_to_equity_points(_downsample(curves.equity_bench)),
+        equity_riskon_buyhold=_to_equity_points(_downsample(curves.equity_riskon)),
         equity_ratio_vs_benchmark=_to_equity_points(_downsample(equity_ratio)),
         metrics_strategy=metrics_strategy,
         metrics_benchmark=metrics_benchmark,

@@ -144,3 +144,85 @@ export interface PortfolioSummary {
   pl_usd: string;
   pl_pct: number | null;
 }
+
+export type CrisisVerdict = 'beats' | 'loses' | 'insufficient_data';
+
+export interface CrisisPoint {
+  date: string;
+  strategy: number;
+  spy: number;
+}
+
+export interface CrisisResult {
+  name: string;
+  label: string;
+  start: string;
+  end: string;
+  verdict: CrisisVerdict;
+  pct_above_spy: number | null;
+  end_ratio: number | null;
+  points: CrisisPoint[];
+}
+
+export interface CrisisAttribution {
+  results: CrisisResult[];
+  n_beats: number;
+  n_eligible: number;
+}
+
+export type CriterionStatus = 'ok' | 'warn' | 'fail' | 'pending';
+
+export interface CriterionScore {
+  key: string;
+  label: string;
+  points: number;
+  max_points: number;
+  status: CriterionStatus;
+  note: string;
+}
+
+export interface DeployScore {
+  asof_date: string;
+  range_start: string;
+  range_end: string;
+  total: number;
+  tier_label: 'FAIL' | 'NEAR_FAIL' | 'MARGINAL' | 'PROMISING' | 'STRONG' | 'WINNER';
+  winner_conditions_met: boolean;
+  criteria: CriterionScore[];
+}
+
+export interface RollingCell {
+  entry_date: string;
+  sharpe: number | null;
+  pct_above_spy: number | null;
+}
+
+export interface RollingRow {
+  window_years: number;
+  cells: RollingCell[];
+}
+
+export interface RollingStress {
+  asof_date: string;
+  history_start: string;
+  window_years: number[];
+  entry_dates: string[];
+  rows: RollingRow[];
+}
+
+export interface CohortEntry {
+  entry_date: string;
+  label: string;
+  forward_years: number;
+  has_data: boolean;
+  n_days: number;
+  cagr: number | null;
+  sharpe: number | null;
+  max_drawdown: number | null;
+}
+
+export interface CohortReport {
+  asof_date: string;
+  forward_years: number;
+  entries: CohortEntry[];
+}
