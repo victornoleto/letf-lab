@@ -10,7 +10,10 @@ export interface EquityPoint { date: string; equity: number; bench: number; }
  */
 export function equityOptions(series: EquityPoint[], t: ChartTokens): EChartsOption {
   return {
-    grid: { left: 4, right: 8, top: 8, bottom: 48, containLabel: true },
+    // top:28 reserves a row above the plot for the legend (Estratégia /
+    // Buy & Hold). Without it the topmost y-axis label collides with the
+    // legend text in the top-right corner — visible as overlapping glyphs.
+    grid: { left: 4, right: 8, top: 28, bottom: 48, containLabel: true },
     animation: false,
     textStyle: { fontFamily: t.fontMono, fontSize: 11, color: t.textMuted },
     axisPointer: {
