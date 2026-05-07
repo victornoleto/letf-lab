@@ -1,0 +1,7 @@
+Pergunta do usuário:
+{question}
+
+Contexto da carteira (JSON):
+{context_json}
+
+Use o contexto acima para responder.

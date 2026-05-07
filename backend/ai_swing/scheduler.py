@@ -8,6 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from ai_swing.config import settings
 from ai_swing.db import SessionLocal
+from ai_swing.services import weekly_digest
 from ai_swing.services.refresh_service import get_refresh_service
 
 logger = logging.getLogger(__name__)
@@ -32,16 +33,44 @@ def _daily_refresh_job() -> None:
         db.close()
 
 
+def _weekly_digest_job() -> None:
+    logger.info("Weekly digest job starting")
+    db = SessionLocal()
+    try:
+        digest = weekly_digest.generate_digest(db)
+        if digest is None:
+            logger.info("Weekly digest skipped (AI CLI not configured)")
+        else:
+            logger.info("Weekly digest persisted for week_start=%s", digest.week_start)
+    except Exception as exc:
+        logger.exception("Weekly digest raised: %s", exc)
+    finally:
+        db.close()
+
+
 def start_scheduler() -> BackgroundScheduler:
     global _scheduler
     if _scheduler is not None:
         return _scheduler
     _scheduler = BackgroundScheduler(timezone="America/New_York")
-    trigger = CronTrigger(hour=settings.refresh_hour_et, minute=0, timezone="America/New_York")
-    _scheduler.add_job(_daily_refresh_job, trigger, id="daily_refresh", replace_existing=True)
+    daily_trigger = CronTrigger(
+        hour=settings.refresh_hour_et, minute=0, timezone="America/New_York"
+    )
+    _scheduler.add_job(
+        _daily_refresh_job, daily_trigger, id="daily_refresh", replace_existing=True
+    )
+    # Weekly digest: every Monday at 09:00 ET, after the Sunday-night refresh
+    # has already populated the latest snapshots.
+    weekly_trigger = CronTrigger(
+        day_of_week="mon", hour=9, minute=0, timezone="America/New_York"
+    )
+    _scheduler.add_job(
+        _weekly_digest_job, weekly_trigger, id="weekly_digest", replace_existing=True
+    )
     _scheduler.start()
-    logger.info("Scheduler started; daily_refresh next run at %s",
-                _scheduler.get_job("daily_refresh").next_run_time)
+    logger.info("Scheduler started; daily_refresh next run at %s; weekly_digest next run at %s",
+                _scheduler.get_job("daily_refresh").next_run_time,
+                _scheduler.get_job("weekly_digest").next_run_time)
     return _scheduler
 
 

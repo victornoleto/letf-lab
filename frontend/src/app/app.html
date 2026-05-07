@@ -49,6 +49,11 @@
         <svg class="ico" width="14" height="14"><use href="#holdings"/></svg>
         <span class="nav-item__label">Portfólio</span>
       </a>
+      <a class="nav-item" routerLink="/digest" routerLinkActive="nav-item--active"
+         [attr.title]="collapsed() ? 'Weekly Digest' : null">
+        <svg class="ico" width="14" height="14"><use href="#message"/></svg>
+        <span class="nav-item__label">Weekly Digest</span>
+      </a>
     </nav>
 
     <div class="sidebar-foot">
@@ -121,6 +126,7 @@
   </main>
 
   <app-command-palette />
+  <app-chat-drawer />
 </div>
 } @else {
   <router-outlet />

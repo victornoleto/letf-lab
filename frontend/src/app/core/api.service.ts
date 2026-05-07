@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   CohortReport,
+  CompareReport,
   CrisisAttribution,
   DeployScore,
   Indicator,
@@ -18,6 +19,8 @@ import {
   Transaction,
   TransactionCreate,
   WalkForwardReport,
+  WeeklyDigestEntry,
+  WeeklyDigestList,
 } from './models';
 
 const BASE_URL = 'http://localhost:8000/api';
@@ -136,6 +139,29 @@ export class ApiService {
   walkForward(strategyId: number, nWindows = 8): Observable<WalkForwardReport> {
     const url = `${BASE_URL}/backtest/${strategyId}/walk-forward?n_windows=${nWindows}`;
     return this.http.post<WalkForwardReport>(url, {});
+  }
+
+  compareStrategies(a: number, b: number, rangeYears = 10): Observable<CompareReport> {
+    const url = `${BASE_URL}/compare?strategy_a=${a}&strategy_b=${b}&range_years=${rangeYears}`;
+    return this.http.get<CompareReport>(url);
+  }
+
+  chat(question: string, includePortfolio = true): Observable<{ answer: string }> {
+    return this.http.post<{ answer: string }>(`${BASE_URL}/chat`, {
+      question,
+      include_portfolio: includePortfolio,
+    });
+  }
+
+  weeklyDigests(limit = 12): Observable<WeeklyDigestList> {
+    return this.http.get<WeeklyDigestList>(`${BASE_URL}/weekly-digest?limit=${limit}`);
+  }
+
+  regenerateWeeklyDigest(weekStart?: string): Observable<WeeklyDigestEntry> {
+    const url = weekStart
+      ? `${BASE_URL}/weekly-digest/regenerate?week_start=${weekStart}`
+      : `${BASE_URL}/weekly-digest/regenerate`;
+    return this.http.post<WeeklyDigestEntry>(url, {});
   }
 
   // Transactions / portfolio

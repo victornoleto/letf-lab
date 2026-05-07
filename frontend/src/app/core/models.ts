@@ -247,3 +247,71 @@ export interface WalkForwardReport {
   windows: WalkForwardWindow[];
   n_passed: number;
 }
+
+export interface StrategyHeader {
+  id: number;
+  name: string;
+  benchmark_ticker: string;
+  risk_on_ticker: string;
+  risk_off_ticker: string;
+  k_threshold: number;
+  n_indicators: number;
+}
+
+export interface CompareCrisisRow {
+  name: string;
+  label: string;
+  a_verdict: CrisisVerdict;
+  a_pct_above_spy: number | null;
+  b_verdict: CrisisVerdict;
+  b_pct_above_spy: number | null;
+}
+
+// Importing the BacktestResult shape from the panel module would create a
+// dependency cycle (panel → models → panel). Re-declare the minimum we need
+// here; the panel re-uses this same structure.
+export interface CompareBacktestSnapshot {
+  range_start: string;
+  range_end: string;
+  range_years: number;
+  asof_date: string;
+  equity_strategy: { date: string; value: number }[];
+  equity_strategy_net: { date: string; value: number }[];
+  equity_benchmark_buyhold: { date: string; value: number }[];
+  metrics_strategy: {
+    cagr: number;
+    max_dd: number;
+    sharpe: number;
+    cagr_net: number | null;
+    sharpe_net: number | null;
+    tax_drag_pp: number | null;
+  };
+  metrics_benchmark: { cagr: number; max_dd: number; sharpe: number };
+}
+
+export interface CompareReport {
+  asof_date: string;
+  range_years: number;
+  strategy_a: StrategyHeader;
+  strategy_b: StrategyHeader;
+  backtest_a: CompareBacktestSnapshot;
+  backtest_b: CompareBacktestSnapshot;
+  deploy_a: DeployScore;
+  deploy_b: DeployScore;
+  crisis_rows: CompareCrisisRow[];
+  n_beats_a: number;
+  n_beats_b: number;
+  n_eligible_a: number;
+  n_eligible_b: number;
+}
+
+export interface WeeklyDigestEntry {
+  week_start: string;
+  body: string;
+  model: string;
+  generated_at: string;
+}
+
+export interface WeeklyDigestList {
+  digests: WeeklyDigestEntry[];
+}

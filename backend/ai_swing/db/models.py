@@ -194,3 +194,22 @@ class StrategyReport(Base):
     proximity_state: Mapped[str | None] = mapped_column(String(32), nullable=True)
     model: Mapped[str] = mapped_column(String(80), nullable=False)
     generated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class WeeklyDigest(Base):
+    """AI-generated weekly summary across the user's strategies.
+
+    One row per Monday (in America/New_York timezone). The cron job builds
+    a context with last week's transitions, headrooms approaching their
+    flips, and per-strategy P&L; the model returns a markdown body that
+    the digest page renders verbatim.
+    """
+    __tablename__ = "weekly_digests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    week_start: Mapped[date] = mapped_column(
+        Date, nullable=False, unique=True, index=True
+    )
+    body: Mapped[str] = mapped_column(String(8000), nullable=False)
+    model: Mapped[str] = mapped_column(String(80), nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

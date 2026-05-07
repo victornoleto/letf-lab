@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -63,10 +63,18 @@ const BACKEND_URL = 'http://localhost:8000/api';
       } @else {
         <header style="display:flex; align-items:flex-end; justify-content:space-between; padding-bottom:8px; border-bottom: 1px solid var(--border);">
           <h1 class="page-h1">{{ strategy()!.name }}</h1>
-          <a [routerLink]="['/strategies', strategy()!.id, 'edit']" class="btn btn--sm">
-            <svg class="ico" width="12" height="12"><use href="#pencil"/></svg>
-            Editar
-          </a>
+          <div style="display:flex; gap:6px;">
+            <select class="select select--sm" [value]="''" (change)="onCompareSelect($event)">
+              <option value="" disabled selected>Comparar com…</option>
+              @for (other of otherStrategies(); track other.id) {
+                <option [value]="other.id">{{ other.name }}</option>
+              }
+            </select>
+            <a [routerLink]="['/strategies', strategy()!.id, 'edit']" class="btn btn--sm">
+              <svg class="ico" width="12" height="12"><use href="#pencil"/></svg>
+              Editar
+            </a>
+          </div>
         </header>
 
         <div class="meta-bar">
@@ -216,10 +224,12 @@ const BACKEND_URL = 'http://localhost:8000/api';
 export class StrategyDetailComponent implements OnInit {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private http = inject(HttpClient);
 
   strategy = signal<Strategy | null>(null);
   loading = signal(true);
+  otherStrategies = signal<Strategy[]>([]);
 
   range = signal(10);
   backtest = signal<BacktestResult | null>(null);
@@ -286,6 +296,19 @@ export class StrategyDetailComponent implements OnInit {
       },
       error: () => this.loading.set(false),
     });
+    // Populate the "Comparar com…" dropdown without blocking the main view.
+    this.api.listStrategies().subscribe({
+      next: (rows) => this.otherStrategies.set(rows.filter((r) => r.id !== id)),
+      error: () => {},
+    });
+  }
+
+  onCompareSelect(ev: Event): void {
+    const otherId = (ev.target as HTMLSelectElement).value;
+    if (!otherId) return;
+    const id = this.strategy()?.id;
+    if (!id) return;
+    this.router.navigate(['/compare'], { queryParams: { a: id, b: otherId } });
   }
 
   onRangeChange(years: number): void {

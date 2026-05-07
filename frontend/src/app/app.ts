@@ -10,6 +10,7 @@ import { LoadingBarComponent } from './shared/loading-bar/loading-bar';
 import { ToastStackComponent } from './shared/toast/toast-stack';
 import { ToastService } from './shared/toast/toast.service';
 import { ConfirmDialogComponent } from './shared/confirm/confirm-dialog';
+import { ChatDrawerComponent } from './shared/chat-drawer/chat-drawer';
 import { ThemeSwitchComponent } from './shared/theme/theme-switch';
 import { AuthService } from './core/auth.service';
 
@@ -24,6 +25,7 @@ const BANNER_DISMISSED_KEY = 'ai-swing.banner.transitions.dismissed';
     RouterLinkActive,
     CommonModule,
     CommandPaletteComponent,
+    ChatDrawerComponent,
     LoadingBarComponent,
     ToastStackComponent,
     ConfirmDialogComponent,
