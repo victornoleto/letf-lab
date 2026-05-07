@@ -10,7 +10,7 @@ export interface EquityPoint { date: string; equity: number; bench: number; }
  */
 export function equityOptions(series: EquityPoint[], t: ChartTokens): EChartsOption {
   return {
-    grid: { left: 8, right: 56, top: 8, bottom: 48, containLabel: true },
+    grid: { left: 4, right: 8, top: 8, bottom: 48, containLabel: true },
     animation: false,
     textStyle: { fontFamily: t.fontMono, fontSize: 11, color: t.textMuted },
     axisPointer: {

@@ -381,7 +381,10 @@ export class IndicatorsTabComponent implements OnInit, OnDestroy {
 
   private commonOption(series: EChartsOption['series'], t: ChartTokens): EChartsOption {
     return {
-      grid: { left: 8, right: 56, top: 8, bottom: 38, containLabel: true },
+      // containLabel:true reserves room for the y-axis labels itself, so we
+      // only need a tiny outer gutter on the right — anything bigger leaves
+      // a visible empty strip between the labels and the card border.
+      grid: { left: 4, right: 8, top: 8, bottom: 38, containLabel: true },
       animation: false,
       textStyle: { fontFamily: t.fontMono, fontSize: 11, color: t.textMuted },
       axisPointer: {
