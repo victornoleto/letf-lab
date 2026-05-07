@@ -32,6 +32,7 @@ export interface IndicatorResult {
   gate_passed: boolean;
   value: number;
   raw_summary: string;
+  headroom_pct: number | null;
 }
 
 export interface SignalSnapshot {

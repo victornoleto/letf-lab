@@ -20,7 +20,13 @@ class Settings(BaseSettings):
     auth_cookie_secure: bool = False
     auth_cookie_name: str = "ai_swing_session"
 
-    # Optional integrations
+    # AI CLI integration (OpenCode by default). Empty command disables AI.
+    ai_cli_command: str = "opencode"
+    ai_cli_model: str = "openai/gpt-5.4-mini-fast"
+    ai_cli_timeout_s: int = 60
+    ai_cli_prompts_dir: str = "prompts"
+
+    # Optional integrations (deprecated: prefer ai_cli_command above)
     anthropic_api_key: str | None = None
 
     @property

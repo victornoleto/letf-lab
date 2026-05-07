@@ -14,6 +14,9 @@ class IndicatorResultDTO(BaseModel):
     gate_passed: bool
     value: float
     raw_summary: str
+    # Default None so old persisted snapshots (pre-headroom migration) keep
+    # deserializing cleanly when the column isn't in the JSON payload.
+    headroom_pct: float | None = None
 
 
 class SignalSnapshotDTO(BaseModel):

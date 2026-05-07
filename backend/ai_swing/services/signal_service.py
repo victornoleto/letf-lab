@@ -77,6 +77,7 @@ def snapshot_to_dto(snap: SnapshotComputation | SignalSnapshot) -> SignalSnapsho
                     gate_passed=r.gate_passed,
                     value=r.value,
                     raw_summary=r.raw_summary,
+                    headroom_pct=r.headroom_pct,
                 )
                 for r in snap.results
             ],
@@ -99,6 +100,7 @@ def serialize_results_for_storage(results: list[IndicatorResult]) -> list[dict]:
             "gate_passed": r.gate_passed,
             "value": r.value,
             "raw_summary": r.raw_summary,
+            "headroom_pct": r.headroom_pct,
         }
         for r in results
     ]

@@ -93,6 +93,52 @@ def attach_indicators(db: Session, strategy: Strategy, indicator_ids: list[int])
         strategy.indicators.append(StrategyIndicator(indicator=ind, order=order))
 
 
+def _unique_clone_name(db: Session, base_name: str) -> str:
+    """Pick a unique strategy name based on the original.
+
+    Sequence: `<name> (clone)`, `<name> (clone 2)`, `<name> (clone 3)`...
+    Stops at 999 to prevent runaway loops if `name` is constrained or
+    something else is corrupting the table.
+    """
+    candidate = f"{base_name} (clone)"
+    if db.scalars(select(Strategy).where(Strategy.name == candidate)).first() is None:
+        return candidate
+    for n in range(2, 1000):
+        candidate = f"{base_name} (clone {n})"
+        if db.scalars(select(Strategy).where(Strategy.name == candidate)).first() is None:
+            return candidate
+    raise RuntimeError(f"Could not derive unique clone name for '{base_name}'")
+
+
+def clone_strategy(db: Session, strategy_id: int) -> Strategy:
+    """Duplicate a strategy with a fresh name; copies tickers + indicator
+    membership. Snapshots, transitions and AI reports are intentionally NOT
+    copied — they get recomputed on the next refresh against the new id.
+    """
+    src = get_strategy(db, strategy_id)
+    if src is None:
+        raise ValueError(f"Strategy {strategy_id} not found")
+
+    clone = Strategy(
+        name=_unique_clone_name(db, src.name),
+        benchmark_ticker=src.benchmark_ticker,
+        risk_on_ticker=src.risk_on_ticker,
+        risk_off_ticker=src.risk_off_ticker,
+        k_threshold=src.k_threshold,
+        enabled=src.enabled,
+    )
+    db.add(clone)
+    db.flush()
+
+    for si in src.indicators:
+        clone.indicators.append(
+            StrategyIndicator(indicator_id=si.indicator_id, order=si.order)
+        )
+
+    db.flush()
+    return clone
+
+
 def strategy_to_dto(strategy: Strategy, current_signal: SignalSnapshotDTO | None = None,
                     sparkline_90d: list[float] | None = None,
                     report: StrategyReportDTO | None = None) -> StrategyDTO:

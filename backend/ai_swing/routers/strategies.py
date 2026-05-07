@@ -14,6 +14,7 @@ from ai_swing.services.strategy_service import (
     attach_indicators,
     build_strategy_dto_with_signal,
     build_strategy_dtos_bulk,
+    clone_strategy,
     get_strategy,
     list_strategies,
 )
@@ -134,6 +135,24 @@ def delete_endpoint(strategy_id: int, db: Session = Depends(get_db)) -> None:
     db.commit()
 
 
+@router.post("/{strategy_id}/clone", response_model=StrategyDTO,
+             status_code=status.HTTP_201_CREATED)
+def clone_endpoint(strategy_id: int, db: Session = Depends(get_db)) -> StrategyDTO:
+    """Duplicate a strategy with a derived unique name.
+
+    Returns the fresh DTO with `current_signal` recomputed live so the UI
+    can navigate to /strategies/{new_id}/edit and the user has immediate
+    feedback on what the clone looks like.
+    """
+    try:
+        clone = clone_strategy(db, strategy_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    db.commit()
+    clone = get_strategy(db, clone.id)
+    return build_strategy_dto_with_signal(db, clone, fresh=True)
+
+
 @router.get("/{strategy_id}/indicator-series")
 def indicator_series_endpoint(
     strategy_id: int,
@@ -169,7 +188,7 @@ def regenerate_report_endpoint(
     if report is None:
         raise HTTPException(
             status_code=503,
-            detail="AI reports não disponíveis (configure ANTHROPIC_API_KEY)",
+            detail="AI reports não disponíveis (configure AI_CLI_COMMAND)",
         )
     db.commit()
     return StrategyReportDTO.model_validate(report)

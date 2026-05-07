@@ -89,6 +89,12 @@ import { ToastService } from '../../shared/toast/toast.service';
                          [routerLink]="['/strategies', s.id, 'edit']" aria-label="Editar">
                         <svg width="13" height="13"><use href="#pencil"/></svg>
                       </a>
+                      <button class="icon-btn"
+                              (click)="$event.stopPropagation(); clone(s)"
+                              [disabled]="cloning() === s.id"
+                              aria-label="Clonar">
+                        <svg width="13" height="13"><use href="#copy"/></svg>
+                      </button>
                       <button class="icon-btn" (click)="$event.stopPropagation(); remove(s)" aria-label="Remover">
                         <svg width="13" height="13"><use href="#trash"/></svg>
                       </button>
@@ -135,6 +141,7 @@ export class StrategiesListComponent implements OnInit {
   strategies = signal<Strategy[]>([]);
   loading = signal(true);
   searchTerm = '';
+  cloning = signal<number | null>(null);
 
   protected stateOf = stateOf;
   stateText(s: Strategy) {
@@ -205,6 +212,25 @@ export class StrategiesListComponent implements OnInit {
 
   open(id: number): void {
     this.router.navigate(['/strategies', id]);
+  }
+
+  clone(s: Strategy): void {
+    this.cloning.set(s.id);
+    this.api.cloneStrategy(s.id).subscribe({
+      next: (created) => {
+        this.cloning.set(null);
+        this.toast.push({ variant: 'success', message: `Clone criado: ${created.name}` });
+        this.router.navigate(['/strategies', created.id, 'edit']);
+      },
+      error: (err) => {
+        this.cloning.set(null);
+        this.toast.push({
+          variant: 'danger',
+          message: err?.error?.detail ?? 'Erro ao clonar estratégia',
+          duration: 8000,
+        });
+      },
+    });
   }
 
   async remove(s: Strategy): Promise<void> {

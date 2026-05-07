@@ -135,6 +135,48 @@ def test_strategy_k_threshold_validation(client):
     assert r.status_code == 400
 
 
+def test_strategy_clone_copies_indicators_and_picks_unique_name(client):
+    r = client.post(
+        "/api/indicators",
+        json={"name": "SMA50", "type": "SMA_GATE", "params": {"period": 50}},
+    )
+    ind_id = r.json()["id"]
+
+    r = client.post(
+        "/api/strategies",
+        json={
+            "name": "qqq vote-2",
+            "benchmark_ticker": "qqq",
+            "risk_on_ticker": "tqqq",
+            "risk_off_ticker": "zroz",
+            "k_threshold": 1,
+            "indicator_ids": [ind_id],
+        },
+    )
+    src_id = r.json()["id"]
+
+    # First clone
+    r = client.post(f"/api/strategies/{src_id}/clone")
+    assert r.status_code == 201, r.text
+    clone = r.json()
+    assert clone["id"] != src_id
+    assert clone["name"] == "qqq vote-2 (clone)"
+    assert clone["benchmark_ticker"] == "QQQ"
+    assert clone["risk_on_ticker"] == "TQQQ"
+    assert clone["k_threshold"] == 1
+    assert [i["id"] for i in clone["indicators"]] == [ind_id]
+
+    # Second clone disambiguates the name
+    r = client.post(f"/api/strategies/{src_id}/clone")
+    assert r.status_code == 201
+    assert r.json()["name"] == "qqq vote-2 (clone 2)"
+
+
+def test_strategy_clone_unknown_id_returns_404(client):
+    r = client.post("/api/strategies/9999/clone")
+    assert r.status_code == 404
+
+
 def test_indicator_in_use_blocks_delete(client):
     r = client.post(
         "/api/indicators",

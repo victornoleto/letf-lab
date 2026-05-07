@@ -23,6 +23,10 @@ class IndicatorResult:
     value: float  # raw scalar (e.g. AR(1) coef, realized vol, latest price for SMA)
     raw_summary: str
     gate_series: pd.Series  # full series, used for backtest
+    # Signed % distance from the gate threshold for the latest bar.
+    # Positive = passing with margin; negative = past the threshold the
+    # other way. None when the indicator hasn't warmed up yet.
+    headroom_pct: float | None = None
 
 
 def _latest(series: pd.Series) -> float | None:
@@ -52,6 +56,8 @@ def evaluate_indicator(
     params = indicator.params or {}
     itype = indicator.type
 
+    headroom: float | None = None
+
     if itype == IndicatorType.SMA_GATE:
         period = int(params.get("period", 200))
         threshold = float(params.get("threshold", 0.0))
@@ -66,6 +72,8 @@ def evaluate_indicator(
                 f"price {latest_price:.2f} {'>' if passed else '<='} "
                 f"SMA{period}{band} {latest_sma:.2f}"
             )
+            if latest_sma:
+                headroom = (latest_price - latest_sma) / latest_sma
         else:
             summary = "n/a (warmup)"
         value = float(latest_price) if latest_price is not None else float("nan")
@@ -84,6 +92,8 @@ def evaluate_indicator(
                 f"price {latest_price:.2f} {'>' if passed else '<='} "
                 f"EMA{period}{band} {latest_ema:.2f}"
             )
+            if latest_ema:
+                headroom = (latest_price - latest_ema) / latest_ema
         else:
             summary = "n/a (warmup)"
         value = float(latest_price) if latest_price is not None else float("nan")
@@ -101,6 +111,11 @@ def evaluate_indicator(
             else "n/a (warmup)"
         )
         value = float(latest_vol) if latest_vol is not None else float("nan")
+        if latest_vol is not None and threshold:
+            # Gate passes when vol < threshold. Headroom = how much room
+            # below the cap, normalized by the cap itself so the scale
+            # matches the SMA/EMA % convention.
+            headroom = (threshold - latest_vol) / threshold
 
     elif itype == IndicatorType.AR1_GATE:
         window = int(params.get("window", 30))
@@ -115,6 +130,8 @@ def evaluate_indicator(
             else "n/a (warmup)"
         )
         value = float(latest_coef) if latest_coef is not None else float("nan")
+        if latest_coef is not None:
+            headroom = latest_coef - threshold
 
     else:
         raise ValueError(f"Unknown indicator type: {itype}")
@@ -127,4 +144,5 @@ def evaluate_indicator(
         value=value if not np.isnan(value) else 0.0,
         raw_summary=summary,
         gate_series=gate,
+        headroom_pct=headroom,
     )

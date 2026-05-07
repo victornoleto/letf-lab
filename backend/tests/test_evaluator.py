@@ -62,3 +62,48 @@ def test_validate_params_rejects_bad_input():
         validate_params(IndicatorType.SMA_GATE, {"period": -5})
     with pytest.raises(Exception):
         validate_params(IndicatorType.VOL_GATE, {"threshold": -0.1})
+
+
+def test_sma_headroom_positive_in_uptrend():
+    prices = _trend_up_prices()
+    ind = _make_indicator(IndicatorType.SMA_GATE, {"period": 50})
+    res = evaluate_indicator(ind, prices)
+    assert res.headroom_pct is not None
+    assert res.headroom_pct > 0  # price above SMA
+
+
+def test_sma_headroom_negative_in_downtrend():
+    prices = _trend_down_prices()
+    ind = _make_indicator(IndicatorType.SMA_GATE, {"period": 50})
+    res = evaluate_indicator(ind, prices)
+    assert res.headroom_pct is not None
+    assert res.headroom_pct < 0
+
+
+def test_vol_headroom_positive_when_calm():
+    rng = np.random.default_rng(0)
+    n = 200
+    idx = pd.date_range("2020-01-01", periods=n, freq="B")
+    rets = rng.normal(0.0001, 0.001, n)
+    prices = pd.Series(100 * np.exp(np.cumsum(rets)), index=idx)
+    ind = _make_indicator(IndicatorType.VOL_GATE, {"window": 21, "threshold": 0.40})
+    res = evaluate_indicator(ind, prices)
+    # gate passes (low vol) → headroom should be a positive fraction
+    assert res.headroom_pct is not None
+    assert res.headroom_pct > 0
+
+
+def test_ar1_headroom_signed_delta():
+    rng = np.random.default_rng(1)
+    n = 200
+    idx = pd.date_range("2020-01-01", periods=n, freq="B")
+    # build a series with mild positive autocorrelation
+    e = rng.normal(0, 0.01, n)
+    rets = np.zeros(n)
+    rets[0] = e[0]
+    for i in range(1, n):
+        rets[i] = 0.3 * rets[i - 1] + e[i]
+    prices = pd.Series(100 * np.exp(np.cumsum(rets)), index=idx)
+    ind = _make_indicator(IndicatorType.AR1_GATE, {"window": 30, "threshold": 0.0})
+    res = evaluate_indicator(ind, prices)
+    assert res.headroom_pct is not None  # should be a real number, sign reflects gate

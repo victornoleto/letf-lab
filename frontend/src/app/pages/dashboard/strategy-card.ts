@@ -44,6 +44,13 @@ import { stateOf, type CardState } from '../../shared/strategy-state';
             </span>
             <span class="ind-row__name">{{ r.indicator_name }}</span>
             <span class="ind-row__detail">{{ r.raw_summary }}</span>
+            @if (r.headroom_pct !== null) {
+              <span
+                class="headroom"
+                [ngClass]="headroomCls(r.headroom_pct)"
+                [title]="headroomTitle(r)"
+              >{{ formatHeadroom(r.headroom_pct) }}</span>
+            }
           </div>
         }
       </div>
@@ -91,6 +98,18 @@ import { stateOf, type CardState } from '../../shared/strategy-state';
     .arrow { color: var(--text-muted); margin: 0 4px; }
     .on { color: var(--success); }
     .off { color: var(--danger); }
+    .headroom {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-feature-settings: 'tnum' 1;
+      font-size: 10.5px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: var(--text-muted);
+    }
+    .headroom--good { color: var(--success); background: rgba(34, 197, 94, 0.10); }
+    .headroom--warn { color: var(--warn); background: rgba(245, 158, 11, 0.12); }
+    .headroom--bad  { color: var(--danger); background: rgba(239, 68, 68, 0.10); }
   `],
 })
 export class StrategyCardComponent {
@@ -143,5 +162,24 @@ export class StrategyCardComponent {
       near_off: 'perto off',
       unknown: '·',
     } as Record<string, string>)[state ?? ''] ?? '·';
+  }
+
+  formatHeadroom(h: number): string {
+    const pct = h * 100;
+    const sign = pct > 0 ? '+' : '';
+    return `${sign}${pct.toFixed(1)}%`;
+  }
+
+  headroomCls(h: number): string {
+    // ≥5pp clear margin = "good" / "bad" depending on direction;
+    // anything closer to the gate = "warn" (near flip).
+    if (Math.abs(h) < 0.05) return 'headroom--warn';
+    return h > 0 ? 'headroom--good' : 'headroom--bad';
+  }
+
+  headroomTitle(r: { headroom_pct: number | null; gate_passed: boolean; indicator_name: string }): string {
+    if (r.headroom_pct === null) return '';
+    const dir = r.headroom_pct >= 0 ? 'acima' : 'abaixo';
+    return `${r.indicator_name}: ${this.formatHeadroom(r.headroom_pct)} ${dir} do threshold (gate ${r.gate_passed ? 'passa' : 'falha'})`;
   }
 }

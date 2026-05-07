@@ -67,6 +67,10 @@ export class ApiService {
     return this.http.delete<void>(`${BASE_URL}/strategies/${id}`);
   }
 
+  cloneStrategy(id: number): Observable<Strategy> {
+    return this.http.post<Strategy>(`${BASE_URL}/strategies/${id}/clone`, {});
+  }
+
   // Signals
   signalHistory(strategyId: number, range: string = '1y'): Observable<SignalSnapshot[]> {
     return this.http.get<SignalSnapshot[]>(
