@@ -1,0 +1,32 @@
+.theme-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.theme-btn {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+
+  &:hover { color: var(--text-primary); }
+
+  &--active,
+  &.is-active {
+    background: var(--surface-muted);
+    color: var(--text-primary);
+  }
+}

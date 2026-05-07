@@ -1,0 +1,108 @@
+<app-loading-bar />
+<app-toast-stack />
+<app-confirm-dialog />
+
+@if (isShellRoute()) {
+<div class="shell">
+  <aside class="sidebar"
+         [class.is-collapsed]="collapsed()"
+         [class.is-mobile-open]="mobileMenuOpen()">
+    <a class="brand" routerLink="/dashboard">
+      <span class="brand__mark">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="5.5" y1="6.5" x2="5.5" y2="14.5" stroke="var(--bg)" stroke-width="1.2" stroke-linecap="round"/>
+          <rect x="4" y="9" width="3" height="4" rx="0.4" fill="var(--danger)"/>
+          <line x1="12" y1="3.5" x2="12" y2="13" stroke="var(--bg)" stroke-width="1.2" stroke-linecap="round"/>
+          <rect x="10.5" y="5.5" width="3" height="6" rx="0.4" fill="var(--success)"/>
+          <line x1="18.5" y1="2" x2="18.5" y2="11.5" stroke="var(--bg)" stroke-width="1.2" stroke-linecap="round"/>
+          <rect x="17" y="3.5" width="3" height="7" rx="0.4" fill="var(--success)"/>
+          <path d="M3 19.5 Q 8 17 12 18.5 T 21 16" stroke="var(--bg)" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+          <path d="M19 14.5 L 21.2 16 L 19.7 18.2" stroke="var(--bg)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </span>
+      <span class="brand__name">
+        <span>AI</span><span class="brand__dot">·</span><span>Swing</span>
+      </span>
+    </a>
+
+    <div class="nav-section">Workspace</div>
+    <nav class="nav">
+      <a class="nav-item" routerLink="/dashboard" routerLinkActive="nav-item--active"
+         [routerLinkActiveOptions]="{ exact: true }"
+         [attr.aria-label]="collapsed() ? 'Dashboard' : null"
+         [attr.title]="collapsed() ? 'Dashboard' : null">
+        <svg class="ico" width="14" height="14"><use href="#dashboard"/></svg>
+        <span class="nav-item__label">Dashboard</span>
+        <span class="kbd nav-item__kbd">G 1</span>
+      </a>
+      <a class="nav-item" routerLink="/strategies" routerLinkActive="nav-item--active"
+         [attr.title]="collapsed() ? 'Estratégias' : null">
+        <svg class="ico" width="14" height="14"><use href="#strategies"/></svg>
+        <span class="nav-item__label">Estratégias</span>
+        <span class="kbd nav-item__kbd">G 2</span>
+      </a>
+      <a class="nav-item" routerLink="/indicators" routerLinkActive="nav-item--active"
+         [attr.title]="collapsed() ? 'Indicadores' : null">
+        <svg class="ico" width="14" height="14"><use href="#indicators"/></svg>
+        <span class="nav-item__label">Indicadores</span>
+        <span class="kbd nav-item__kbd">G 3</span>
+      </a>
+    </nav>
+
+    <div class="status-bar">
+      <div class="status-bar__row">
+        <span class="status-bar__dot"></span>
+        <span>Atualizado <span class="mono">{{ lastRefreshLabel() }}</span></span>
+      </div>
+      <button class="btn btn--sm" style="width: 100%; margin-top: 8px;"
+              (click)="triggerRefresh()" [disabled]="refreshing()">
+        <svg class="ico" width="11" height="11" [class.spin]="refreshing()"><use href="#refresh"/></svg>
+        @if (refreshing()) { Atualizando… } @else { Refresh }
+      </button>
+    </div>
+  </aside>
+
+  <header class="topbar-mobile">
+    <button class="icon-btn" (click)="toggleMobileMenu()" aria-label="Menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18M3 12h18M3 18h18"/>
+      </svg>
+    </button>
+  </header>
+
+  <main class="main">
+    @if (recentTransitions().length > 0 && !bannerDismissed()) {
+      <div class="banner banner--warn">
+        <svg class="ico" width="14" height="14"><use href="#alert-circle"/></svg>
+        <span>
+          <strong>{{ recentTransitions().length }} transições nos últimos 7 dias</strong>
+          @for (t of recentTransitions().slice(0, 2); track t.id) {
+            · #{{ t.strategy_id }} {{ t.from_state ? 'ON' : 'OFF' }} → {{ t.to_state ? 'ON' : 'OFF' }}
+          }
+          <a routerLink="/strategies" style="margin-left: 8px;">Ver →</a>
+        </span>
+        <button class="banner__close" (click)="dismissBanner()" aria-label="Dismiss">
+          <svg class="ico" width="12" height="12"><use href="#x"/></svg>
+        </button>
+      </div>
+    }
+
+    @if (refreshError()) {
+      <div class="banner banner--danger">
+        <svg class="ico" width="14" height="14"><use href="#alert-circle"/></svg>
+        <span>{{ refreshError() }}</span>
+        <button class="banner__close" (click)="dismissError()" aria-label="Fechar">
+          <svg class="ico" width="12" height="12"><use href="#x"/></svg>
+        </button>
+      </div>
+    }
+
+    <router-outlet />
+  </main>
+
+  <app-command-palette />
+</div>
+} @else {
+  <router-outlet />
+}

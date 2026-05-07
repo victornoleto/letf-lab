@@ -1,0 +1,7 @@
+.ico { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
+
+.ico--spin { animation: ico-spin 1s linear infinite; }
+
+@keyframes ico-spin {
+  to { transform: rotate(360deg); }
+}

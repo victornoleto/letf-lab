@@ -1,0 +1,33 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-7) var(--space-8) var(--space-10);
+  max-width: 1280px;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: var(--space-5) var(--space-5) var(--space-9);
+  }
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: var(--z-sticky);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+
+  &.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

@@ -1,0 +1,31 @@
+.meta-bar {
+  display: flex;
+  gap: var(--space-5);
+  padding: var(--space-5) 0;
+  align-items: baseline;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 0;
+    font-weight: var(--fw-medium);
+  }
+
+  .val {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: var(--fw-medium);
+
+    &--success { color: var(--success); }
+    &--danger  { color: var(--danger); }
+    &--warn    { color: var(--warn); }
+  }
+}

@@ -1,0 +1,15 @@
+.score-bar {
+  display: flex;
+  gap: 2px;
+}
+
+.score-bar__seg {
+  width: 14px;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--border-subtle);
+
+  &--filled-on         { background: var(--success); }
+  &--filled-borderline { background: var(--warn); }
+  &--filled-off        { background: var(--danger); }
+}

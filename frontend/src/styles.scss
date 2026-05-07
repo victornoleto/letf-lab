@@ -1,0 +1,8 @@
+@use 'styles/tokens';
+@use 'styles/components';
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+table { border-collapse: collapse; width: 100%; }
+
+::selection { background: var(--accent-soft); color: var(--text-primary); }

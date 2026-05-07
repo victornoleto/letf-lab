@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI-Swing — Stripe DNA · full redesign</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    html, body, #root { height: 100%; margin: 0; }
+    body { background: #0a0a0a; color: #fafaf9; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+    *, *::before, *::after { box-sizing: border-box; }
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="ui-shared.jsx"></script>
+  <script type="text/babel" src="charts.jsx"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="stripe-tokens.jsx"></script>
+  <script type="text/babel" src="stripe-styles.jsx"></script>
+  <script type="text/babel" src="stripe-screens.jsx"></script>
+  <script type="text/babel" src="stripe-reference.jsx"></script>
+  <script type="text/babel" src="stripe-mobile.jsx"></script>
+  <script type="text/babel" src="var-a-linear.jsx"></script>
+  <script type="text/babel" src="var-b-vercel.jsx"></script>
+  <script type="text/babel" src="var-c-stripe.jsx"></script>
+
+  <script type="text/babel" data-presets="react">
+    const { useMemo } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent": "#635bff"
+    }/*EDITMODE-END*/;
+
+    // Stripe-leaning curated palette: Stripe purple, ink (canonical), forest, slate-blue.
+    const ACCENT_OPTIONS = ["#635bff", "#0a2540", "#1f8e4d", "#3f6fd6"];
+
+    function withAccent(tokens, accent) {
+      // Recompute accent-derived tokens so swatch changes propagate.
+      return {
+        ...tokens,
+        accent,
+        accentHover: accent,
+        accentText: '#ffffff',
+        focus: accent + '40',
+      };
+    }
+
+    function App() {
+      const tweaks = window.useTweaks ? window.useTweaks(TWEAK_DEFAULTS) : { values: TWEAK_DEFAULTS, setTweak: () => {} };
+      const accent = tweaks.values.accent;
+      const setTweak = tweaks.setTweak;
+
+      const lightTokens = useMemo(() => withAccent(window.STRIPE_TOKENS.light, accent), [accent]);
+      const darkTokens  = useMemo(() => withAccent(window.STRIPE_TOKENS.dark,  accent), [accent]);
+
+      const S = window.STRIPE_SCREENS;
+      const R = window.STRIPE_REF;
+      const M = window.STRIPE_MOBILE;
+      const VarA = window.AISWING_VARS.A;
+      const VarB = window.AISWING_VARS.B;
+      const VarC = window.AISWING_VARS.C;
+
+      const { DesignCanvas, DCSection, DCArtboard } = window;
+
+      // App screens have a fixed layout width (sidebar 232 + main). We size artboards
+      // generously so nothing is cropped.
+      const APP_W = 1440;
+      const APP_H = 900;
+      const APP_H_TALL = 1100;
+
+      return (
+        <>
+          <DesignCanvas>
+            {/* ─────────────── 0 · DNA exploration (kept for reference) ─────────────── */}
+            <DCSection
+              id="dna-explorations"
+              title="0 · Exploração inicial — 3 DNAs"
+              subtitle="Comparativo Linear / Vercel / Stripe que rodamos antes de fechar a direção. Stripe ganhou."
+            >
+              <DCArtboard id="explore-linear" label="A · Linear DNA — denso, neutro frio" width={1280} height={1100}>
+                <VarA accent={accent} />
+              </DCArtboard>
+              <DCArtboard id="explore-vercel" label="B · Vercel DNA — airy, mono-forward" width={1320} height={1100}>
+                <VarB accent={accent} />
+              </DCArtboard>
+              <DCArtboard id="explore-stripe" label="C · Stripe DNA — neutros warm, badges com ponto ✓ escolhida" width={1320} height={1180}>
+                <VarC accent={accent} />
+              </DCArtboard>
+            </DCSection>
+
+            {/* ─────────────── 1 · Foundations ─────────────── */}
+            <DCSection
+              id="foundations"
+              title="1 · Foundations"
+              subtitle="Tokens canônicos do design system. Light é o default; dark é first-class."
+            >
+              <DCArtboard id="tokens-light" label="Tokens · light" width={1240} height={1480}>
+                <R.TokensPage tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="tokens-dark" label="Tokens · dark" width={1240} height={1480}>
+                <R.TokensPage tokens={darkTokens} mode="dark" />
+              </DCArtboard>
+              <DCArtboard id="components-light" label="Componentes · light" width={1240} height={1620}>
+                <R.ComponentsPage tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="components-dark" label="Componentes · dark" width={1240} height={1620}>
+                <R.ComponentsPage tokens={darkTokens} mode="dark" />
+              </DCArtboard>
+            </DCSection>
+
+            {/* ─────────────── 2 · Telas core (light) ─────────────── */}
+            <DCSection
+              id="core-light"
+              title="2 · Telas core — light (canônico)"
+              subtitle="As 5 telas principais do produto, no tema canônico."
+            >
+              <DCArtboard id="dashboard-light" label="Dashboard" width={APP_W} height={APP_H_TALL}>
+                <S.Dashboard tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="detail-light" label="Strategy Detail · QQQ → TQQQ" width={APP_W} height={1500}>
+                <S.StrategyDetail tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="strategy-list-light" label="Strategy List" width={APP_W} height={APP_H} >
+                <S.StrategyList tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="indicator-list-light" label="Indicator List" width={APP_W} height={APP_H}>
+                <S.IndicatorList tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="settings-light" label="Settings" width={APP_W} height={APP_H_TALL}>
+                <S.Settings tokens={lightTokens} mode="light" />
+              </DCArtboard>
+            </DCSection>
+
+            {/* ─────────────── 3 · Telas core (dark) ─────────────── */}
+            <DCSection
+              id="core-dark"
+              title="3 · Telas core — dark"
+              subtitle="Mesmas telas, tema escuro. Verde/vermelho recalibrados para contraste."
+            >
+              <DCArtboard id="dashboard-dark" label="Dashboard · dark" width={APP_W} height={APP_H_TALL}>
+                <S.Dashboard tokens={darkTokens} mode="dark" />
+              </DCArtboard>
+              <DCArtboard id="detail-dark" label="Strategy Detail · dark" width={APP_W} height={1500}>
+                <S.StrategyDetail tokens={darkTokens} mode="dark" />
+              </DCArtboard>
+              <DCArtboard id="strategy-list-dark" label="Strategy List · dark" width={APP_W} height={APP_H}>
+                <S.StrategyList tokens={darkTokens} mode="dark" />
+              </DCArtboard>
+              <DCArtboard id="settings-dark" label="Settings · dark" width={APP_W} height={APP_H_TALL}>
+                <S.Settings tokens={darkTokens} mode="dark" />
+              </DCArtboard>
+            </DCSection>
+
+            {/* ─────────────── 4 · Forms ─────────────── */}
+            <DCSection
+              id="forms"
+              title="4 · Forms"
+              subtitle="Estados normais e com erro de validação. Inline errors, save bar fixa no rodapé."
+            >
+              <DCArtboard id="strategy-form" label="Strategy Form · preenchido" width={APP_W} height={1280}>
+                <S.StrategyForm tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="strategy-form-error" label="Strategy Form · com erro de validação" width={APP_W} height={1280}>
+                <S.StrategyFormError tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="indicator-form" label="Indicator Form · preenchido" width={APP_W} height={1100}>
+                <S.IndicatorForm tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="indicator-form-error" label="Indicator Form · com erro" width={APP_W} height={1100}>
+                <S.IndicatorFormError tokens={lightTokens} mode="light" />
+              </DCArtboard>
+            </DCSection>
+
+            {/* ─────────────── 5 · Estados especiais ─────────────── */}
+            <DCSection
+              id="states"
+              title="5 · Estados — login, vazio, loading, erro"
+              subtitle="Cobrindo as condições não-felizes que o app real precisa ter."
+            >
+              <DCArtboard id="login" label="Login" width={APP_W} height={APP_H}>
+                <S.Login tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="empty-strategies" label="Strategy List · vazio (primeira sessão)" width={APP_W} height={APP_H}>
+                <S.StrategyListEmpty tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="empty-indicators" label="Indicator List · vazio" width={APP_W} height={APP_H}>
+                <S.IndicatorListEmpty tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="loading" label="Dashboard · skeleton (loading)" width={APP_W} height={APP_H}>
+                <S.Loading tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="not-found" label="404 / not found" width={APP_W} height={APP_H}>
+                <S.NotFound tokens={lightTokens} mode="light" />
+              </DCArtboard>
+            </DCSection>
+
+            {/* ─────────────── 6 · Patterns ─────────────── */}
+            <DCSection
+              id="patterns"
+              title="6 · Patterns — sidebar, modal, toasts"
+              subtitle="Affordances reusáveis. Sidebar collapsed mostra ícones; toasts empilham canto sup-direito."
+            >
+              <DCArtboard id="sidebar-collapsed" label="Sidebar collapsed" width={APP_W} height={APP_H_TALL}>
+                <S.CollapsedSidebar tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="modal" label="Modal · confirmar exclusão" width={APP_W} height={APP_H}>
+                <S.Modal tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="toast" label="Toast stack" width={APP_W} height={APP_H_TALL}>
+                <S.Toast tokens={lightTokens} mode="light" />
+              </DCArtboard>
+            </DCSection>
+
+            {/* ─────────────── 7 · Mobile ─────────────── */}
+            <DCSection
+              id="mobile"
+              title="7 · Mobile (≤768px)"
+              subtitle="Bottom-nav, header colapsado, cards full-width. Dashboard e Strategy Detail em iPhone-class."
+            >
+              <DCArtboard id="mobile-dashboard-light" label="Mobile · Dashboard (light)" width={390} height={844}>
+                <M.MobileDashboard tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="mobile-detail-light" label="Mobile · Strategy Detail (light)" width={390} height={900}>
+                <M.MobileDetail tokens={lightTokens} mode="light" />
+              </DCArtboard>
+              <DCArtboard id="mobile-dashboard-dark" label="Mobile · Dashboard (dark)" width={390} height={844}>
+                <M.MobileDashboard tokens={darkTokens} mode="dark" />
+              </DCArtboard>
+              <DCArtboard id="mobile-detail-dark" label="Mobile · Strategy Detail (dark)" width={390} height={900}>
+                <M.MobileDetail tokens={darkTokens} mode="dark" />
+              </DCArtboard>
+            </DCSection>
+          </DesignCanvas>
+
+          {window.TweaksPanel && (
+            <window.TweaksPanel title="Tweaks">
+              <window.TweakSection title="Cor de accent">
+                <window.TweakColor
+                  name="accent"
+                  label="Accent"
+                  value={accent}
+                  onChange={v => setTweak('accent', v)}
+                  options={ACCENT_OPTIONS}
+                />
+                <div style={{ fontSize: 11, color: '#888', marginTop: 8, lineHeight: 1.5 }}>
+                  Aplicado a botão primário, link active, focus rings.<br />
+                  Verde / vermelho / âmbar continuam reservados para risk-on / off / borderline.
+                </div>
+              </window.TweakSection>
+              <window.TweakSection title="Tema">
+                <div style={{ fontSize: 11, color: '#888', lineHeight: 1.5 }}>
+                  Cada seção mostra <b style={{ color: '#fff' }}>light</b> (canônico) e <b style={{ color: '#fff' }}>dark</b>.
+                  No produto real o toggle (light / dark / system) está no rodapé da sidebar e persiste em <code>localStorage</code>.
+                </div>
+              </window.TweakSection>
+              <window.TweakSection title="Sobre esta entrega">
+                <div style={{ fontSize: 11, color: '#888', lineHeight: 1.6 }}>
+                  Stripe DNA aplicada ao app inteiro: tokens, componentes, telas core (light + dark), forms com validação, estados, patterns e mobile.<br />
+                  <br />
+                  A seção <b style={{ color: '#fff' }}>0 · Explorações</b> guarda Linear / Vercel / Stripe lado a lado da rodada anterior, para referência.
+                </div>
+              </window.TweakSection>
+            </window.TweaksPanel>
+          )}
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    requestAnimationFrame(() => root.render(<App />));
+  </script>
+</body>
+</html>

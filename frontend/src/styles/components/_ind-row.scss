@@ -1,0 +1,22 @@
+.ind-row {
+  display: grid;
+  grid-template-columns: 14px 84px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 11.5px;
+
+  &__icon-pass { color: var(--success); }
+  &__icon-fail { color: var(--danger); }
+
+  &__name { color: var(--text-secondary); }
+
+  &__detail {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

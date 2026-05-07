@@ -1,0 +1,44 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--warn-soft);
+  border: 1px solid color-mix(in oklab, var(--warn) 20%, transparent);
+  border-radius: var(--radius-lg);
+  font-size: 12.5px;
+  color: var(--text-primary);
+  margin-bottom: var(--space-5);
+
+  &--info {
+    background: var(--info-soft);
+    border-color: color-mix(in oklab, var(--info) 20%, transparent);
+  }
+
+  &--danger {
+    background: var(--danger-soft);
+    border-color: color-mix(in oklab, var(--danger) 20%, transparent);
+  }
+
+  &--success {
+    background: var(--success-soft);
+    border-color: color-mix(in oklab, var(--success) 20%, transparent);
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__close {
+    margin-left: auto;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px;
+    background: none;
+    border: none;
+  }
+}

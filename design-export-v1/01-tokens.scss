@@ -1,0 +1,274 @@
+// =============================================================================
+// AI-Swing — Design tokens
+// Stripe DNA · IBM Plex Sans + Mono · light (default) + dark
+// Drop-in @use as: @use './styles/tokens';
+// =============================================================================
+
+// ============== Light theme (default — :root) ==============
+:root {
+  // Surfaces
+  --bg:               #f7f8fa;
+  --surface:          #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-muted:    #f3f5f8;
+  --sidebar-bg:       #ffffff;
+
+  // Text
+  --text-primary:     #1a1f36;
+  --text-secondary:   #3c4257;
+  --text-muted:       #697386;
+  --text-disabled:    #a3acba;
+
+  // Borders
+  --border:           #e3e8ee;
+  --border-subtle:    #eef0f4;
+  --border-strong:    #cfd7e0;
+
+  // Brand / interactive (canonical = ink black)
+  --primary:          #0a0a0a;
+  --primary-hover:    #1a1a1a;
+  --primary-active:   #000000;
+  --primary-fg:       #ffffff;
+  --primary-soft:     rgba(10, 10, 10, 0.06);
+  --focus-ring:       rgba(10, 10, 10, 0.18);
+
+  // Semantic — risk-on / off / borderline / info
+  --success:          #1f8e4d;
+  --success-bg:       #e6f5ec;
+  --success-text:     #117040;
+  --success-border:   #c2e6cf;
+
+  --danger:           #cd3500;
+  --danger-bg:        #fdecec;
+  --danger-text:      #a3260e;
+  --danger-border:    #f5c8c0;
+
+  --warn:             #bb5504;          // borderline (score == k)
+  --warn-bg:          #fdf3e1;
+  --warn-text:        #a04200;
+  --warn-border:      #f4dcb1;
+
+  --info:             #3f6fd6;
+  --info-bg:          rgba(63, 111, 214, 0.10);
+  --info-text:        #2c54a8;
+  --info-border:      #c8d6f1;
+
+  // Charts (ECharts series + axes — reference; consume via getChartTokens())
+  --chart-strategy:        #1f8e4d;
+  --chart-benchmark:       #697386;
+  --chart-leveraged:       #bb5504;
+  --chart-ratio-positive:  #3f6fd6;
+  --chart-ratio-negative:  #cd3500;
+  --chart-grid:            #eef0f4;
+  --chart-axis:            #697386;
+  --chart-tooltip-bg:      #ffffff;
+  --chart-tooltip-border:  #e3e8ee;
+  --chart-tooltip-fg:      #1a1f36;
+
+  // Spacing scale (4-base)
+  --space-0:  0px;
+  --space-05: 2px;
+  --space-1:  4px;
+  --space-15: 6px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  // Radius
+  --radius-sm:   4px;
+  --radius-md:   6px;   // buttons, inputs, nav items
+  --radius-lg:   8px;   // cards
+  --radius-xl:   10px;  // hero, modals
+  --radius-2xl:  14px;
+  --radius-pill: 9999px;
+
+  // Shadows (Stripe-style — hairline + soft)
+  --shadow-xs: 0 0 0 1px rgba(60, 66, 87, 0.08);
+  --shadow-sm: 0 1px 1px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(60, 66, 87, 0.06);
+  --shadow-md: 0 2px 5px rgba(60, 66, 87, 0.06), 0 0 0 1px rgba(60, 66, 87, 0.08);
+  --shadow-lg: 0 8px 24px rgba(60, 66, 87, 0.10), 0 2px 6px rgba(60, 66, 87, 0.06), 0 0 0 1px rgba(60, 66, 87, 0.08);
+  --shadow-modal: 0 20px 60px rgba(60, 66, 87, 0.25);
+
+  --scrim: rgba(20, 28, 50, 0.45);
+
+  // Type scale (IBM Plex Sans)
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --text-display:  32px / 1.18 var(--font-sans);  // letter-spacing -0.022em
+  --text-h1:       26px / 1.20 var(--font-sans);  // letter-spacing -0.020em
+  --text-h2:       20px / 1.30 var(--font-sans);  // letter-spacing -0.014em
+  --text-h3:       16px / 1.40 var(--font-sans);  // letter-spacing -0.008em
+  --text-base:     14px / 1.55 var(--font-sans);
+  --text-sm:       13px / 1.50 var(--font-sans);
+  --text-xs:       12px / 1.45 var(--font-sans);
+  --text-micro:    11.5px / 1.40 var(--font-sans);
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semi:    600;
+  --weight-bold:    700;
+
+  // Transitions
+  --transition-fast: 120ms ease;
+  --transition-base: 180ms ease;
+
+  // Layout
+  --sidebar-width:           232px;
+  --sidebar-width-collapsed: 56px;
+  --content-max-width:       1600px;
+  --content-pad-x:           32px;
+  --content-pad-y:           28px;
+}
+
+// ============== Dark theme (explicit override) ==============
+[data-theme="dark"] {
+  --bg:               #08090b;
+  --surface:          #0f1014;
+  --surface-elevated: #15171c;
+  --surface-muted:    #0c0d11;
+  --sidebar-bg:       #0b0c10;
+
+  --text-primary:     #f5f6f8;
+  --text-secondary:   #c8ccd4;
+  --text-muted:       #7d828c;
+  --text-disabled:    #4a4e57;
+
+  --border:           #1f2129;
+  --border-subtle:    #16181e;
+  --border-strong:    #2c2f38;
+
+  --primary:          #ffffff;
+  --primary-hover:    #e6e8ec;
+  --primary-active:   #d4d6da;
+  --primary-fg:       #08090b;
+  --primary-soft:     rgba(255, 255, 255, 0.07);
+  --focus-ring:       rgba(255, 255, 255, 0.32);
+
+  // Semantic — brighter / less saturated for dark backgrounds
+  --success:          #3ddc84;
+  --success-bg:       rgba(61, 220, 132, 0.12);
+  --success-text:     #7ce5a8;
+  --success-border:   rgba(61, 220, 132, 0.28);
+
+  --danger:           #ff5a4a;
+  --danger-bg:        rgba(255, 90, 74, 0.14);
+  --danger-text:      #ff8c80;
+  --danger-border:    rgba(255, 90, 74, 0.32);
+
+  --warn:             #f5a524;
+  --warn-bg:          rgba(245, 165, 36, 0.14);
+  --warn-text:        #fbc26b;
+  --warn-border:      rgba(245, 165, 36, 0.30);
+
+  --info:             #7aa9ff;
+  --info-bg:          rgba(122, 169, 255, 0.12);
+  --info-text:        #a5c2ff;
+  --info-border:      rgba(122, 169, 255, 0.28);
+
+  --chart-strategy:        #3ddc84;
+  --chart-benchmark:       #7d828c;
+  --chart-leveraged:       #f5a524;
+  --chart-ratio-positive:  #7aa9ff;
+  --chart-ratio-negative:  #ff5a4a;
+  --chart-grid:            #16181e;
+  --chart-axis:            #7d828c;
+  --chart-tooltip-bg:      #15171c;
+  --chart-tooltip-border:  #2c2f38;
+  --chart-tooltip-fg:      #f5f6f8;
+
+  --shadow-xs: 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.60), 0 2px 6px rgba(0, 0, 0, 0.40), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.70);
+
+  --scrim: rgba(0, 0, 0, 0.62);
+}
+
+// ============== System preference fallback (when no explicit data-theme) ==============
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg:               #08090b;
+    --surface:          #0f1014;
+    --surface-elevated: #15171c;
+    --surface-muted:    #0c0d11;
+    --sidebar-bg:       #0b0c10;
+
+    --text-primary:     #f5f6f8;
+    --text-secondary:   #c8ccd4;
+    --text-muted:       #7d828c;
+    --text-disabled:    #4a4e57;
+
+    --border:           #1f2129;
+    --border-subtle:    #16181e;
+    --border-strong:    #2c2f38;
+
+    --primary:          #ffffff;
+    --primary-hover:    #e6e8ec;
+    --primary-active:   #d4d6da;
+    --primary-fg:       #08090b;
+    --primary-soft:     rgba(255, 255, 255, 0.07);
+    --focus-ring:       rgba(255, 255, 255, 0.32);
+
+    --success:          #3ddc84;
+    --success-bg:       rgba(61, 220, 132, 0.12);
+    --success-text:     #7ce5a8;
+    --success-border:   rgba(61, 220, 132, 0.28);
+
+    --danger:           #ff5a4a;
+    --danger-bg:        rgba(255, 90, 74, 0.14);
+    --danger-text:      #ff8c80;
+    --danger-border:    rgba(255, 90, 74, 0.32);
+
+    --warn:             #f5a524;
+    --warn-bg:          rgba(245, 165, 36, 0.14);
+    --warn-text:        #fbc26b;
+    --warn-border:      rgba(245, 165, 36, 0.30);
+
+    --info:             #7aa9ff;
+    --info-bg:          rgba(122, 169, 255, 0.12);
+    --info-text:        #a5c2ff;
+    --info-border:      rgba(122, 169, 255, 0.28);
+
+    --chart-strategy:        #3ddc84;
+    --chart-benchmark:       #7d828c;
+    --chart-leveraged:       #f5a524;
+    --chart-ratio-positive:  #7aa9ff;
+    --chart-ratio-negative:  #ff5a4a;
+    --chart-grid:            #16181e;
+    --chart-axis:            #7d828c;
+    --chart-tooltip-bg:      #15171c;
+    --chart-tooltip-border:  #2c2f38;
+    --chart-tooltip-fg:      #f5f6f8;
+
+    --shadow-xs: 0 0 0 1px rgba(255, 255, 255, 0.05);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.60), 0 2px 6px rgba(0, 0, 0, 0.40), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.70);
+
+    --scrim: rgba(0, 0, 0, 0.62);
+  }
+}
+
+// ============== Base reset hooks ==============
+html, body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font: var(--text-base);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
+
+// Tabular numerals everywhere mono is used
+.mono, code, kbd, pre, [class*="mono"] {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum';
+}

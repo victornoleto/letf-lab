@@ -1,0 +1,18 @@
+.status-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+  }
+
+  &--on::before         { background: var(--success); }
+  &--off::before        { background: var(--danger); }
+  &--borderline::before { background: var(--warn); }
+}

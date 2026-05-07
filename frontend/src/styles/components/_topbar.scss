@@ -1,0 +1,35 @@
+.topbar-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .topbar-mobile {
+    display: flex;
+    height: var(--h-topbar);
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-5);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+  }
+
+  .topbar-mobile__hamburger {
+    background: transparent;
+    border: none;
+    padding: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background: var(--surface-muted);
+      color: var(--text-primary);
+    }
+  }
+}

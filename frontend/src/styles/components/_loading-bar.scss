@@ -1,0 +1,20 @@
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: var(--z-toast);
+  animation: loading-bar 800ms var(--ease-out) infinite;
+  transform-origin: left;
+}
+
+@keyframes loading-bar {
+  0%   { transform: scaleX(0);   opacity: 1; }
+  50%  { transform: scaleX(0.7); opacity: 1; }
+  100% { transform: scaleX(1);   opacity: 0; }
+}
+
+.spin { animation: spin 600ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,55 @@
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+
+.metric-card {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+
+  &:last-child { border-right: none; }
+
+  &--highlight { border-left: 2px solid var(--success); }
+
+  &__title {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: var(--fw-medium);
+  }
+
+  &__rows {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+.metric-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+
+  &__k {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  &__v {
+    font-family: var(--font-mono);
+    font-weight: var(--fw-medium);
+    font-size: 13.5px;
+  }
+
+  &__diff {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+
+    &--pos { color: var(--success); }
+    &--neg { color: var(--danger); }
+  }
+}

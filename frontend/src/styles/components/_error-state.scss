@@ -1,0 +1,25 @@
+.error-state {
+  text-align: center;
+  padding: 48px 24px;
+
+  &__icon {
+    width: 20px;
+    height: 20px;
+    color: var(--danger);
+    margin-bottom: 8px;
+  }
+
+  &__title {
+    font-weight: var(--fw-medium);
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+
+  &__copy {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    font-family: var(--font-mono);
+  }
+}

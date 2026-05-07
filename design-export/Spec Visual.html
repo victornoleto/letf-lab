@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>AI-Swing · Spec Visual (Linear DNA)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #ececec; font-family: 'Inter', system-ui, sans-serif; color: #0a0a0a; -webkit-font-smoothing: antialiased; }
+    .doc { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 24px 0 80px; }
+    .page { width: 1920px; height: 1180px; background: #fff; box-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.06); transform-origin: top center; transform: scale(0.6); margin-bottom: -432px; display: flex; flex-direction: column; }
+    @media (max-width: 1280px) { .page { transform: scale(0.5); margin-bottom: -550px; } }
+    .page-head { height: 60px; flex-shrink: 0; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e5e5e5; background: #fff; }
+    .ph-l { display: flex; align-items: baseline; gap: 16px; }
+    .ph-num { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; color: #737373; font-weight: 500; min-width: 40px; }
+    .ph-title { font-size: 18px; font-weight: 600; letter-spacing: -0.015em; }
+    .ph-sub { font-size: 12px; color: #737373; margin-left: 12px; }
+    .ph-r { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #737373; text-transform: uppercase; letter-spacing: 0.06em; }
+    .frame { flex: 1; overflow: hidden; position: relative; }
+    .frame iframe { width: 1920px; height: 1120px; border: none; display: block; }
+    .cover { padding: 100px 80px; display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
+    .cover-mark { display: flex; align-items: center; gap: 14px; }
+    .cover-mark .m { width: 44px; height: 44px; border-radius: 10px; background: #0a0a0a; color: #fff; display: grid; place-items: center; font-size: 22px; }
+    .cover-title { font-size: 88px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.0; }
+    .cover-title em { font-style: normal; color: #737373; }
+    .cover-sub { font-size: 22px; color: #525252; max-width: 1100px; line-height: 1.45; margin-top: 20px; }
+    .cover-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 56px; max-width: 1300px; }
+    .cover-meta .lbl { font-size: 11px; color: #737373; text-transform: uppercase; letter-spacing: 0.08em; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .cover-meta .val { font-size: 18px; font-weight: 500; margin-top: 6px; }
+    .cover-foot { display: flex; justify-content: space-between; align-items: flex-end; font-size: 13px; color: #737373; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .toc { display: grid; grid-template-columns: 1fr 1fr; gap: 0 80px; padding: 60px 80px; height: 100%; }
+    .toc-section h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: #737373; font-weight: 500; margin: 0 0 24px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .toc-row { display: flex; padding: 10px 0; font-size: 18px; border-bottom: 1px dotted #ededed; align-items: baseline; color: inherit; text-decoration: none; }
+    .toc-row .num { font-family: 'JetBrains Mono', ui-monospace, monospace; color: #737373; min-width: 44px; }
+    .toc-row .lbl { flex: 1; padding-left: 8px; }
+    .toc-row .pg { font-family: 'JetBrains Mono', ui-monospace, monospace; color: #737373; font-size: 14px; }
+    .nav-bar { position: fixed; top: 16px; right: 16px; background: rgba(10,10,10,0.92); color: #fff; padding: 10px 14px; border-radius: 8px; display: flex; gap: 12px; align-items: center; font: 13px 'Inter', system-ui, sans-serif; z-index: 999; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+    .nav-bar select { background: transparent; color: #fff; border: 1px solid #444; border-radius: 4px; padding: 4px 6px; font: inherit; }
+    .nav-bar button { color: #fff; padding: 4px 8px; border-radius: 4px; cursor: pointer; background: #333; border: none; font: inherit; }
+    .nav-bar button:hover { background: #555; }
+    @page { size: 1920px 1180px; margin: 0; }
+    @media print {
+      html, body { background: #fff; }
+      .doc { padding: 0; gap: 0; }
+      .page { transform: none !important; margin: 0 !important; box-shadow: none !important; page-break-after: always; }
+      .page:last-child { page-break-after: auto; }
+      .nav-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="nav-bar">
+  <span style="opacity:0.7">AI-Swing · Spec Visual</span>
+  <select id="jump"></select>
+  <button id="prep-btn" onclick="window.prepareForPrint()">⌘P · Salvar PDF</button>
+</div>
+
+<div class="doc" id="doc">
+  <section class="page">
+    <div class="page-head"><div class="ph-l"><div class="ph-num">—</div><div class="ph-title">Cover</div></div><div class="ph-r">v0.4.2 · 2026-05-06</div></div>
+    <div class="frame">
+      <div class="cover">
+        <div class="cover-mark"><div class="m">⚡</div><div style="font-weight:600;font-size:20px">AI-Swing</div></div>
+        <div>
+          <div class="cover-title">Spec Visual<br/><em>— Linear DNA</em></div>
+          <div class="cover-sub">Pacote de telas para handoff de redesign. <strong>15 telas</strong> em <em>light</em> e <em>dark</em>, cobrindo dashboard, CRUD, estados (loading / empty / 404), overlays (modal / palette / toast), shell colapsado, login e settings.</div>
+          <div class="cover-meta">
+            <div><div class="lbl">Tema</div><div class="val">Linear DNA</div></div>
+            <div><div class="lbl">Telas</div><div class="val">15 × 2 = 30</div></div>
+            <div><div class="lbl">Resolução</div><div class="val">1920 × 1080</div></div>
+            <div><div class="lbl">Stack</div><div class="val">Inter · JetBrains Mono · ECharts</div></div>
+          </div>
+        </div>
+        <div class="cover-foot"><div>spec visual gerado para handoff dev</div><div>30 frames · 1920×1080 nativo</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="page-head"><div class="ph-l"><div class="ph-num">00</div><div class="ph-title">Índice</div></div><div class="ph-r">30 telas · light + dark</div></div>
+    <div class="frame">
+      <div class="toc">
+        <div class="toc-section"><h3>Light Theme</h3><div id="toc-light"></div></div>
+        <div class="toc-section"><h3>Dark Theme</h3><div id="toc-dark"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="screens"></div>
+</div>
+
+<script>
+  const SCREENS = [
+    { id: 'dashboard',         title: 'Dashboard',                 sub: 'Visão geral · 5 estratégias · banner de transição · cards com sparkline + score' },
+    { id: 'strategy-list',     title: 'Lista de Estratégias',      sub: 'CRUD · table densa · row hover revela actions' },
+    { id: 'strategy-detail',   title: 'Detalhe da Estratégia',     sub: 'Backtest · 3 cols de métricas · 2 charts (equity log + razão) · histórico' },
+    { id: 'strategy-form',     title: 'Form de Estratégia',        sub: 'Editar QQQ → TQQQ · chips de indicadores · k threshold' },
+    { id: 'indicator-list',    title: 'Lista de Indicadores',      sub: 'Catálogo · contagem de uso · status ativo/inativo' },
+    { id: 'indicator-form',    title: 'Form de Indicador',         sub: 'Editar Vol21d<40% · campo threshold dinâmico' },
+    { id: 'settings',          title: 'Settings',                  sub: 'Workspace · cron · provider · cache · notificações · aparência' },
+    { id: 'sidebar-collapsed', title: 'Sidebar Collapsed',         sub: 'Modo compacto · só ícones · dashboard como contexto' },
+    { id: 'empty',             title: 'Empty State',               sub: 'Sem estratégias ainda · CTA dual' },
+    { id: 'loading',           title: 'Loading / Skeleton',        sub: 'Skeleton dos cards do dashboard' },
+    { id: 'modal',             title: 'Modal de Confirmação',      sub: 'Excluir estratégia · destrutivo · alerta de irreversibilidade' },
+    { id: 'palette',           title: 'Command Palette',           sub: '⌘K · busca + ações + atalhos' },
+    { id: 'toast',             title: 'Toast Stack',               sub: 'Success / info / danger · 3 toasts empilhados' },
+    { id: 'login',             title: 'Login',                     sub: 'Card centralizado · email + senha + SSO' },
+    { id: 'notfound',          title: '404',                       sub: 'Estratégia inexistente · CTA dual' },
+  ];
+  const THEMES = [{ id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' }];
+
+  function buildToc(themeId, containerId) {
+    const root = document.getElementById(containerId);
+    SCREENS.forEach((s, i) => {
+      const num = String(i + 1).padStart(2, '0');
+      const pageNum = themeId === 'light' ? (i + 3) : (i + 18);
+      const targetId = themeId + '-' + s.id;
+      const row = document.createElement('a');
+      row.className = 'toc-row';
+      row.href = '#' + targetId;
+      row.innerHTML = '<span class="num">' + num + '</span><span class="lbl">' + s.title + '</span><span class="pg">p.' + pageNum + '</span>';
+      root.appendChild(row);
+    });
+  }
+  buildToc('light', 'toc-light');
+  buildToc('dark', 'toc-dark');
+
+  const screensRoot = document.getElementById('screens');
+  THEMES.forEach(theme => {
+    SCREENS.forEach((s, i) => {
+      const num = String(i + 1).padStart(2, '0');
+      const sec = document.createElement('section');
+      sec.className = 'page';
+      sec.id = theme.id + '-' + s.id;
+      sec.innerHTML =
+        '<div class="page-head">' +
+          '<div class="ph-l">' +
+            '<div class="ph-num">' + num + '</div>' +
+            '<div><div class="ph-title">' + s.title + '</div><div class="ph-sub">' + s.sub + '</div></div>' +
+          '</div>' +
+          '<div class="ph-r">' + theme.label + ' · 1920×1080</div>' +
+        '</div>' +
+        '<div class="frame"><iframe data-src="frame.html#s=' + s.id + '&t=' + theme.id + '"></iframe></div>';
+      screensRoot.appendChild(sec);
+    });
+  });
+
+  const jump = document.getElementById('jump');
+  THEMES.forEach(theme => {
+    const og = document.createElement('optgroup');
+    og.label = theme.label;
+    SCREENS.forEach((s, i) => {
+      const opt = document.createElement('option');
+      opt.value = theme.id + '-' + s.id;
+      opt.textContent = String(i+1).padStart(2,'0') + ' · ' + s.title;
+      og.appendChild(opt);
+    });
+    jump.appendChild(og);
+  });
+  jump.addEventListener('change', () => {
+    const el = document.getElementById(jump.value);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // Lazy load via IntersectionObserver — keep memory low while scrolling
+  const allIframes = document.querySelectorAll('iframe[data-src]');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting && !e.target.src) {
+        e.target.src = e.target.dataset.src;
+        io.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: '500px 0px' });
+  allIframes.forEach(f => io.observe(f));
+
+  // Prepare-for-print button: force load all + wait
+  window.prepareForPrint = async () => {
+    const btn = document.getElementById('prep-btn');
+    btn.textContent = 'Carregando 0/' + allIframes.length + '…';
+    btn.disabled = true;
+    let loaded = 0;
+    const promises = [];
+    allIframes.forEach(f => {
+      if (!f.src) f.src = f.dataset.src;
+      promises.push(new Promise(res => {
+        if (f.contentWindow?.AISWING_CAPTURE) { loaded++; btn.textContent='Carregando '+loaded+'/'+allIframes.length+'…'; return res(); }
+        const check = setInterval(() => {
+          const root = f.contentDocument?.getElementById('root');
+          if (root && root.children.length > 0) {
+            clearInterval(check);
+            loaded++;
+            btn.textContent = 'Carregando ' + loaded + '/' + allIframes.length + '…';
+            res();
+          }
+        }, 200);
+        setTimeout(() => { clearInterval(check); loaded++; res(); }, 15000);
+      }));
+    });
+    await Promise.all(promises);
+    btn.textContent = '✓ Pronto · ⌘P';
+    btn.disabled = false;
+    setTimeout(() => window.print(), 400);
+  };
+</script>
+
+</body>
+</html>

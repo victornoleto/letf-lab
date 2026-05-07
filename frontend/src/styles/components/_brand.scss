@@ -1,0 +1,41 @@
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 16px;
+  text-decoration: none;
+  color: inherit;
+
+  &__mark {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-md);
+    background: var(--text-primary);
+    color: var(--bg);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: 13.5px;
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-tight);
+    color: var(--text-primary);
+
+    .dot {
+      color: var(--text-muted);
+      margin: 0 2px;
+    }
+  }
+
+  &--lg &__mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+  }
+
+  &--lg &__name {
+    font-size: 15px;
+  }
+}
