@@ -12,7 +12,7 @@ class WalkForwardWindowDTO(BaseModel):
     start: DateT
     end: DateT
     n_days: int
-    sharpe: float | None
+    sortino: float | None
     cagr: float | None
     max_drawdown: float | None
     pct_above_benchmark: float | None

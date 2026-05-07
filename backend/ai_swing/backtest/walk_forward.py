@@ -21,7 +21,7 @@ from ai_swing.backtest.engine import compute_strategy_curves
 from ai_swing.backtest.metrics import (
     cagr as cagr_metric,
     max_drawdown as mdd_metric,
-    sharpe as sharpe_metric,
+    sortino as sortino_metric,
 )
 from ai_swing.db.models import Strategy
 
@@ -36,7 +36,7 @@ class WalkForwardWindow:
     start: date
     end: date
     n_days: int
-    sharpe: float | None
+    sortino: float | None
     cagr: float | None
     max_drawdown: float | None
     pct_above_benchmark: float | None
@@ -100,13 +100,13 @@ def compute_walk_forward(
             s_norm = win_strat / float(win_strat.iloc[0])
             b_norm = win_bench / float(win_bench.iloc[0])
             pct_above = float((s_norm > b_norm).mean())
-            sh = float(sharpe_metric(win_rets))
+            so = float(sortino_metric(win_rets))
             cg = float(cagr_metric(win_strat))
             mdd = float(mdd_metric(win_strat))
             passed = pct_above >= _PCT_ABOVE_BAR
         else:
             pct_above = None
-            sh = None
+            so = None
             cg = None
             mdd = None
             passed = False
@@ -116,7 +116,7 @@ def compute_walk_forward(
             start=chunk[0].date(),
             end=chunk[-1].date(),
             n_days=len(chunk),
-            sharpe=sh,
+            sortino=so,
             cagr=cg,
             max_drawdown=mdd,
             pct_above_benchmark=pct_above,

@@ -214,16 +214,16 @@ def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
 
     # Tax-aware net curve (Lei 14.754, annual_realize). Compounding shape is
     # preserved; the DARF deduction lands on the last bar of each calendar
-    # year. We re-run compute_metrics on the net equity to get sharpe_net /
-    # cagr_net and report the gross→net Sharpe drag in pp.
+    # year. We re-run compute_metrics on the net equity to get sortino_net /
+    # cagr_net and report the gross→net Sortino drag in pp.
     equity_strategy_net = apply_annual_darf(
         curves.equity_strategy, strategy_returns_window
     )
     net_returns = equity_strategy_net.pct_change().fillna(0.0)
     metrics_net = compute_metrics(equity_strategy_net, net_returns)
     metrics_strategy.cagr_net = metrics_net.cagr
-    metrics_strategy.sharpe_net = metrics_net.sharpe
-    metrics_strategy.tax_drag_pp = metrics_strategy.sharpe - metrics_net.sharpe
+    metrics_strategy.sortino_net = metrics_net.sortino
+    metrics_strategy.tax_drag_pp = metrics_strategy.sortino - metrics_net.sortino
 
     return BacktestResult(
         range_start=curves.range_start,

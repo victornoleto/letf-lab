@@ -11,6 +11,7 @@ from ai_swing.backtest.metrics import (
     max_drawdown,
     n_trades,
     sharpe,
+    sortino,
 )
 
 
@@ -56,6 +57,50 @@ def test_sharpe_positive_when_uptrend():
     assert s > 0.5  # ~0.001/0.01 * sqrt(252) ≈ 1.6
 
 
+def test_sortino_zero_when_constant():
+    rets = pd.Series([0.0] * 100, index=pd.date_range("2020-01-01", periods=100, freq="B"))
+    assert sortino(rets) == 0.0
+
+
+def test_sortino_positive_when_no_downside():
+    rets = pd.Series(
+        [0.001] * 252, index=pd.date_range("2020-01-01", periods=252, freq="B")
+    )
+    # All returns >= 0 → downside_dev = 0 → guard returns 0.0
+    assert sortino(rets) == 0.0
+
+
+def test_sortino_higher_than_sharpe_for_right_skewed():
+    """The asymmetric-upside hypothesis: a right-skewed series (occasional
+    small losses, frequent moderate gains) gets a Sortino ratio higher
+    than its Sharpe ratio because Sortino ignores upside volatility."""
+    # 200 small positive days + 20 small negative days + 32 large positive days
+    rng = np.random.default_rng(42)
+    pos_small = rng.normal(0.002, 0.003, 200)
+    neg_small = rng.normal(-0.002, 0.001, 20)
+    pos_large = rng.normal(0.020, 0.005, 32)
+    vals = np.concatenate([pos_small, neg_small, pos_large])
+    rng.shuffle(vals)
+    rets = pd.Series(vals, index=pd.date_range("2020-01-01", periods=len(vals), freq="B"))
+    sh = sharpe(rets)
+    so = sortino(rets)
+    assert so > sh, f"expected Sortino > Sharpe for right-skewed series; got {so:.3f} vs {sh:.3f}"
+
+
+def test_sortino_matches_manual_formula():
+    """Sortino = mean(r) / sqrt(mean(min(r,0)^2)) * sqrt(252)."""
+    rets = pd.Series(
+        [0.01, -0.02, 0.005, -0.01, 0.015, 0.0],
+        index=pd.date_range("2020-01-01", periods=6, freq="B"),
+    )
+    expected = (
+        rets.mean()
+        / np.sqrt(np.mean(np.minimum(rets.values, 0.0) ** 2))
+        * np.sqrt(252)
+    )
+    assert sortino(rets) == pytest.approx(float(expected), rel=1e-9)
+
+
 def test_n_trades_counts_flips():
     pos = pd.Series([0, 0, 1, 1, 0, 1, 1])
     # flips: 0→1, 1→0, 0→1 = 3
@@ -78,3 +123,5 @@ def test_compute_metrics_aggregates():
     assert m.max_dd < 0
     assert m.n_trades == 3
     assert 0.0 <= m.hit_rate_vs_benchmark <= 1.0
+    # Sortino is the primary risk-adjusted field on Metrics now.
+    assert isinstance(m.sortino, float)

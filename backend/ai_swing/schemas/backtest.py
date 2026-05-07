@@ -19,12 +19,12 @@ class BacktestTransition(BaseModel):
 class BacktestMetrics(BaseModel):
     cagr: float
     max_dd: float
-    sharpe: float
+    sortino: float
     n_trades: int | None = None
     hit_rate_vs_benchmark: float | None = None
     # Net-of-tax (Lei 14.754) — only populated for the strategy curve.
     cagr_net: float | None = None
-    sharpe_net: float | None = None
+    sortino_net: float | None = None
     tax_drag_pp: float | None = None
 
 

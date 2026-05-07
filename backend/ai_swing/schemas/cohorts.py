@@ -14,7 +14,7 @@ class CohortEntryDTO(BaseModel):
     has_data: bool
     n_days: int
     cagr: float | None
-    sharpe: float | None
+    sortino: float | None
     max_drawdown: float | None
 
 

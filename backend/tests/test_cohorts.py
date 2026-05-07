@@ -76,7 +76,7 @@ def test_cohort_entries_computes_metrics_when_data_available(patch_prices):
     assert len(full) >= 6, "expected at least 6 cohorts with full history"
     for e in full:
         assert e.cagr is not None
-        assert e.sharpe is not None
+        assert e.sortino is not None
         assert e.max_drawdown is not None
         # MaxDD is negative or zero
         assert e.max_drawdown <= 0

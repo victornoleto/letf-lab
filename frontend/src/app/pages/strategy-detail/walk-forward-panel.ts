@@ -47,7 +47,7 @@ import { WalkForwardReport, WalkForwardWindow } from '../../core/models';
                   <tr>
                     <th>#</th>
                     <th>Período</th>
-                    <th class="th--num">Sharpe</th>
+                    <th class="th--num">Sortino</th>
                     <th class="th--num">CAGR</th>
                     <th class="th--num">Max DD</th>
                     <th class="th--num">% acima bench</th>
@@ -59,7 +59,7 @@ import { WalkForwardReport, WalkForwardWindow } from '../../core/models';
                     <tr [class.wf-row--passed]="w.passed">
                       <td class="mono">{{ w.index + 1 }}</td>
                       <td class="mono">{{ w.start }} → {{ w.end }}</td>
-                      <td class="td--num mono">{{ formatNum(w.sharpe) }}</td>
+                      <td class="td--num mono">{{ formatNum(w.sortino) }}</td>
                       <td class="td--num mono">{{ formatPct(w.cagr) }}</td>
                       <td class="td--num mono">{{ formatPct(w.max_drawdown) }}</td>
                       <td class="td--num mono">{{ formatPct(w.pct_above_benchmark) }}</td>

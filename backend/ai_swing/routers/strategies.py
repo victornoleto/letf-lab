@@ -253,7 +253,7 @@ def cohort_entry_endpoint(
                 has_data=e.has_data,
                 n_days=e.n_days,
                 cagr=e.cagr,
-                sharpe=e.sharpe,
+                sortino=e.sortino,
                 max_drawdown=e.max_drawdown,
             )
             for e in report.entries

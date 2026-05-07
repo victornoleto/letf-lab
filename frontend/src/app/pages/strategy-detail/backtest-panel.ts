@@ -48,11 +48,11 @@ export interface EquityPoint {
 export interface BacktestMetrics {
   cagr: number;
   max_dd: number;
-  sharpe: number;
+  sortino: number;
   n_trades: number | null;
   hit_rate_vs_benchmark: number | null;
   cagr_net: number | null;
-  sharpe_net: number | null;
+  sortino_net: number | null;
   tax_drag_pp: number | null;
 }
 
@@ -87,7 +87,7 @@ interface PerfRow {
   cls: string;
   cagr: number;
   max_dd: number;
-  sharpe: number;
+  sortino: number;
 }
 
 @Component({
@@ -149,7 +149,7 @@ interface PerfRow {
                   <th>Comparativo</th>
                   <th class="th--num">CAGR</th>
                   <th class="th--num">Max. DD</th>
-                  <th class="th--num">Sharpe</th>
+                  <th class="th--num">Sortino</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,7 +161,7 @@ interface PerfRow {
                     </td>
                     <td class="td--num mono" [ngClass]="numCls(row.cagr)">{{ pct(row.cagr) }}</td>
                     <td class="td--num mono" [ngClass]="numCls(row.max_dd)">{{ pct(row.max_dd) }}</td>
-                    <td class="td--num mono">{{ num(row.sharpe) }}</td>
+                    <td class="td--num mono">{{ num(row.sortino) }}</td>
                   </tr>
                 }
               </tbody>
@@ -196,7 +196,7 @@ interface PerfRow {
           @if (showNet() && result()!.metrics_strategy.tax_drag_pp != null) {
             <span class="perf-footnote">
               <span class="perf-footnote__k">Tax drag</span>
-              <span class="mono num--neg">−{{ num(result()!.metrics_strategy.tax_drag_pp!) }} Sharpe</span>
+              <span class="mono num--neg">−{{ num(result()!.metrics_strategy.tax_drag_pp!) }} Sortino</span>
             </span>
           }
           <span class="perf-footnote perf-footnote--hint">
@@ -302,18 +302,18 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
         cls: 'perf-table__label--strategy',
         cagr: r.metrics_strategy.cagr,
         max_dd: r.metrics_strategy.max_dd,
-        sharpe: r.metrics_strategy.sharpe,
+        sortino: r.metrics_strategy.sortino,
       },
     ];
     if (this.showNet()
         && r.metrics_strategy.cagr_net != null
-        && r.metrics_strategy.sharpe_net != null) {
+        && r.metrics_strategy.sortino_net != null) {
       rows.push({
         label: 'Estratégia · Net',
         cls: 'perf-table__label--strategy-net',
         cagr: r.metrics_strategy.cagr_net,
         max_dd: r.metrics_strategy.max_dd,  // MaxDD is structural, ~unchanged
-        sharpe: r.metrics_strategy.sharpe_net,
+        sortino: r.metrics_strategy.sortino_net,
       });
     }
     rows.push(
@@ -322,14 +322,14 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
         cls: 'perf-table__label--benchmark',
         cagr: r.metrics_benchmark.cagr,
         max_dd: r.metrics_benchmark.max_dd,
-        sharpe: r.metrics_benchmark.sharpe,
+        sortino: r.metrics_benchmark.sortino,
       },
       {
         label: 'LETF',
         cls: 'perf-table__label--letf',
         cagr: r.metrics_riskon.cagr,
         max_dd: r.metrics_riskon.max_dd,
-        sharpe: r.metrics_riskon.sharpe,
+        sortino: r.metrics_riskon.sortino,
       },
     );
     return rows;

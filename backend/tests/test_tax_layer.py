@@ -80,7 +80,7 @@ def test_full_year_loss_carries_forward_indefinitely():
 
 
 def test_engine_populates_net_metrics():
-    """Smoke: run_backtest should attach sharpe_net + cagr_net + tax_drag_pp."""
+    """Smoke: run_backtest should attach sortino_net + cagr_net + tax_drag_pp."""
     from ai_swing.backtest import engine as engine_module
     from ai_swing.db.models import Indicator, IndicatorType, Strategy, StrategyIndicator
 
@@ -92,9 +92,13 @@ def test_engine_populates_net_metrics():
             return self._m.get(t, pd.Series(dtype=float))
 
     idx = pd.bdate_range("2014-01-01", "2026-04-30")
-    bench = pd.Series(np.linspace(100, 350, len(idx)), index=idx)
-    risk_on = pd.Series(np.linspace(100, 600, len(idx)), index=idx)
-    risk_off = pd.Series(np.full(len(idx), 100.0), index=idx)
+    # Sortino on a perfectly monotone trend is 0 (no downside). Add Gaussian
+    # noise so both gross and net curves yield finite, comparable Sortino.
+    rng = np.random.default_rng(7)
+    n = len(idx)
+    bench = pd.Series(np.linspace(100, 350, n) + rng.normal(0, 1.5, n), index=idx)
+    risk_on = pd.Series(np.linspace(100, 600, n) + rng.normal(0, 2.5, n), index=idx)
+    risk_off = pd.Series(np.full(n, 100.0) + rng.normal(0, 0.5, n), index=idx)
     fake = _FakePriceService({"QQQ": bench, "TQQQ": risk_on, "ZROZ": risk_off})
 
     ind = Indicator(name="SMA50", type=IndicatorType.SMA_GATE, params={"period": 50})
@@ -116,11 +120,11 @@ def test_engine_populates_net_metrics():
     with mock.patch.object(engine_module, "get_price_service", return_value=fake):
         result = engine_module.run_backtest(s, range_years=10)
 
-    assert result.metrics_strategy.sharpe_net is not None
+    assert result.metrics_strategy.sortino_net is not None
     assert result.metrics_strategy.cagr_net is not None
     assert result.metrics_strategy.tax_drag_pp is not None
     # Tax drag must be non-negative for a net-profitable strategy.
     assert result.metrics_strategy.tax_drag_pp >= 0
-    # Net Sharpe is bounded by gross Sharpe.
-    assert result.metrics_strategy.sharpe_net <= result.metrics_strategy.sharpe + 1e-9
+    # Net Sortino is bounded by gross Sortino.
+    assert result.metrics_strategy.sortino_net <= result.metrics_strategy.sortino + 1e-9
     assert len(result.equity_strategy_net) > 0

@@ -107,7 +107,7 @@ def walk_forward_endpoint(
 
     Mirrors the study's G3 gate: a window passes when the strategy spent
     ≥50% of its days above the benchmark equity (renormalised within the
-    window). Returns per-window Sharpe/CAGR/MaxDD plus the pass count.
+    window). Returns per-window Sortino/CAGR/MaxDD plus the pass count.
     """
     strategy = get_strategy(db, strategy_id)
     if strategy is None:
@@ -126,7 +126,7 @@ def walk_forward_endpoint(
                 start=w.start,
                 end=w.end,
                 n_days=w.n_days,
-                sharpe=w.sharpe,
+                sortino=w.sortino,
                 cagr=w.cagr,
                 max_drawdown=w.max_drawdown,
                 pct_above_benchmark=w.pct_above_benchmark,
@@ -143,7 +143,7 @@ def rolling_stress_endpoint(
     step_months: int = Query(default=3, ge=1, le=12),
     db: Session = Depends(get_db),
 ) -> RollingStressDTO:
-    """Compute rolling-window Sharpe heatmap (3y/5y/10y/20y × entry dates)."""
+    """Compute rolling-window Sortino heatmap (3y/5y/10y/20y × entry dates)."""
     strategy = get_strategy(db, strategy_id)
     if strategy is None:
         raise HTTPException(status_code=404, detail="Strategy not found")
@@ -162,7 +162,7 @@ def rolling_stress_endpoint(
                 cells=[
                     RollingCellDTO(
                         entry_date=c.entry_date,
-                        sharpe=c.sharpe,
+                        sortino=c.sortino,
                         pct_above_spy=c.pct_above_spy,
                     )
                     for c in row.cells

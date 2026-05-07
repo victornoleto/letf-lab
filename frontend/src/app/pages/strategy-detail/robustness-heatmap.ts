@@ -37,7 +37,7 @@ echarts.use([HeatmapChart, GridComponent, TooltipComponent, VisualMapComponent, 
         <div>
           <h2 class="section__title">Robustness Heatmap</h2>
           <p class="section__sub">
-            Sharpe da estratégia para janelas rolantes (3y/5y/10y/20y) por data de entrada.
+            Sortino da estratégia para janelas rolantes (3y/5y/10y/20y) por data de entrada.
             Identifica os piores entry points históricos.
           </p>
         </div>
@@ -121,8 +121,8 @@ export class RobustnessHeatmapComponent implements OnInit, OnDestroy {
     const series: [number, number, number][] = [];
     d.rows.forEach((row, rIdx) => {
       row.cells.forEach((c, cIdx) => {
-        if (c.sharpe !== null && Number.isFinite(c.sharpe)) {
-          series.push([cIdx, rIdx, +c.sharpe.toFixed(3)]);
+        if (c.sortino !== null && Number.isFinite(c.sortino)) {
+          series.push([cIdx, rIdx, +c.sortino.toFixed(3)]);
         }
       });
     });
@@ -147,7 +147,7 @@ export class RobustnessHeatmapComponent implements OnInit, OnDestroy {
               : '—';
           return [
             `<div style="font-weight:500;">${entry} → +${window}y</div>`,
-            `<div>Sharpe: ${value.toFixed(2)}</div>`,
+            `<div>Sortino: ${value.toFixed(2)}</div>`,
             `<div>% acima bench: ${pct}</div>`,
           ].join('');
         },
@@ -187,7 +187,7 @@ export class RobustnessHeatmapComponent implements OnInit, OnDestroy {
       },
       series: [
         {
-          name: 'Sharpe',
+          name: 'Sortino',
           type: 'heatmap',
           data: series,
           itemStyle: { borderRadius: 1, borderWidth: 0 },

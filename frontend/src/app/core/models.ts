@@ -195,7 +195,7 @@ export interface DeployScore {
 
 export interface RollingCell {
   entry_date: string;
-  sharpe: number | null;
+  sortino: number | null;
   pct_above_spy: number | null;
 }
 
@@ -219,7 +219,7 @@ export interface CohortEntry {
   has_data: boolean;
   n_days: number;
   cagr: number | null;
-  sharpe: number | null;
+  sortino: number | null;
   max_drawdown: number | null;
 }
 
@@ -234,7 +234,7 @@ export interface WalkForwardWindow {
   start: string;
   end: string;
   n_days: number;
-  sharpe: number | null;
+  sortino: number | null;
   cagr: number | null;
   max_drawdown: number | null;
   pct_above_benchmark: number | null;
@@ -281,12 +281,12 @@ export interface CompareBacktestSnapshot {
   metrics_strategy: {
     cagr: number;
     max_dd: number;
-    sharpe: number;
+    sortino: number;
     cagr_net: number | null;
-    sharpe_net: number | null;
+    sortino_net: number | null;
     tax_drag_pp: number | null;
   };
-  metrics_benchmark: { cagr: number; max_dd: number; sharpe: number };
+  metrics_benchmark: { cagr: number; max_dd: number; sortino: number };
 }
 
 export interface CompareReport {

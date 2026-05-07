@@ -65,8 +65,8 @@ def test_compare_runs_both_strategies(patch_prices):
     report = compare_strategies(a, b, range_years=10)
 
     # Both backtests ran
-    assert report.backtest_a.metrics_strategy.sharpe is not None
-    assert report.backtest_b.metrics_strategy.sharpe is not None
+    assert report.backtest_a.metrics_strategy.sortino is not None
+    assert report.backtest_b.metrics_strategy.sortino is not None
     # Both deploy scores computed
     assert 0 <= report.deploy_a.total <= 100
     assert 0 <= report.deploy_b.total <= 100

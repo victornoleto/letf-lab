@@ -97,9 +97,13 @@ def test_split_oos_fwd_partitions_returns():
 
 
 def test_oos_fwd_points_full_credit_when_both_positive():
-    # 1000 days of small positive returns → both slices have positive Sharpe
+    # Mostly-positive returns with occasional dips, so Sortino has a
+    # non-zero downside denominator. Strong positive bias (mean 5×std)
+    # ensures both the OOS and FWD slices come out positive even with
+    # sample-level noise.
     idx = pd.date_range("2018-01-01", periods=1000, freq="B")
-    rets = pd.Series(np.full(1000, 0.001), index=idx)
+    rng = np.random.default_rng(0)
+    rets = pd.Series(rng.normal(0.005, 0.01, 1000), index=idx)
     pts, status, _ = deploy_score._oos_fwd_points(rets)
     assert pts == 10
     assert status == "ok"
@@ -123,7 +127,7 @@ def test_full_score_runs_end_to_end(patch_prices):
     assert 0 <= score.total <= 100
     keys = [c.key for c in score.criteria]
     assert keys == [
-        "1_sharpe_edge", "2_underwater", "3_gates", "4_dsr",
+        "1_sortino_edge", "2_underwater", "3_gates", "4_dsr",
         "5_oos_fwd", "6_crisis", "7_bonus",
     ]
     summed = sum(c.points for c in score.criteria)

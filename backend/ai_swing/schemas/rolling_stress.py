@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict
 class RollingCellDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     entry_date: DateT
-    sharpe: float | None
+    sortino: float | None
     pct_above_spy: float | None
 
 

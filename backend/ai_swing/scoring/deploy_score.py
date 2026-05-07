@@ -27,7 +27,7 @@ import pandas as pd
 
 from ai_swing.backtest import crisis
 from ai_swing.backtest.engine import compute_strategy_curves
-from ai_swing.backtest.metrics import sharpe as sharpe_metric
+from ai_swing.backtest.metrics import sortino as sortino_metric
 from ai_swing.db.models import Strategy
 
 logger = logging.getLogger(__name__)
@@ -70,12 +70,12 @@ def _edge_points(edge: float) -> tuple[int, str, str]:
     for threshold, pts in _EDGE_TIERS:
         if edge >= threshold:
             note = (
-                f"Sharpe edge {edge:+.2f} vs benchmark "
+                f"Sortino edge {edge:+.2f} vs benchmark "
                 f"(≥+0.05/+0.15/+0.30 → 10/20/30 pts)"
             )
             return pts, "ok" if edge >= 0.15 else "warn", note
     return 0, "fail", (
-        f"Sharpe edge {edge:+.2f} insuficiente — precisa ≥+0.05 vs benchmark"
+        f"Sortino edge {edge:+.2f} insuficiente — precisa ≥+0.05 vs benchmark"
     )
 
 
@@ -141,21 +141,21 @@ def _oos_fwd_points(strat_returns: pd.Series) -> tuple[int, str, str]:
     pts = 0
     notes: list[str] = []
     if len(oos) >= 30:
-        oos_sharpe = sharpe_metric(oos)
-        if oos_sharpe > 0:
+        oos_sortino = sortino_metric(oos)
+        if oos_sortino > 0:
             pts += 5
-            notes.append(f"OOS 30%: Sharpe {oos_sharpe:+.2f} ✓")
+            notes.append(f"OOS 30%: Sortino {oos_sortino:+.2f} ✓")
         else:
-            notes.append(f"OOS 30%: Sharpe {oos_sharpe:+.2f}")
+            notes.append(f"OOS 30%: Sortino {oos_sortino:+.2f}")
     else:
         notes.append("OOS 30%: dados insuficientes")
     if len(fwd) >= 60:
-        fwd_sharpe = sharpe_metric(fwd)
-        if fwd_sharpe > 0:
+        fwd_sortino = sortino_metric(fwd)
+        if fwd_sortino > 0:
             pts += 5
-            notes.append(f"FWD pós-2020: Sharpe {fwd_sharpe:+.2f} ✓")
+            notes.append(f"FWD pós-2020: Sortino {fwd_sortino:+.2f} ✓")
         else:
-            notes.append(f"FWD pós-2020: Sharpe {fwd_sharpe:+.2f}")
+            notes.append(f"FWD pós-2020: Sortino {fwd_sortino:+.2f}")
     else:
         notes.append("FWD pós-2020: dados insuficientes")
     status = "ok" if pts == 10 else ("warn" if pts >= 5 else "fail")
@@ -204,11 +204,13 @@ def compute_deploy_score(
     strat_returns = curves.strategy_returns.loc[valid_idx]
     bench_returns = curves.df["bench"].pct_change().loc[valid_idx]
 
-    strat_sharpe = sharpe_metric(strat_returns)
-    bench_sharpe = sharpe_metric(bench_returns)
-    edge = strat_sharpe - bench_sharpe
+    strat_sortino = sortino_metric(strat_returns)
+    bench_sortino = sortino_metric(bench_returns)
+    edge = strat_sortino - bench_sortino
 
-    # Criterion 1: Sharpe edge
+    # Criterion 1: Sortino edge (LETF strategies are right-skewed under
+    # trend filters — Sortino captures the asymmetric upside that Sharpe
+    # underweights, per `SORTINO_REANALYSIS_REPORT.md`).
     pts1, status1, note1 = _edge_points(edge)
 
     # Criterion 2: Underwater-vs-benchmark
@@ -229,7 +231,7 @@ def compute_deploy_score(
     total = pts1 + pts2 + pts5 + pts6 + pts7  # crit 3+4 contribute 0 pts
 
     # Winner strict bars (subset we can verify in Fase 2)
-    sharpe_edge_passed = edge >= 0.05
+    edge_passed = edge >= 0.05
     underwater_bar_passed = (
         pct_above >= 0.95 if pct_above == pct_above else False
     )
@@ -241,7 +243,7 @@ def compute_deploy_score(
 
     criteria = [
         CriterionScore(
-            key="1_sharpe_edge", label="Sharpe edge",
+            key="1_sortino_edge", label="Sortino edge",
             points=pts1, max_points=30, status=status1, note=note1,
         ),
         CriterionScore(

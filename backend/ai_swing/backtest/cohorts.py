@@ -19,7 +19,7 @@ from ai_swing.backtest.engine import compute_strategy_curves
 from ai_swing.backtest.metrics import (
     cagr as cagr_metric,
     max_drawdown as mdd_metric,
-    sharpe as sharpe_metric,
+    sortino as sortino_metric,
 )
 from ai_swing.db.models import Strategy
 
@@ -49,7 +49,7 @@ class CohortEntry:
     has_data: bool
     n_days: int
     cagr: float | None
-    sharpe: float | None
+    sortino: float | None
     max_drawdown: float | None
 
 
@@ -75,7 +75,7 @@ def _entry_metrics(
         True,
         len(win_eq),
         cagr_metric(win_eq),
-        sharpe_metric(win_ret),
+        sortino_metric(win_ret),
         mdd_metric(win_eq),
     )
 
@@ -98,7 +98,7 @@ def compute_cohort_entries(
             has_data=has_data,
             n_days=n_days,
             cagr=c,
-            sharpe=s,
+            sortino=s,
             max_drawdown=mdd,
         ))
     return CohortReport(

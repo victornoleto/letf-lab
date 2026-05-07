@@ -40,7 +40,7 @@ import { CohortReport } from '../../core/models';
                   <th>Data</th>
                   <th>Cenário</th>
                   <th class="th--num">CAGR</th>
-                  <th class="th--num">Sharpe</th>
+                  <th class="th--num">Sortino</th>
                   <th class="th--num">MaxDD</th>
                 </tr>
               </thead>
@@ -53,8 +53,8 @@ import { CohortReport } from '../../core/models';
                       <td class="td--num mono" [ngClass]="cagrCls(e.cagr)">
                         {{ formatPct(e.cagr) }}
                       </td>
-                      <td class="td--num mono" [ngClass]="sharpeCls(e.sharpe)">
-                        {{ formatNum(e.sharpe) }}
+                      <td class="td--num mono" [ngClass]="sortinoCls(e.sortino)">
+                        {{ formatNum(e.sortino) }}
                       </td>
                       <td class="td--num mono" [ngClass]="mddCls(e.max_drawdown)">
                         {{ formatPct(e.max_drawdown) }}
@@ -120,7 +120,7 @@ export class CohortEntriesComponent implements OnInit {
     return 'num--warn';
   }
 
-  sharpeCls(v: number | null): string {
+  sortinoCls(v: number | null): string {
     if (v === null) return '';
     if (v > 0.7) return 'num--good';
     if (v < 0.3) return 'num--bad';

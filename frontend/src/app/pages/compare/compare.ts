@@ -297,18 +297,18 @@ export class CompareComponent implements OnInit, OnDestroy {
     const mb = d.backtest_b.metrics_strategy;
     return [
       mkRow('cagr', 'CAGR', ma.cagr, mb.cagr, fmtPct, fmtPctDelta, true),
-      mkRow('sharpe', 'Sharpe (gross)', ma.sharpe, mb.sharpe, fmtNum, fmtNumDelta, true),
+      mkRow('sortino', 'Sortino (gross)', ma.sortino, mb.sortino, fmtNum, fmtNumDelta, true),
       mkRow(
-        'sharpe_net',
-        'Sharpe (net Lei 14.754)',
-        ma.sharpe_net ?? 0,
-        mb.sharpe_net ?? 0,
+        'sortino_net',
+        'Sortino (net Lei 14.754)',
+        ma.sortino_net ?? 0,
+        mb.sortino_net ?? 0,
         fmtNum, fmtNumDelta, true,
       ),
       mkRow('max_dd', 'Max DD', ma.max_dd, mb.max_dd, fmtPct, fmtPctDelta, false),
       mkRow(
         'tax_drag',
-        'Tax drag (pp Sharpe)',
+        'Tax drag (pp Sortino)',
         ma.tax_drag_pp ?? 0,
         mb.tax_drag_pp ?? 0,
         fmtNum, fmtNumDelta, false,

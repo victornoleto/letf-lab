@@ -1,14 +1,14 @@
-"""Rolling-window stress: Sharpe heatmap by entry date × window size.
+"""Rolling-window stress: Sortino heatmap by entry date × window size.
 
-For every (entry_date, window_size) combination we slice the strategy's daily
-returns to a fixed window and recompute the Sharpe. The result is a 2D grid
-the UI can render as a heatmap, exposing the worst-case entry dates the
-study identified across 37k rolling backtests.
+For every (entry_date, window_size) combination we slice the strategy's
+daily returns to a fixed window and recompute the Sortino. The result is
+a 2D grid the UI renders as a heatmap, exposing the worst-case entry
+dates the study identified across 37k rolling backtests.
 
 The strategy itself is computed *once* over the full available history (so
 indicator warmups use as much data as we have); the rolling step is just
-slicing series + running the Sharpe formula. This keeps the call to under a
-second even with hundreds of windows.
+slicing series + running the Sortino formula. This keeps the call to
+under a second even with hundreds of windows.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 from ai_swing.backtest.engine import compute_strategy_curves
-from ai_swing.backtest.metrics import sharpe as sharpe_metric
+from ai_swing.backtest.metrics import sortino as sortino_metric
 from ai_swing.db.models import Strategy
 
 # Range_years=100 acts as "all available history": the engine's trim cutoff
@@ -30,7 +30,7 @@ _RANGE_YEARS_ALL = 100
 @dataclass
 class RollingCell:
     entry_date: date
-    sharpe: float | None  # None if the window doesn't fit (too close to today)
+    sortino: float | None  # None if the window doesn't fit (too close to today)
     pct_above_spy: float | None  # ratio of days strategy > benchmark in window
 
 
@@ -58,16 +58,16 @@ def _entry_grid(start: pd.Timestamp, end: pd.Timestamp, step_months: int) -> lis
     return [pd.Timestamp(ts) for ts in rng]
 
 
-def _window_sharpe(
+def _window_sortino(
     returns: pd.Series, entry: pd.Timestamp, window_years: int
 ) -> float | None:
     end = entry + pd.Timedelta(days=int(window_years * 365.25))
     win = returns.loc[(returns.index >= entry) & (returns.index <= end)]
-    # Need at least 80% of the expected days for the Sharpe to be meaningful
+    # Need at least 80% of the expected days for the Sortino to be meaningful
     expected = int(window_years * 252)
     if len(win) < int(expected * 0.8):
         return None
-    return float(sharpe_metric(win))
+    return float(sortino_metric(win))
 
 
 def _window_pct_above(
@@ -89,7 +89,7 @@ def compute_rolling_stress(
     window_years: list[int] | None = None,
     step_months: int = 3,
 ) -> RollingStress:
-    """Build a heatmap of Sharpe by (entry_date, window_size).
+    """Build a heatmap of Sortino by (entry_date, window_size).
 
     Parameters
     ----------
@@ -131,11 +131,11 @@ def compute_rolling_stress(
     for wy in window_years:
         cells: list[RollingCell] = []
         for entry in entry_dates:
-            s = _window_sharpe(rets, entry, wy)
+            so = _window_sortino(rets, entry, wy)
             p = _window_pct_above(curves.equity_strategy, curves.equity_bench, entry, wy)
             cells.append(RollingCell(
                 entry_date=entry.date(),
-                sharpe=s,
+                sortino=so,
                 pct_above_spy=p,
             ))
         rows.append(RollingRow(window_years=wy, cells=cells))
