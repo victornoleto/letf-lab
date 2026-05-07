@@ -1,5 +1,6 @@
 import type { EChartsOption } from 'echarts';
 import { tok, type ChartTokens } from './chart-tokens';
+import { axisTooltipFormatter } from './tooltip-formatter';
 
 export interface EquityPoint { date: string; equity: number; bench: number; }
 
@@ -41,9 +42,10 @@ export function equityOptions(series: EquityPoint[], t: ChartTokens): EChartsOpt
       backgroundColor: tok('--surface-elevated'),
       borderColor: t.border,
       borderWidth: 1,
-      padding: [6, 10],
+      padding: [10, 12],
       textStyle: { color: t.textPrimary, fontSize: 12, fontFamily: t.fontMono },
       axisPointer: { lineStyle: { color: t.border, width: 1, type: 'solid' } },
+      formatter: axisTooltipFormatter(),
     },
     legend: {
       // Anchored left so it sits right under the chart's HTML caption.

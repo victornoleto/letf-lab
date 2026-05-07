@@ -9,6 +9,12 @@
   gap: var(--space-4);
 }
 
+.row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-4);
+}
+
 .chips-field {
   display: flex;
   flex-wrap: wrap;

@@ -1,5 +1,6 @@
 import type { EChartsOption } from 'echarts';
 import { tok, type ChartTokens } from './chart-tokens';
+import { axisTooltipFormatter } from './tooltip-formatter';
 
 export interface RatioPoint { date: string; ratio: number; }
 
@@ -32,7 +33,9 @@ export function ratioOptions(series: RatioPoint[], t: ChartTokens): EChartsOptio
       trigger: 'axis',
       backgroundColor: tok('--surface-elevated'),
       borderColor: t.border, borderWidth: 1,
+      padding: [10, 12],
       textStyle: { color: t.textPrimary, fontSize: 12, fontFamily: t.fontMono },
+      formatter: axisTooltipFormatter(),
     },
     dataZoom: [
       {

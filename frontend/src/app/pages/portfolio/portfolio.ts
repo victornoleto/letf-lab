@@ -188,8 +188,25 @@ type Tab = 'positions' | 'transactions';
 
     <app-modal [open]="showModal()"
                [title]="'Nova transação'"
+               [subtitle]="'Registrar compra ou venda no portfólio'"
                (close)="closeModal()">
-      <form (submit)="$event.preventDefault(); save()">
+      <form id="portfolio-tx-form" (submit)="$event.preventDefault(); save()">
+
+        <!-- Side: segmented control buy/sell -->
+        <div class="field">
+          <label class="label">Operação</label>
+          <div class="segmented" role="tablist">
+            <button type="button" role="tab"
+                    class="segmented__opt segmented__opt--buy"
+                    [class.segmented__opt--active]="form.side() === 'buy'"
+                    (click)="form.side.set('buy')">Buy</button>
+            <button type="button" role="tab"
+                    class="segmented__opt segmented__opt--sell"
+                    [class.segmented__opt--active]="form.side() === 'sell'"
+                    (click)="form.side.set('sell')">Sell</button>
+          </div>
+        </div>
+
         <div class="row-2">
           <div class="field">
             <label class="label">Data</label>
@@ -198,7 +215,7 @@ type Tab = 'positions' | 'transactions';
           </div>
           <div class="field">
             <label class="label">Ticker</label>
-            <input class="input input--mono"
+            <input class="input input--mono" placeholder="AAPL"
                    [ngModel]="form.asset_ticker()"
                    (ngModelChange)="form.asset_ticker.set($any($event).toUpperCase())"
                    name="ticker" maxlength="16" />
@@ -207,56 +224,60 @@ type Tab = 'positions' | 'transactions';
 
         <div class="row-2">
           <div class="field">
-            <label class="label">Side</label>
-            <select class="input"
-                    [ngModel]="form.side()" (ngModelChange)="form.side.set($event)" name="side">
-              <option value="buy">buy</option>
-              <option value="sell">sell</option>
-            </select>
-          </div>
-          <div class="field">
             <label class="label">N. Shares</label>
             <input class="input input--mono" type="number" step="0.0001" min="0"
                    [ngModel]="form.n_shares()" (ngModelChange)="form.n_shares.set(+$event)" name="n_shares" />
           </div>
-        </div>
-
-        <div class="row-2">
           <div class="field">
             <label class="label">Preço/share</label>
-            <input class="input input--mono" type="number" step="0.0001" min="0"
-                   [ngModel]="form.price_per_share()"
-                   (ngModelChange)="form.price_per_share.set(+$event)"
-                   name="price" />
-          </div>
-          <div class="field">
-            <label class="label">Moeda</label>
-            <input class="input input--mono"
-                   [ngModel]="form.currency()"
-                   (ngModelChange)="form.currency.set($any($event).toUpperCase())"
-                   name="currency" maxlength="8" />
+            <div class="input-affix input-affix--suffix">
+              <input class="input input--mono" type="number" step="0.0001" min="0"
+                     [ngModel]="form.price_per_share()"
+                     (ngModelChange)="form.price_per_share.set(+$event)"
+                     name="price" />
+              <span class="input-affix__suffix">{{ form.currency() || 'USD' }}</span>
+            </div>
           </div>
         </div>
 
-        <div class="row-2">
+        <div class="modal__divider"></div>
+
+        <div class="row-3">
           <div class="field">
-            <label class="label">FX → USD</label>
+            <label class="label">Moeda</label>
+            <select class="input"
+                    [ngModel]="form.currency()" (ngModelChange)="form.currency.set($event)" name="currency">
+              <option value="USD">USD</option>
+              <option value="BRL">BRL</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label">
+              FX → USD
+              <span class="label__hint">1 se já é USD</span>
+            </label>
             <input class="input input--mono" type="number" step="0.0001" min="0"
                    [ngModel]="form.fx()" (ngModelChange)="form.fx.set(+$event)" name="fx" />
-            <p class="hint">1 se o trade já é em USD</p>
           </div>
           <div class="field">
             <label class="label">Fees</label>
-            <input class="input input--mono" type="number" step="0.01" min="0"
-                   [ngModel]="form.fees()" (ngModelChange)="form.fees.set(+$event)" name="fees" />
+            <div class="input-affix input-affix--suffix">
+              <input class="input input--mono" type="number" step="0.01" min="0"
+                     [ngModel]="form.fees()" (ngModelChange)="form.fees.set(+$event)" name="fees" />
+              <span class="input-affix__suffix">{{ form.currency() || 'USD' }}</span>
+            </div>
           </div>
         </div>
 
         <div class="field">
-          <label class="label">Notas</label>
-          <textarea class="input" rows="2"
-                    [ngModel]="form.notes()" (ngModelChange)="form.notes.set($event)" name="notes"
-                    style="height: auto; padding: 8px 10px;"></textarea>
+          <label class="label">
+            Notas
+            <span class="label__hint">opcional</span>
+          </label>
+          <textarea class="input" rows="2" placeholder="Estratégia, observação, …"
+                    [ngModel]="form.notes()" (ngModelChange)="form.notes.set($event)" name="notes"></textarea>
         </div>
 
         @if (formError()) {
@@ -265,15 +286,18 @@ type Tab = 'positions' | 'transactions';
             <span>{{ formError() }}</span>
           </div>
         }
-
-        <div modal-footer class="modal__foot">
-          <button type="button" class="btn btn--ghost btn--md" (click)="closeModal()">Cancelar</button>
-          <button type="submit" class="btn btn--primary btn--md"
-                  [disabled]="!canSave() || saving()">
-            @if (saving()) { Salvando… } @else { Salvar }
-          </button>
-        </div>
       </form>
+
+      <div modal-footer class="modal__foot">
+        <span class="foot-hint">
+          <kbd>Esc</kbd> fechar · <kbd>⌘</kbd><kbd>↵</kbd> salvar
+        </span>
+        <button type="button" class="btn btn--ghost btn--md" (click)="closeModal()">Cancelar</button>
+        <button type="submit" form="portfolio-tx-form" class="btn btn--primary btn--md"
+                [disabled]="!canSave() || saving()">
+          @if (saving()) { Salvando… } @else { Salvar }
+        </button>
+      </div>
     </app-modal>
   `,
   styles: [`

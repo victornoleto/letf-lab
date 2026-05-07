@@ -1,3 +1,7 @@
+// =============================================================================
+// AI-Swing — Fields, inputs, affix groups, segmented control
+// =============================================================================
+
 .field { margin-bottom: var(--space-5); }
 
 .label {
@@ -5,15 +9,22 @@
   font-size: 11.5px;
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
-  margin-bottom: 5px;
-  text-transform: capitalize;
+  margin-bottom: 6px;
   letter-spacing: 0.01em;
+
+  // Hint inline (pequeno texto à direita do label)
+  .label__hint {
+    float: right;
+    font-weight: var(--fw-regular);
+    color: var(--text-muted);
+    font-size: 11px;
+  }
 }
 
 .input {
   width: 100%;
   height: var(--h-input);
-  padding: 0 10px;
+  padding: 0 11px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -25,15 +36,25 @@
 
   &::placeholder { color: var(--text-disabled); }
 
+  &:hover:not(:focus):not(:disabled) {
+    border-color: var(--border-strong);
+  }
+
   &:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--focus-ring);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+
+  &:disabled {
+    background: var(--surface-muted);
+    color: var(--text-disabled);
+    cursor: not-allowed;
   }
 
   &--error {
     border-color: var(--danger);
-    &:focus { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25); }
+    &:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.22); }
   }
 
   &--mono {
@@ -44,7 +65,7 @@
 
 textarea.input {
   height: auto;
-  padding: 8px 10px;
+  padding: 8px 11px;
   min-height: 80px;
   resize: vertical;
 }
@@ -60,11 +81,99 @@ select.input {
   background-repeat: no-repeat;
 }
 
+// ---- Input affix group: input com prefixo ou sufixo (USD, %, etc) ----
+.input-affix {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+
+  .input { flex: 1; min-width: 0; }
+
+  &__prefix,
+  &__suffix {
+    display: inline-flex;
+    align-items: center;
+    height: var(--h-input);
+    padding: 0 10px;
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+  }
+
+  &__prefix {
+    border-right: none;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+  }
+  &--prefix .input {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+
+  &__suffix {
+    border-left: none;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+  &--suffix .input {
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+  }
+
+  // Focus ring engloba o group inteiro
+  &:focus-within {
+    .input { border-color: var(--accent); box-shadow: none; }
+    .input-affix__prefix,
+    .input-affix__suffix { border-color: var(--accent); }
+  }
+}
+
+// ---- Segmented control (radio horizontal): Buy/Sell, etc ----
+.segmented {
+  display: inline-flex;
+  width: 100%;
+  height: var(--h-input);
+  padding: 3px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  gap: 2px;
+
+  &__opt {
+    appearance: none;
+    flex: 1;
+    border: none;
+    background: transparent;
+    border-radius: calc(var(--radius-md) - 2px);
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out);
+
+    &:hover:not(.segmented__opt--active) {
+      color: var(--text-primary);
+    }
+
+    &--active {
+      background: var(--surface);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-xs);
+    }
+
+    // Variants semânticas (buy=green, sell=red) quando ativos
+    &--buy.segmented__opt--active   { color: var(--success-fg); }
+    &--sell.segmented__opt--active  { color: var(--danger-fg); }
+  }
+}
+
 .hint {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
 .error {

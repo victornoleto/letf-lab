@@ -26,6 +26,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsOption } from 'echarts';
 import { tok, readChartTokens, type ChartTokens } from '../../shared/charts/chart-tokens';
+import { axisTooltipFormatter } from '../../shared/charts/tooltip-formatter';
 
 echarts.use([
   LineChart,
@@ -412,25 +413,13 @@ export class IndicatorsTabComponent implements OnInit, OnDestroy {
         backgroundColor: tok('--surface-elevated'),
         borderColor: t.border,
         borderWidth: 1,
-        padding: [6, 10],
+        padding: [10, 12],
         textStyle: { color: t.textPrimary, fontSize: 12, fontFamily: t.fontMono },
-        // Hide the invisible band-baseline series + format delta as the
-        // displayed band width when present. Names starting with `__` are
-        // implementation details and shouldn't show up in the tooltip.
-        formatter: (params: any) => {
-          const arr = Array.isArray(params) ? params : [params];
-          const visible = arr.filter((p) => !String(p.seriesName ?? '').startsWith('__'));
-          if (visible.length === 0) return '';
-          const date = visible[0].axisValueLabel ?? visible[0].axisValue ?? '';
-          const lines = visible.map((p) => {
-            const v = Array.isArray(p.value) ? p.value[1] : p.value;
-            const val = (v == null || Number.isNaN(v))
-              ? '—'
-              : typeof v === 'number' ? v.toFixed(2) : String(v);
-            return `${p.marker} ${p.seriesName}: <b>${val}</b>`;
-          });
-          return `${date}<br/>${lines.join('<br/>')}`;
-        },
+        // Hide the invisible band-baseline series — names starting with `__`
+        // are implementation details and shouldn't show up in the tooltip.
+        formatter: axisTooltipFormatter({
+          hideSeries: (name) => name.startsWith('__'),
+        }),
       },
       dataZoom: [
         { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true },

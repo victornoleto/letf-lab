@@ -122,9 +122,9 @@
   --shadow-lg:        0 12px 32px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.05);
 
   // Density — alturas canônicas
-  --h-input:          32px;      // h-8 (campos formulário)
-  --h-btn:            30px;      // mais compacto que input
-  --h-btn-sm:         24px;
+  --h-input:          35px;      // canônico — inputs e botões alinhados
+  --h-btn:            35px;      // alinhado com input para evitar saltos visuais
+  --h-btn-sm:         30px;
   --h-row:            36px;      // table rows densas
   --h-nav-item:       28px;      // sidebar items
   --h-topbar:         48px;
