@@ -128,8 +128,15 @@ def compute_strategy_curves(strategy: Strategy, range_years: int = 10) -> Strate
     df_trimmed = df[df.index >= cutoff]
     if len(df_trimmed) >= 60:
         df = df_trimmed
-    if len(df) < 5:
-        raise ValueError(f"Too few bars to backtest ({len(df)})")
+    # Below 60 trading days (~3 months) annualized metrics like Sharpe become
+    # statistically meaningless — std on so few samples explodes the ratio.
+    # Better to surface a clear error than to publish a number like Sharpe=10.
+    if len(df) < 60:
+        raise ValueError(
+            f"Too few bars to backtest ({len(df)} < 60). "
+            "Likely cause: one of the tickers has only the 30-day refresh "
+            "window cached. Trigger a full price prime."
+        )
 
     gates: list[pd.Series] = []
     for ind in indicators:

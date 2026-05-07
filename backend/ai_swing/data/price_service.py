@@ -13,13 +13,27 @@ logger = logging.getLogger(__name__)
 
 
 class PriceService:
+    # If the on-disk cache has fewer rows than this, treat it as never-primed
+    # and re-fetch with `period="max"`. Symptoms before this guard: a parquet
+    # populated only by the 30-day refresh job (because the ticker was never
+    # touched by an explicit full fetch) would yield bogus annualized
+    # metrics like Sharpe ~10 when the engine ran on it.
+    MIN_PRIMED_ROWS = 100
+
     def get_history(self, ticker: str) -> pd.DataFrame:
-        """Return full history (cache-first; fetches max if cache empty)."""
+        """Return full history (cache-first; fetches `period="max"` if the
+        cache is missing or suspiciously small)."""
         df = price_cache.read_cache(ticker)
-        if df is None or df.empty:
-            df = yfinance_loader.fetch_history(ticker, period="max")
-            if not df.empty:
-                price_cache.write_cache(ticker, df)
+        if df is None or df.empty or len(df) < self.MIN_PRIMED_ROWS:
+            if df is not None and not df.empty:
+                logger.info(
+                    "Cache for %s has %d rows (<%d) — re-priming with period=max",
+                    ticker, len(df), self.MIN_PRIMED_ROWS,
+                )
+            full = yfinance_loader.fetch_history(ticker, period="max")
+            if not full.empty:
+                price_cache.write_cache(ticker, full)
+                df = full
         return df if df is not None else pd.DataFrame(columns=["close"])
 
     def refresh(self, ticker: str, days: int = 30) -> pd.DataFrame:

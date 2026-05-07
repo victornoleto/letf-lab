@@ -98,3 +98,24 @@ def test_backtest_missing_prices(monkeypatch):
     s = _make_strategy()
     with pytest.raises(ValueError, match="Missing prices"):
         run_backtest(s)
+
+
+def test_backtest_rejects_too_short_history(monkeypatch):
+    """Window with <60 trading days must raise — Sharpe is meaningless on
+    such tiny samples. This guard catches the symptom that bit us in
+    practice: a never-primed parquet (only the 30-day refresh window)
+    silently producing Sharpe ~10.
+    """
+    from ai_swing.data import price_service as ps_mod
+
+    class ShortPS:
+        def get_close_series(self, ticker):
+            idx = pd.bdate_range("2026-04-01", "2026-05-06")
+            return pd.Series([100.0 + i for i in range(len(idx))], index=idx)
+
+    monkeypatch.setattr(ps_mod, "_singleton", ShortPS(), raising=False)
+    monkeypatch.setattr(ps_mod, "get_price_service", lambda: ps_mod._singleton)
+
+    s = _make_strategy()
+    with pytest.raises(ValueError, match=r"Too few bars"):
+        run_backtest(s, range_years=10)
