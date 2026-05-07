@@ -1,4 +1,4 @@
-.PHONY: help install install-backend install-frontend migrate seed dev backend frontend test test-backend test-frontend refresh clean db-up db-down db-logs db-reset
+.PHONY: help install install-backend install-frontend migrate seed dev backend frontend test test-backend test-frontend refresh clean db-create db-drop
 
 # Use the venv's bin/ directly so we don't need to source `.venv/bin/activate`
 # in every recipe. If the venv doesn't exist yet, install-backend will create it.
@@ -14,10 +14,8 @@ help:
 	@echo "  install         install backend + frontend deps"
 	@echo "  install-backend install backend deps in backend/.venv (uv preferred)"
 	@echo "  install-frontend install frontend deps (npm)"
-	@echo "  db-up           start Postgres via docker-compose"
-	@echo "  db-down         stop Postgres"
-	@echo "  db-logs         tail Postgres logs"
-	@echo "  db-reset        wipe Postgres volume and recreate"
+	@echo "  db-create       create the ai_swing role + database on local Postgres"
+	@echo "  db-drop         drop the ai_swing database (data loss — confirm twice)"
 	@echo "  migrate         alembic upgrade head"
 	@echo "  seed            create default user + example strategies + indicators"
 	@echo "  dev             backend + frontend in parallel (foreground)"
@@ -47,20 +45,26 @@ install-backend:
 install-frontend:
 	cd frontend && npm install
 
-db-up:
-	docker compose up -d
-	@echo "Postgres up at localhost:5432 (user=ai_swing db=ai_swing). Run \`make migrate seed\` next."
+# Provisioning targets assume Postgres is already running on the host
+# (Debian/Ubuntu: `sudo systemctl start postgresql`). They run as the
+# `postgres` superuser via sudo, then create role + database matching
+# the credentials baked into backend/.env.example.
+DB_NAME ?= ai_swing
+DB_USER ?= ai_swing
+DB_PASS ?= dev
 
-db-down:
-	docker compose down
+db-create:
+	@echo "Creating role $(DB_USER) and database $(DB_NAME) on local Postgres…"
+	@sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$(DB_USER)'" | grep -q 1 \
+	  || sudo -u postgres psql -c "CREATE ROLE $(DB_USER) LOGIN PASSWORD '$(DB_PASS)';"
+	@sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$(DB_NAME)'" | grep -q 1 \
+	  || sudo -u postgres psql -c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USER);"
+	@echo "Done. Next: make migrate seed"
 
-db-logs:
-	docker compose logs -f db
-
-db-reset:
-	docker compose down -v
-	docker compose up -d
-	@echo "Postgres volume wiped. Run \`make migrate seed\` to repopulate."
+db-drop:
+	@echo "About to DROP database $(DB_NAME) — type the database name to confirm:"
+	@read -p "> " confirm; [ "$$confirm" = "$(DB_NAME)" ] || { echo "Aborted."; exit 1; }
+	@sudo -u postgres psql -c "DROP DATABASE IF EXISTS $(DB_NAME);"
 
 migrate:
 	cd backend && ../$(ALEMBIC) upgrade head
