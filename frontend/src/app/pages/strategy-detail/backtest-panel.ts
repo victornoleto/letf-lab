@@ -20,6 +20,8 @@ import {
   TooltipComponent,
   LegendComponent,
   MarkLineComponent,
+  DataZoomComponent,
+  AxisPointerComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { readChartTokens } from '../../shared/charts/chart-tokens';
@@ -32,6 +34,8 @@ echarts.use([
   TooltipComponent,
   LegendComponent,
   MarkLineComponent,
+  DataZoomComponent,
+  AxisPointerComponent,
   CanvasRenderer,
 ]);
 
@@ -71,6 +75,15 @@ export interface BacktestResult {
 }
 
 const RANGE_OPTIONS = [3, 5, 10, 20];
+const CHART_GROUP = 'backtest-charts';
+
+interface PerfRow {
+  label: string;
+  cls: string;
+  cagr: number;
+  max_dd: number;
+  sharpe: number;
+}
 
 @Component({
   selector: 'app-backtest-panel',
@@ -114,107 +127,98 @@ const RANGE_OPTIONS = [3, 5, 10, 20];
           <div class="error-state__copy mono">{{ error() }}</div>
         </div>
       } @else if (result()) {
-        <div class="metrics-grid">
-          <div class="metric-card metric-card--highlight">
-            <div class="metric-card__title">Estratégia</div>
-            <div class="metric-card__rows">
-              <div class="metric-row">
-                <span class="metric-row__k">CAGR</span>
-                <span class="metric-row__v">{{ pct(result()!.metrics_strategy.cagr) }}</span>
-                <span
-                  class="metric-row__diff"
-                  [ngClass]="diffCls(result()!.metrics_strategy.cagr - result()!.metrics_benchmark.cagr)"
-                >{{ pp(result()!.metrics_strategy.cagr - result()!.metrics_benchmark.cagr) }}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__k">MaxDD</span>
-                <span class="metric-row__v">{{ pct(result()!.metrics_strategy.max_dd) }}</span>
-                <span
-                  class="metric-row__diff"
-                  [ngClass]="diffCls(result()!.metrics_strategy.max_dd - result()!.metrics_benchmark.max_dd)"
-                >{{ pp(result()!.metrics_strategy.max_dd - result()!.metrics_benchmark.max_dd) }}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__k">Sharpe</span>
-                <span class="metric-row__v">{{ num(result()!.metrics_strategy.sharpe) }}</span>
-                <span
-                  class="metric-row__diff"
-                  [ngClass]="diffCls(result()!.metrics_strategy.sharpe - result()!.metrics_benchmark.sharpe)"
-                >{{ ptNum(result()!.metrics_strategy.sharpe - result()!.metrics_benchmark.sharpe) }}</span>
-              </div>
-              @if (result()!.metrics_strategy.n_trades != null) {
-                <div class="metric-row">
-                  <span class="metric-row__k">Trades</span>
-                  <span class="metric-row__v">{{ result()!.metrics_strategy.n_trades }}</span>
-                  <span></span>
-                </div>
+        <div class="table-wrap perf-table-wrap">
+          <table class="table perf-table">
+            <thead>
+              <tr>
+                <th class="th--num">#</th>
+                <th>Comparativo</th>
+                <th class="th--num">CAGR</th>
+                <th class="th--num">Max. DD</th>
+                <th class="th--num">Sharpe</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of perfRows(); track row.label; let i = $index) {
+                <tr [class.perf-table__row--strategy]="i === 0">
+                  <td class="td--num mono">{{ i + 1 }}</td>
+                  <td>
+                    <span class="perf-table__label" [ngClass]="row.cls">{{ row.label }}</span>
+                  </td>
+                  <td class="td--num mono" [ngClass]="numCls(row.cagr)">{{ pct(row.cagr) }}</td>
+                  <td class="td--num mono" [ngClass]="numCls(row.max_dd)">{{ pct(row.max_dd) }}</td>
+                  <td class="td--num mono">{{ num(row.sharpe) }}</td>
+                </tr>
               }
-              @if (result()!.metrics_strategy.hit_rate_vs_benchmark != null) {
-                <div class="metric-row">
-                  <span class="metric-row__k">Hit vs B&amp;H</span>
-                  <span class="metric-row__v">{{ pct(result()!.metrics_strategy.hit_rate_vs_benchmark!) }}</span>
-                  <span></span>
-                </div>
-              }
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-card__title">Buy &amp; Hold benchmark</div>
-            <div class="metric-card__rows">
-              <div class="metric-row">
-                <span class="metric-row__k">CAGR</span>
-                <span class="metric-row__v">{{ pct(result()!.metrics_benchmark.cagr) }}</span>
-                <span></span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__k">MaxDD</span>
-                <span class="metric-row__v">{{ pct(result()!.metrics_benchmark.max_dd) }}</span>
-                <span></span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__k">Sharpe</span>
-                <span class="metric-row__v">{{ num(result()!.metrics_benchmark.sharpe) }}</span>
-                <span></span>
-              </div>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-card__title">Buy &amp; Hold LETF</div>
-            <div class="metric-card__rows">
-              <div class="metric-row">
-                <span class="metric-row__k">CAGR</span>
-                <span class="metric-row__v">{{ pct(result()!.metrics_riskon.cagr) }}</span>
-                <span></span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__k">MaxDD</span>
-                <span class="metric-row__v">{{ pct(result()!.metrics_riskon.max_dd) }}</span>
-                <span></span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__k">Sharpe</span>
-                <span class="metric-row__v">{{ num(result()!.metrics_riskon.sharpe) }}</span>
-                <span></span>
-              </div>
-            </div>
-          </div>
+            </tbody>
+          </table>
         </div>
 
         <div class="charts-grid">
           <div class="chart-cell">
             <div class="chart-cap">Equity curve · Estratégia vs Buy &amp; Hold benchmark</div>
-            <div #equityHost style="height: 240px;"></div>
+            <div #equityHost style="height: 280px;"></div>
           </div>
           <div class="chart-cell">
             <div class="chart-cap">Razão Estratégia / Benchmark · paridade em 1.0×</div>
-            <div #ratioHost style="height: 240px;"></div>
+            <div #ratioHost style="height: 280px;"></div>
           </div>
+        </div>
+
+        <div class="perf-footnotes">
+          @if (result()!.metrics_strategy.n_trades != null) {
+            <span class="perf-footnote">
+              <span class="perf-footnote__k">Trades</span>
+              <span class="mono">{{ result()!.metrics_strategy.n_trades }}</span>
+            </span>
+          }
+          @if (result()!.metrics_strategy.hit_rate_vs_benchmark != null) {
+            <span class="perf-footnote">
+              <span class="perf-footnote__k">Hit vs B&amp;H</span>
+              <span class="mono">{{ pct(result()!.metrics_strategy.hit_rate_vs_benchmark!) }}</span>
+            </span>
+          }
+          <span class="perf-footnote perf-footnote--hint">
+            scroll = zoom · arraste o slider abaixo dos charts para ajustar a janela · cursor sincronizado entre charts
+          </span>
         </div>
       }
     </section>
   `,
+  styles: [`
+    .perf-table th, .perf-table td { white-space: nowrap; }
+    .perf-table .th--num, .perf-table .td--num { text-align: right; }
+    .perf-table__row--strategy td { background: var(--surface-muted); }
+    .perf-table__label { font-weight: var(--fw-medium); }
+    .perf-table__label--strategy { color: var(--text-primary); }
+    .perf-table__label--benchmark { color: var(--text-secondary); }
+    .perf-table__label--letf { color: var(--text-secondary); }
+
+    .perf-footnotes {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 18px;
+      margin-top: 10px;
+      padding: 8px 14px;
+      border-top: 1px dashed var(--border);
+      font-size: 11.5px;
+    }
+    .perf-footnote { display: inline-flex; align-items: center; gap: 6px; }
+    .perf-footnote__k {
+      color: var(--text-muted);
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .perf-footnote--hint {
+      margin-left: auto;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .num--pos { color: var(--success); }
+    .num--neg { color: var(--danger); }
+  `],
 })
 export class BacktestPanelComponent implements OnInit, OnDestroy {
   result = input<BacktestResult | null>(null);
@@ -249,6 +253,9 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
         if (!this.equityChart) {
           this.equityChart = echarts.init(eHost);
           this.ratioChart = echarts.init(rHost);
+          this.equityChart.group = CHART_GROUP;
+          this.ratioChart.group = CHART_GROUP;
+          echarts.connect(CHART_GROUP);
           this.ro = new ResizeObserver(() => {
             this.equityChart?.resize();
             this.ratioChart?.resize();
@@ -267,6 +274,34 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     document.removeEventListener('themechange', this.themeListener);
     this.disposeCharts();
+  }
+
+  perfRows(): PerfRow[] {
+    const r = this.result();
+    if (!r) return [];
+    return [
+      {
+        label: 'Estratégia',
+        cls: 'perf-table__label--strategy',
+        cagr: r.metrics_strategy.cagr,
+        max_dd: r.metrics_strategy.max_dd,
+        sharpe: r.metrics_strategy.sharpe,
+      },
+      {
+        label: 'Benchmark',
+        cls: 'perf-table__label--benchmark',
+        cagr: r.metrics_benchmark.cagr,
+        max_dd: r.metrics_benchmark.max_dd,
+        sharpe: r.metrics_benchmark.sharpe,
+      },
+      {
+        label: 'LETF',
+        cls: 'perf-table__label--letf',
+        cagr: r.metrics_riskon.cagr,
+        max_dd: r.metrics_riskon.max_dd,
+        sharpe: r.metrics_riskon.sharpe,
+      },
+    ];
   }
 
   private disposeCharts(): void {
@@ -300,19 +335,12 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
   pct(v: number): string {
     return (v * 100).toFixed(2) + '%';
   }
-  pp(v: number): string {
-    return (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + 'pp';
-  }
   num(v: number): string {
     return v.toFixed(2);
   }
-  ptNum(v: number): string {
-    return (v >= 0 ? '+' : '') + v.toFixed(2);
-  }
-
-  diffCls(v: number): string {
-    if (v > 0) return 'metric-row__diff--pos';
-    if (v < 0) return 'metric-row__diff--neg';
+  numCls(v: number): string {
+    if (v > 0) return 'num--pos';
+    if (v < 0) return 'num--neg';
     return '';
   }
 }
