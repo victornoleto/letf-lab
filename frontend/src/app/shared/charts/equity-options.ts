@@ -46,7 +46,8 @@ export function equityOptions(series: EquityPoint[], t: ChartTokens): EChartsOpt
       axisPointer: { lineStyle: { color: t.border, width: 1, type: 'solid' } },
     },
     legend: {
-      top: 0, right: 0,
+      // Anchored left so it sits right under the chart's HTML caption.
+      top: 0, left: 0,
       itemWidth: 14, itemHeight: 2, itemGap: 16,
       textStyle: { color: t.textMuted, fontSize: 11, fontFamily: tok('--font-sans') },
     },
