@@ -9,7 +9,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ai_swing.auth.security import get_current_user
 from ai_swing.config import settings
-from ai_swing.routers import auth, backtest, indicators, refresh, signals, strategies
+from ai_swing.routers import (
+    auth,
+    backtest,
+    indicators,
+    refresh,
+    signals,
+    strategies,
+    transactions,
+)
 from ai_swing.scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(
@@ -48,6 +56,9 @@ def create_app() -> FastAPI:
     app.include_router(signals.router, dependencies=protected)
     app.include_router(refresh.router, dependencies=protected)
     app.include_router(backtest.router, dependencies=protected)
+    # transactions router consumes get_current_user directly (it needs the
+    # user object, not just the auth check), so no global dep here.
+    app.include_router(transactions.router)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:

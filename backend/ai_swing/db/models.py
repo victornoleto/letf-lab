@@ -11,6 +11,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
 )
@@ -135,6 +136,39 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class TransactionSide(str, enum.Enum):
+    BUY = "buy"
+    SELL = "sell"
+
+
+class Transaction(Base):
+    """User-recorded trade. Fractional shares supported.
+
+    `fx_rate_to_usd` is the FX rate applied at trade time so we can normalize
+    portfolios that mix BRL/USD/etc to a single base currency. Defaults to 1
+    for users who only ever trade USD.
+    """
+    __tablename__ = "transactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    asset_ticker: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    side: Mapped[TransactionSide] = mapped_column(Enum(TransactionSide), nullable=False)
+    n_shares: Mapped[float] = mapped_column(Numeric(18, 8), nullable=False)
+    price_per_share: Mapped[float] = mapped_column(Numeric(18, 6), nullable=False)
+    currency: Mapped[str] = mapped_column(String(8), nullable=False, default="USD")
+    fx_rate_to_usd: Mapped[float] = mapped_column(Numeric(18, 8), nullable=False, default=1)
+    fees: Mapped[float] = mapped_column(Numeric(18, 6), nullable=False, default=0)
+    notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    strategy_id: Mapped[int | None] = mapped_column(
+        ForeignKey("strategies.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 

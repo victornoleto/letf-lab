@@ -4,12 +4,15 @@ import { Observable } from 'rxjs';
 import {
   Indicator,
   IndicatorTypeInfo,
+  PortfolioSummary,
   RefreshStatus,
   SignalSnapshot,
   SignalTransition,
   Strategy,
   StrategyCreate,
   StrategyReport,
+  Transaction,
+  TransactionCreate,
 } from './models';
 
 const BASE_URL = 'http://localhost:8000/api';
@@ -97,5 +100,22 @@ export class ApiService {
 
   regenerateReport(strategyId: number): Observable<StrategyReport> {
     return this.http.post<StrategyReport>(`${BASE_URL}/strategies/${strategyId}/report`, {});
+  }
+
+  // Transactions / portfolio
+  listTransactions(): Observable<Transaction[]> {
+    return this.http.get<Transaction[]>(`${BASE_URL}/transactions`);
+  }
+
+  createTransaction(body: TransactionCreate): Observable<Transaction> {
+    return this.http.post<Transaction>(`${BASE_URL}/transactions`, body);
+  }
+
+  deleteTransaction(id: number): Observable<void> {
+    return this.http.delete<void>(`${BASE_URL}/transactions/${id}`);
+  }
+
+  getPortfolio(): Observable<PortfolioSummary> {
+    return this.http.get<PortfolioSummary>(`${BASE_URL}/portfolio`);
   }
 }

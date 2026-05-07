@@ -55,6 +55,11 @@ export const routes: Routes = [
       import('./pages/indicators/indicator-form').then((m) => m.IndicatorFormComponent),
   },
   {
+    path: 'portfolio',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/portfolio/portfolio').then((m) => m.PortfolioComponent),
+  },
+  {
     path: 'settings',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/settings/settings').then((m) => m.SettingsComponent),

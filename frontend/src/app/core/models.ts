@@ -94,3 +94,52 @@ export interface StrategyCreate {
   enabled?: boolean;
   indicator_ids: number[];
 }
+
+export type TransactionSide = 'buy' | 'sell';
+
+export interface Transaction {
+  id: number;
+  date: string;
+  asset_ticker: string;
+  side: TransactionSide;
+  n_shares: string; // serialized Decimal
+  price_per_share: string;
+  currency: string;
+  fx_rate_to_usd: string;
+  fees: string;
+  notes: string | null;
+  strategy_id: number | null;
+  created_at: string;
+}
+
+export interface TransactionCreate {
+  date: string;
+  asset_ticker: string;
+  side: TransactionSide;
+  n_shares: number | string;
+  price_per_share: number | string;
+  currency?: string;
+  fx_rate_to_usd?: number | string;
+  fees?: number | string;
+  notes?: string | null;
+  strategy_id?: number | null;
+}
+
+export interface PortfolioPosition {
+  asset_ticker: string;
+  n_shares: string;
+  avg_cost_usd: string;
+  invested_usd: string;
+  current_price_usd: string | null;
+  market_value_usd: string | null;
+  pl_usd: string | null;
+  pl_pct: number | null;
+}
+
+export interface PortfolioSummary {
+  positions: PortfolioPosition[];
+  invested_usd: string;
+  market_value_usd: string;
+  pl_usd: string;
+  pl_pct: number | null;
+}

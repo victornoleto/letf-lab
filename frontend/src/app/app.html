@@ -44,6 +44,11 @@
         <svg class="ico" width="14" height="14"><use href="#indicators"/></svg>
         <span class="nav-item__label">Indicadores</span>
       </a>
+      <a class="nav-item" routerLink="/portfolio" routerLinkActive="nav-item--active"
+         [attr.title]="collapsed() ? 'Portfólio' : null">
+        <svg class="ico" width="14" height="14"><use href="#holdings"/></svg>
+        <span class="nav-item__label">Portfólio</span>
+      </a>
     </nav>
 
     <div class="sidebar-foot">
