@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -36,48 +37,68 @@ import { Router } from '@angular/router';
           <div class="field">
             <label class="label" for="login-email">Email</label>
             <input id="login-email" class="input" type="email"
-                   [(ngModel)]="model.email" name="email"
+                   [ngModel]="email()" (ngModelChange)="email.set($event)" name="email"
                    autocomplete="username" required />
           </div>
 
           <div class="field">
             <label class="label" for="login-pass">Senha</label>
             <input id="login-pass" class="input" type="password"
-                   [(ngModel)]="model.password" name="password"
+                   [ngModel]="password()" (ngModelChange)="password.set($event)" name="password"
                    autocomplete="current-password" required />
           </div>
 
+          @if (error()) {
+            <div class="banner banner--danger" style="margin-top: 4px;">
+              <svg class="ico" width="13" height="13"><use href="#alert-circle"/></svg>
+              <span>{{ error() }}</span>
+            </div>
+          }
+
           <button type="submit" class="btn btn--primary"
+                  [disabled]="submitting() || !canSubmit()"
                   style="width: 100%; justify-content: center; padding: 9px 12px; margin-top: 4px;">
-            Entrar
+            @if (submitting()) {
+              <svg class="ico spin" width="13" height="13"><use href="#refresh"/></svg>
+              Entrando…
+            } @else {
+              Entrar
+            }
           </button>
 
-          <div class="login-divider">ou</div>
-
-          <button type="button" class="btn"
-                  style="width: 100%; justify-content: center; padding: 9px 12px;"
-                  (click)="continueWithSSO()">
-            <svg class="ico" width="13" height="13"><use href="#command"/></svg>
-            Continuar com SSO
-          </button>
-
-          <p class="login-foot">v0.4.2 · cron 22h ET · last sync 14:32</p>
+          <p class="login-foot">v0.4.2 · cron 22h ET</p>
         </form>
       </div>
     </div>
   `,
 })
 export class LoginComponent {
+  private auth = inject(AuthService);
   private router = inject(Router);
-  model = { email: '', password: '' };
 
-  submit(): void {
-    console.log('login submit', this.model.email);
-    this.router.navigate(['/dashboard']);
+  email = signal('');
+  password = signal('');
+  submitting = signal(false);
+  error = signal<string | null>(null);
+
+  canSubmit(): boolean {
+    return this.email().trim().length > 0 && this.password().length > 0;
   }
 
-  continueWithSSO(): void {
-    console.log('SSO clicked');
-    this.router.navigate(['/dashboard']);
+  submit(): void {
+    if (!this.canSubmit() || this.submitting()) return;
+    this.submitting.set(true);
+    this.error.set(null);
+    this.auth.login(this.email().trim(), this.password()).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.submitting.set(false);
+        const detail = err?.error?.detail;
+        this.error.set(typeof detail === 'string' ? detail : 'Falha ao autenticar');
+      },
+    });
   }
 }

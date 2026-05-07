@@ -14,6 +14,15 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     allow_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
 
+    # Auth — JWT in HttpOnly cookie. The default secret is unsafe; override in .env.
+    auth_jwt_secret: str = "dev-only-change-me"
+    auth_token_ttl_hours: int = 24
+    auth_cookie_secure: bool = False
+    auth_cookie_name: str = "ai_swing_session"
+
+    # Optional integrations
+    anthropic_api_key: str | None = None
+
     @property
     def price_cache_path(self) -> Path:
         return Path(self.price_cache_dir).resolve()

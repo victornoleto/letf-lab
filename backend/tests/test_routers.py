@@ -31,8 +31,15 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setattr(sched, "stop_scheduler", lambda: None)
 
     from ai_swing.main import create_app
+    from ai_swing.auth.security import get_current_user
+    from ai_swing.db.models import User
 
     app = create_app()
+    # Tests don't exercise auth itself — override the dependency so protected
+    # routers behave as if a valid session were present.
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id=1, email="test@example.com", password_hash="x", is_active=True
+    )
     with TestClient(app) as c:
         yield c
 

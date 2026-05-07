@@ -52,6 +52,16 @@
         <app-theme-switch />
       </div>
 
+      @if (auth.user(); as user) {
+        <div class="sidebar-foot__user" [title]="user.email">
+          <span class="sidebar-foot__avatar">{{ avatarInitial() }}</span>
+          <span class="sidebar-foot__email">{{ user.email }}</span>
+          <button class="icon-btn" (click)="logout()" aria-label="Sair" title="Sair">
+            <svg class="ico" width="13" height="13"><use href="#logout"/></svg>
+          </button>
+        </div>
+      }
+
       <div class="status-bar">
         <div class="status-bar__row">
           <span class="status-bar__dot"></span>

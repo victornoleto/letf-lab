@@ -4,11 +4,12 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from ai_swing.auth.security import get_current_user
 from ai_swing.config import settings
-from ai_swing.routers import backtest, indicators, refresh, signals, strategies
+from ai_swing.routers import auth, backtest, indicators, refresh, signals, strategies
 from ai_swing.scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(
@@ -37,11 +38,16 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.include_router(indicators.router)
-    app.include_router(strategies.router)
-    app.include_router(signals.router)
-    app.include_router(refresh.router)
-    app.include_router(backtest.router)
+    # Public — auth endpoints handle their own session lifecycle.
+    app.include_router(auth.router)
+
+    # Everything else requires a valid session cookie.
+    protected = [Depends(get_current_user)]
+    app.include_router(indicators.router, dependencies=protected)
+    app.include_router(strategies.router, dependencies=protected)
+    app.include_router(signals.router, dependencies=protected)
+    app.include_router(refresh.router, dependencies=protected)
+    app.include_router(backtest.router, dependencies=protected)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:

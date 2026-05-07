@@ -11,6 +11,7 @@ import { ToastStackComponent } from './shared/toast/toast-stack';
 import { ToastService } from './shared/toast/toast.service';
 import { ConfirmDialogComponent } from './shared/confirm/confirm-dialog';
 import { ThemeSwitchComponent } from './shared/theme/theme-switch';
+import { AuthService } from './core/auth.service';
 
 const COLLAPSED_KEY = 'ai-swing.sidebar.collapsed';
 const BANNER_DISMISSED_KEY = 'ai-swing.banner.transitions.dismissed';
@@ -38,6 +39,7 @@ export class App implements OnInit {
   private palette = inject(PaletteService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  protected auth = inject(AuthService);
 
   recentTransitions = signal<SignalTransition[]>([]);
   refreshing = signal(false);
@@ -49,6 +51,13 @@ export class App implements OnInit {
 
   private currentUrl = signal<string>(typeof location !== 'undefined' ? location.pathname : '');
   isShellRoute = computed(() => !this.currentUrl().startsWith('/login'));
+
+  avatarInitial = computed(() => {
+    const u = this.auth.user();
+    if (!u) return '?';
+    const src = u.name || u.email;
+    return src ? src.charAt(0).toUpperCase() : '?';
+  });
 
   constructor() {
     this.router.events.subscribe((ev) => {
@@ -73,8 +82,22 @@ export class App implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadTransitions();
-    this.loadRefreshStatus();
+    // Resolve session before loading anything that requires it. The guard
+    // also calls refresh(), but landing on login or non-shell routes won't
+    // trigger it — we want the foot user/email to populate either way.
+    this.auth.refresh().subscribe((u) => {
+      if (u) {
+        this.loadTransitions();
+        this.loadRefreshStatus();
+      }
+    });
+  }
+
+  logout(): void {
+    this.auth.logout().subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: () => this.router.navigate(['/login']),
+    });
   }
 
   loadTransitions(): void {

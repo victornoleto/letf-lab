@@ -7,14 +7,18 @@ from __future__ import annotations
 
 import logging
 
+import os
+
 from sqlalchemy import select
 
+from ai_swing.auth.security import hash_password
 from ai_swing.db import SessionLocal
 from ai_swing.db.models import (
     Indicator,
     IndicatorType,
     Strategy,
     StrategyIndicator,
+    User,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -71,9 +75,27 @@ def _get_or_create_strategy(db, name, benchmark, risk_on, risk_off, k, indicator
     return s
 
 
+def _get_or_create_default_user(db) -> User:
+    email = os.getenv("SEED_USER_EMAIL", "admin@ai-swing.local").lower()
+    password = os.getenv("SEED_USER_PASSWORD", "admin")
+    existing = db.scalars(select(User).where(User.email == email)).first()
+    if existing is not None:
+        log.info("User already exists: %s", email)
+        return existing
+    user = User(email=email, password_hash=hash_password(password), name="Admin", is_active=True)
+    db.add(user)
+    db.flush()
+    log.info("Created user: %s (password from SEED_USER_PASSWORD or 'admin')", email)
+    return user
+
+
 def main() -> None:
     db = SessionLocal()
     try:
+        log.info("Seeding default user...")
+        _get_or_create_default_user(db)
+        db.commit()
+
         log.info("Seeding indicators...")
         ind_objs = []
         for name, type_, params, desc in INDICATORS_SEED:
