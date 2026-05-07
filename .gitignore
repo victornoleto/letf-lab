@@ -40,5 +40,5 @@ Thumbs.db
 # Playwright MCP artifacts
 .playwright-mcp/
 
-# Redesign loop runtime
-redesign/logs/
+# Redesign workspace (design creation, not part of repo)
+redesign/
