@@ -87,7 +87,10 @@ export class StrategyCardComponent {
     return 'off';
   });
 
-  segs = computed(() => Array.from({ length: 5 }, (_, i) => i));
+  segs = computed(() => {
+    const total = this.strategy().current_signal?.total ?? this.strategy().indicators.length ?? 0;
+    return Array.from({ length: Math.max(total, 1) }, (_, i) => i);
+  });
 
   segClass(i: number): string {
     const s = this.strategy();

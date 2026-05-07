@@ -99,11 +99,15 @@ def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
     if df.empty:
         raise ValueError("No overlapping price data across the three tickers")
 
-    # Trim to last range_years
+    # Trim to last range_years if we have enough; otherwise fall back to all
+    # available history. Tickers with short trade histories (recent IPOs, fresh
+    # LETFs) shouldn't 400 — we just backtest what we have.
     cutoff = df.index[-1] - pd.Timedelta(days=int(range_years * 365.25))
-    df = df[df.index >= cutoff]
-    if len(df) < 60:
-        raise ValueError(f"Insufficient data ({len(df)} bars) for range {range_years}y")
+    df_trimmed = df[df.index >= cutoff]
+    if len(df_trimmed) >= 60:
+        df = df_trimmed
+    if len(df) < 5:
+        raise ValueError(f"Too few bars to backtest ({len(df)})")
 
     bench_returns = df["bench"].pct_change()
 

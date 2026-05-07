@@ -20,6 +20,12 @@
   padding: 9px 14px;
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
+  text-align: left;
+}
+
+.table td.td--icon,
+.table th.th--icon {
+  text-align: center;
 }
 
 .table tr:hover td { background: var(--bg); }

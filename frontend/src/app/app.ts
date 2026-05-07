@@ -10,6 +10,7 @@ import { LoadingBarComponent } from './shared/loading-bar/loading-bar';
 import { ToastStackComponent } from './shared/toast/toast-stack';
 import { ToastService } from './shared/toast/toast.service';
 import { ConfirmDialogComponent } from './shared/confirm/confirm-dialog';
+import { ThemeSwitchComponent } from './shared/theme/theme-switch';
 
 const COLLAPSED_KEY = 'ai-swing.sidebar.collapsed';
 const BANNER_DISMISSED_KEY = 'ai-swing.banner.transitions.dismissed';
@@ -25,6 +26,7 @@ const BANNER_DISMISSED_KEY = 'ai-swing.banner.transitions.dismissed';
     LoadingBarComponent,
     ToastStackComponent,
     ConfirmDialogComponent,
+    ThemeSwitchComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',

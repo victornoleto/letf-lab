@@ -10,10 +10,22 @@ from ai_swing.db.models import IndicatorType
 
 class SmaGateParams(BaseModel):
     period: int = Field(default=200, ge=2, le=2000, description="SMA lookback period")
+    threshold: float = Field(
+        default=0.0,
+        ge=0,
+        le=0.5,
+        description="Hysteresis band as a fraction of SMA (0.05 = 5%). 0 disables the band.",
+    )
 
 
 class EmaGateParams(BaseModel):
     period: int = Field(default=200, ge=2, le=2000, description="EMA span")
+    threshold: float = Field(
+        default=0.0,
+        ge=0,
+        le=0.5,
+        description="Hysteresis band as a fraction of EMA (0.05 = 5%). 0 disables the band.",
+    )
 
 
 class VolGateParams(BaseModel):

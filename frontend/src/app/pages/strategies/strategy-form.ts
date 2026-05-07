@@ -69,7 +69,7 @@ type Touched = { name: boolean; benchmark: boolean; riskOn: boolean; riskOff: bo
               Indicadores (k de N)
               <span class="kmin">
                 k mínimo:
-                <select [(ngModel)]="model.k_threshold" name="k">
+                <select [ngModel]="kThreshold()" (ngModelChange)="kThreshold.set(+$event)" name="k">
                   @for (i of kOptions(); track i) { <option [value]="i">{{ i }}</option> }
                 </select>
               </span>
@@ -84,7 +84,7 @@ type Touched = { name: boolean; benchmark: boolean; riskOn: boolean; riskOff: bo
                 </button>
               }
             </div>
-            <p class="hint">{{ model.indicator_ids.length }} selecionado(s) · {{ model.k_threshold }} mínimo(s) para risk-on</p>
+            <p class="hint">{{ indicatorIds().length }} selecionado(s) · {{ kThreshold() }} mínimo(s) para risk-on</p>
           </div>
 
           @if (error()) {
@@ -124,18 +124,21 @@ export class StrategyFormComponent implements OnInit {
 
   touched: Touched = { name: false, benchmark: false, riskOn: false, riskOff: false };
 
+  // Reactive bits — drive the k-of-N dropdown and the chips selection.
+  indicatorIds = signal<number[]>([]);
+  kThreshold = signal<number>(2);
+
+  // Plain fields kept on a model object (ngModel handles their CD on input).
   model = {
     name: '',
     benchmark_ticker: '',
     risk_on_ticker: '',
     risk_off_ticker: 'ZROZ',
-    k_threshold: 2,
     enabled: true,
-    indicator_ids: [] as number[],
   };
 
   kOptions = computed(() => {
-    const n = Math.max(this.model.indicator_ids.length, 1);
+    const n = Math.max(this.indicatorIds().length, 1);
     return Array.from({ length: n }, (_, i) => i + 1);
   });
 
@@ -165,23 +168,22 @@ export class StrategyFormComponent implements OnInit {
       benchmark_ticker: s.benchmark_ticker,
       risk_on_ticker: s.risk_on_ticker,
       risk_off_ticker: s.risk_off_ticker,
-      k_threshold: s.k_threshold,
       enabled: s.enabled,
-      indicator_ids: s.indicators.map((i) => i.id),
     };
+    this.indicatorIds.set(s.indicators.map((i) => i.id));
+    this.kThreshold.set(s.k_threshold);
   }
 
   validName() { return this.model.name.trim().length > 0; }
 
-  isSelected(id: number) { return this.model.indicator_ids.includes(id); }
+  isSelected(id: number) { return this.indicatorIds().includes(id); }
+
   toggleIndicator(id: number) {
-    if (this.isSelected(id)) {
-      this.model.indicator_ids = this.model.indicator_ids.filter(x => x !== id);
-    } else {
-      this.model.indicator_ids = [...this.model.indicator_ids, id];
-    }
-    if (this.model.k_threshold > this.model.indicator_ids.length) {
-      this.model.k_threshold = Math.max(1, this.model.indicator_ids.length);
+    const ids = this.indicatorIds();
+    const next = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+    this.indicatorIds.set(next);
+    if (this.kThreshold() > next.length) {
+      this.kThreshold.set(Math.max(1, next.length));
     }
   }
 
@@ -190,9 +192,9 @@ export class StrategyFormComponent implements OnInit {
       && this.model.benchmark_ticker.length > 0
       && this.model.risk_on_ticker.length > 0
       && this.model.risk_off_ticker.length > 0
-      && this.model.indicator_ids.length > 0
-      && this.model.k_threshold >= 1
-      && this.model.k_threshold <= this.model.indicator_ids.length;
+      && this.indicatorIds().length > 0
+      && this.kThreshold() >= 1
+      && this.kThreshold() <= this.indicatorIds().length;
   }
 
   save(): void {
@@ -200,7 +202,12 @@ export class StrategyFormComponent implements OnInit {
     this.saving.set(true);
     this.error.set(null);
     const id = this.strategyId();
-    const obs = id ? this.api.updateStrategy(id, this.model) : this.api.createStrategy(this.model);
+    const body = {
+      ...this.model,
+      k_threshold: this.kThreshold(),
+      indicator_ids: this.indicatorIds(),
+    };
+    const obs = id ? this.api.updateStrategy(id, body) : this.api.createStrategy(body);
     obs.subscribe({
       next: (s) => {
         this.saving.set(false);

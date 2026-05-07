@@ -3,9 +3,11 @@
 .label {
   display: block;
   font-size: 11.5px;
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
   color: var(--text-primary);
   margin-bottom: 5px;
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
 }
 
 .input {

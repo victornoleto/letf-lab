@@ -55,7 +55,7 @@ type Range = typeof RANGES[number];
                 <th>Score</th>
                 <th>Estado</th>
                 @for (col of indicatorColumns(); track col) {
-                  <th>{{ col }}</th>
+                  <th class="th--icon">{{ col }}</th>
                 }
               </tr>
             </thead>
@@ -71,7 +71,7 @@ type Range = typeof RANGES[number];
                     >{{ s.risk_on ? 'on' : 'off' }}</span>
                   </td>
                   @for (col of indicatorColumns(); track col) {
-                    <td style="text-align: center;">
+                    <td class="td--icon">
                       @let r = findResult(s, col);
                       @if (r) {
                         <svg

@@ -54,30 +54,38 @@ def evaluate_indicator(
 
     if itype == IndicatorType.SMA_GATE:
         period = int(params.get("period", 200))
-        gate = F.sma_gate(prices, period=period)
+        threshold = float(params.get("threshold", 0.0))
+        gate = F.sma_gate(prices, period=period, threshold=threshold)
         sma = prices.rolling(window=period, min_periods=period).mean()
         latest_price = _latest(prices)
         latest_sma = _latest(sma)
         passed = bool(gate.dropna().iloc[-1]) if not gate.dropna().empty else False
-        summary = (
-            f"price {latest_price:.2f} {'>' if passed else '<='} SMA{period} {latest_sma:.2f}"
-            if latest_price is not None and latest_sma is not None
-            else "n/a (warmup)"
-        )
+        if latest_price is not None and latest_sma is not None:
+            band = f" ±{threshold * 100:.1f}%" if threshold > 0 else ""
+            summary = (
+                f"price {latest_price:.2f} {'>' if passed else '<='} "
+                f"SMA{period}{band} {latest_sma:.2f}"
+            )
+        else:
+            summary = "n/a (warmup)"
         value = float(latest_price) if latest_price is not None else float("nan")
 
     elif itype == IndicatorType.EMA_GATE:
         period = int(params.get("period", 200))
-        gate = F.ema_gate(prices, period=period)
+        threshold = float(params.get("threshold", 0.0))
+        gate = F.ema_gate(prices, period=period, threshold=threshold)
         ema = prices.ewm(span=period, min_periods=period, adjust=False).mean()
         latest_price = _latest(prices)
         latest_ema = _latest(ema)
         passed = bool(gate.dropna().iloc[-1]) if not gate.dropna().empty else False
-        summary = (
-            f"price {latest_price:.2f} {'>' if passed else '<='} EMA{period} {latest_ema:.2f}"
-            if latest_price is not None and latest_ema is not None
-            else "n/a (warmup)"
-        )
+        if latest_price is not None and latest_ema is not None:
+            band = f" ±{threshold * 100:.1f}%" if threshold > 0 else ""
+            summary = (
+                f"price {latest_price:.2f} {'>' if passed else '<='} "
+                f"EMA{period}{band} {latest_ema:.2f}"
+            )
+        else:
+            summary = "n/a (warmup)"
         value = float(latest_price) if latest_price is not None else float("nan")
 
     elif itype == IndicatorType.VOL_GATE:

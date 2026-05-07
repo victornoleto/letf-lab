@@ -33,32 +33,36 @@
          [attr.title]="collapsed() ? 'Dashboard' : null">
         <svg class="ico" width="14" height="14"><use href="#dashboard"/></svg>
         <span class="nav-item__label">Dashboard</span>
-        <span class="kbd nav-item__kbd">G 1</span>
       </a>
       <a class="nav-item" routerLink="/strategies" routerLinkActive="nav-item--active"
          [attr.title]="collapsed() ? 'Estratégias' : null">
         <svg class="ico" width="14" height="14"><use href="#strategies"/></svg>
         <span class="nav-item__label">Estratégias</span>
-        <span class="kbd nav-item__kbd">G 2</span>
       </a>
       <a class="nav-item" routerLink="/indicators" routerLinkActive="nav-item--active"
          [attr.title]="collapsed() ? 'Indicadores' : null">
         <svg class="ico" width="14" height="14"><use href="#indicators"/></svg>
         <span class="nav-item__label">Indicadores</span>
-        <span class="kbd nav-item__kbd">G 3</span>
       </a>
     </nav>
 
-    <div class="status-bar">
-      <div class="status-bar__row">
-        <span class="status-bar__dot"></span>
-        <span>Atualizado <span class="mono">{{ lastRefreshLabel() }}</span></span>
+    <div class="sidebar-foot">
+      <div class="sidebar-foot__theme">
+        <span class="sidebar-foot__caption">Tema</span>
+        <app-theme-switch />
       </div>
-      <button class="btn btn--sm" style="width: 100%; margin-top: 8px;"
-              (click)="triggerRefresh()" [disabled]="refreshing()">
-        <svg class="ico" width="11" height="11" [class.spin]="refreshing()"><use href="#refresh"/></svg>
-        @if (refreshing()) { Atualizando… } @else { Refresh }
-      </button>
+
+      <div class="status-bar">
+        <div class="status-bar__row">
+          <span class="status-bar__dot"></span>
+          <span>Atualizado <span class="mono">{{ lastRefreshLabel() }}</span></span>
+        </div>
+        <button class="btn btn--sm" style="width: 100%; margin-top: 8px;"
+                (click)="triggerRefresh()" [disabled]="refreshing()">
+          <svg class="ico" width="11" height="11" [class.spin]="refreshing()"><use href="#refresh"/></svg>
+          @if (refreshing()) { Atualizando… } @else { Refresh }
+        </button>
+      </div>
     </div>
   </aside>
 

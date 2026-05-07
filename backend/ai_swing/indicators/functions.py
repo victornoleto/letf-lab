@@ -14,20 +14,59 @@ import pandas as pd
 TRADING_DAYS_PER_YEAR = 252
 
 
-def sma_gate(prices: pd.Series, period: int = 200) -> pd.Series:
-    """Binary gate: 1 if price > SMA(period), else 0. NaN during warmup."""
+def _band_gate(prices: pd.Series, ref: pd.Series, threshold: float) -> pd.Series:
+    """Hysteresis gate driven by a reference line (SMA/EMA/etc).
+
+    threshold == 0 → strict price > ref. Otherwise risk-on triggers only above
+    ref·(1+threshold) and risk-off only below ref·(1-threshold); inside the band
+    the previous state holds. NaN during warmup (when ref is NaN).
+    """
+    if threshold <= 0:
+        gate = (prices > ref).astype(float)
+        gate[ref.isna()] = np.nan
+        return gate
+
+    upper = ref * (1.0 + threshold)
+    lower = ref * (1.0 - threshold)
+    out = np.full(len(prices), np.nan)
+    state = np.nan
+    p_arr = prices.to_numpy()
+    u_arr = upper.to_numpy()
+    l_arr = lower.to_numpy()
+    r_arr = ref.to_numpy()
+    for i in range(len(prices)):
+        if np.isnan(r_arr[i]) or np.isnan(p_arr[i]):
+            out[i] = np.nan
+            state = np.nan
+            continue
+        if np.isnan(state):
+            state = 1.0 if p_arr[i] > r_arr[i] else 0.0
+        if p_arr[i] > u_arr[i]:
+            state = 1.0
+        elif p_arr[i] < l_arr[i]:
+            state = 0.0
+        out[i] = state
+    return pd.Series(out, index=prices.index)
+
+
+def sma_gate(prices: pd.Series, period: int = 200, threshold: float = 0.0) -> pd.Series:
+    """Binary gate: 1 if price > SMA(period), else 0. NaN during warmup.
+
+    With threshold > 0 a hysteresis band of ±threshold·SMA prevents whipsaws
+    near the line: triggers risk-on only above SMA·(1+t), risk-off only below
+    SMA·(1-t).
+    """
     sma = prices.rolling(window=period, min_periods=period).mean()
-    gate = (prices > sma).astype(float)
-    gate[sma.isna()] = np.nan
-    return gate
+    return _band_gate(prices, sma, threshold)
 
 
-def ema_gate(prices: pd.Series, period: int = 200) -> pd.Series:
-    """Binary gate: 1 if price > EMA(period), else 0. NaN during warmup."""
+def ema_gate(prices: pd.Series, period: int = 200, threshold: float = 0.0) -> pd.Series:
+    """Binary gate: 1 if price > EMA(period), else 0. NaN during warmup.
+
+    Same hysteresis-band semantics as `sma_gate`.
+    """
     ema = prices.ewm(span=period, min_periods=period, adjust=False).mean()
-    gate = (prices > ema).astype(float)
-    gate[ema.isna()] = np.nan
-    return gate
+    return _band_gate(prices, ema, threshold)
 
 
 def realized_vol_gate(
