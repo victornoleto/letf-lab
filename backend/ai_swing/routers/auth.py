@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ai_swing.auth.security import (
@@ -18,8 +18,12 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
+    # Plain str + lightweight check on purpose. EmailStr (via email-validator)
+    # rejects RFC 6761 reserved TLDs like .local, which we use for the seeded
+    # admin@ai-swing.local account. Auth itself just compares lowercased
+    # strings against the DB, not the format.
+    email: str = Field(..., min_length=3, max_length=255)
+    password: str = Field(..., min_length=1, max_length=200)
 
 
 class UserDTO(BaseModel):
