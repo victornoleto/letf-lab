@@ -3,15 +3,20 @@
 The cookie holds a short-lived JWT (default 24h). Cookie is HttpOnly and,
 when AUTH_COOKIE_SECURE=true, Secure+SameSite=Lax — so XSS can't steal it
 and CSRF on cross-site is mitigated for state-changing requests.
+
+We use the `bcrypt` package directly rather than passlib: passlib 1.7 is
+unmaintained and breaks against bcrypt>=4 (it pokes at a removed
+__about__.__version__ and runs a self-check that trips bcrypt's >72-byte
+ValueError). bcrypt's API is small enough that we don't miss the wrapper.
 """
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import bcrypt
 import jwt
 from fastapi import Cookie, Depends, HTTPException, status
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -19,16 +24,29 @@ from ai_swing.config import settings
 from ai_swing.db import get_db
 from ai_swing.db.models import User
 
-_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _JWT_ALG = "HS256"
+
+# bcrypt rejects secrets longer than 72 bytes. Truncating matches OpenBSD
+# behavior and is what passlib used to do silently. Anything beyond 72
+# bytes adds no entropy in bcrypt's design.
+_BCRYPT_MAX_BYTES = 72
+
+
+def _to_bytes(plain: str) -> bytes:
+    encoded = plain.encode("utf-8")
+    return encoded[:_BCRYPT_MAX_BYTES]
 
 
 def hash_password(plain: str) -> str:
-    return _pwd.hash(plain)
+    return bcrypt.hashpw(_to_bytes(plain), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(_to_bytes(plain), hashed.encode("utf-8"))
+    except ValueError:
+        # Malformed hash on disk — treat as failed auth, don't crash.
+        return False
 
 
 def authenticate_user(db: Session, email: str, password: str) -> User | None:
