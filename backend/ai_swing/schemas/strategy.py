@@ -1,11 +1,22 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ai_swing.schemas.indicator import IndicatorDTO
 from ai_swing.schemas.signal import SignalSnapshotDTO
+
+
+class StrategyReportDTO(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    date: date
+    headline: str
+    body: str
+    proximity_state: str | None
+    model: str
+    generated_at: datetime
 
 
 class StrategyBase(BaseModel):
@@ -49,3 +60,4 @@ class StrategyDTO(StrategyBase):
     indicators: list[IndicatorDTO]
     current_signal: SignalSnapshotDTO | None = None
     sparkline_90d: list[float] = Field(default_factory=list)
+    report: StrategyReportDTO | None = None

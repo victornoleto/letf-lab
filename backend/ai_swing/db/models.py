@@ -136,3 +136,27 @@ class User(Base):
     name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class StrategyReport(Base):
+    """AI-generated narrative on a strategy's current state.
+
+    One row per (strategy_id, date) produced after the daily refresh: a
+    short headline + a longer paragraph. We keep history so the dashboard
+    can show "yesterday vs today" if it ever needs to.
+    """
+    __tablename__ = "strategy_reports"
+    __table_args__ = (
+        UniqueConstraint("strategy_id", "date", name="uq_report_strategy_date"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    strategy_id: Mapped[int] = mapped_column(
+        ForeignKey("strategies.id", ondelete="CASCADE"), index=True
+    )
+    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    headline: Mapped[str] = mapped_column(String(280), nullable=False)
+    body: Mapped[str] = mapped_column(String(4000), nullable=False)
+    proximity_state: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    model: Mapped[str] = mapped_column(String(80), nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

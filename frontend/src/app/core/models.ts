@@ -42,6 +42,15 @@ export interface SignalSnapshot {
   results: IndicatorResult[];
 }
 
+export interface StrategyReport {
+  date: string;
+  headline: string;
+  body: string;
+  proximity_state: string | null;
+  model: string;
+  generated_at: string;
+}
+
 export interface Strategy {
   id: number;
   name: string;
@@ -54,6 +63,7 @@ export interface Strategy {
   indicators: Indicator[];
   current_signal: SignalSnapshot | null;
   sparkline_90d: number[];
+  report: StrategyReport | null;
 }
 
 export interface SignalTransition {

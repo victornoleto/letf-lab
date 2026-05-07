@@ -47,10 +47,38 @@ import { stateOf, type CardState } from '../../shared/strategy-state';
           </div>
         }
       </div>
+
+      @if (strategy().report; as rep) {
+        <div class="card__report" [ngClass]="reportCls(rep.proximity_state)">
+          <span class="card__report-tag">{{ proximityLabel(rep.proximity_state) }}</span>
+          {{ rep.headline }}
+        </div>
+      }
     </a>
   `,
   styles: [`
     .card { display: block; text-decoration: none; color: inherit; }
+    .card__report {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-md);
+      background: var(--surface-muted);
+      font-size: 11.5px;
+      line-height: 1.4;
+      color: var(--text-secondary);
+    }
+    .card__report--near_off { background: rgba(245, 158, 11, 0.10); color: var(--warn); }
+    .card__report--near_on  { background: rgba(34, 197, 94, 0.10); }
+    .card__report-tag {
+      display: inline-block;
+      margin-right: 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: var(--fw-medium);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
     .ticker {
       display: inline-flex;
       align-items: center;
@@ -100,5 +128,20 @@ export class StrategyCardComponent {
     const stMap = ({ on: 'score-bar__seg--filled-on', off: 'score-bar__seg--filled-off',
                     borderline: 'score-bar__seg--filled-borderline' } as const);
     return 'score-bar__seg ' + stMap[this.cardState()];
+  }
+
+  reportCls(state: string | null | undefined): string {
+    if (!state) return '';
+    return `card__report--${state}`;
+  }
+
+  proximityLabel(state: string | null | undefined): string {
+    return ({
+      on: 'risk on',
+      off: 'risk off',
+      near_on: 'perto on',
+      near_off: 'perto off',
+      unknown: '·',
+    } as Record<string, string>)[state ?? ''] ?? '·';
   }
 }

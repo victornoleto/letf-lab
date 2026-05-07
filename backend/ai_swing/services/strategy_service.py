@@ -16,8 +16,9 @@ from ai_swing.db.models import (
 )
 from ai_swing.schemas.indicator import IndicatorDTO
 from ai_swing.schemas.signal import IndicatorResultDTO, SignalSnapshotDTO
-from ai_swing.schemas.strategy import StrategyDTO
+from ai_swing.schemas.strategy import StrategyDTO, StrategyReportDTO
 from ai_swing.services.signal_service import compute_snapshot, snapshot_to_dto
+from ai_swing.services import ai_reports
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,8 @@ def attach_indicators(db: Session, strategy: Strategy, indicator_ids: list[int])
 
 
 def strategy_to_dto(strategy: Strategy, current_signal: SignalSnapshotDTO | None = None,
-                    sparkline_90d: list[float] | None = None) -> StrategyDTO:
+                    sparkline_90d: list[float] | None = None,
+                    report: StrategyReportDTO | None = None) -> StrategyDTO:
     indicator_dtos = [
         IndicatorDTO.model_validate(si.indicator) for si in strategy.indicators
     ]
@@ -78,6 +80,7 @@ def strategy_to_dto(strategy: Strategy, current_signal: SignalSnapshotDTO | None
         indicators=indicator_dtos,
         current_signal=current_signal,
         sparkline_90d=sparkline_90d or [],
+        report=report,
     )
 
 
@@ -118,4 +121,17 @@ def build_strategy_dto_with_signal(
     except Exception as exc:
         logger.warning("Failed sparkline for %s: %s", strategy.benchmark_ticker, exc)
 
-    return strategy_to_dto(strategy, current_signal=snapshot_dto, sparkline_90d=sparkline)
+    report_dto: StrategyReportDTO | None = None
+    try:
+        report_row = ai_reports.latest_report(db, strategy.id)
+        if report_row is not None:
+            report_dto = StrategyReportDTO.model_validate(report_row)
+    except Exception as exc:
+        logger.debug("Failed to load AI report for strategy %s: %s", strategy.id, exc)
+
+    return strategy_to_dto(
+        strategy,
+        current_signal=snapshot_dto,
+        sparkline_90d=sparkline,
+        report=report_dto,
+    )

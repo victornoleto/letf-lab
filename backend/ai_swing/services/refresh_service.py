@@ -15,6 +15,7 @@ from ai_swing.db.models import (
     Strategy,
     StrategyIndicator,
 )
+from ai_swing.services import ai_reports
 from ai_swing.services.signal_service import (
     compute_snapshot,
     serialize_results_for_storage,
@@ -70,6 +71,20 @@ class RefreshService:
                         n_transitions += 1
                 except Exception as exc:
                     logger.exception("Failed snapshot for strategy %s: %s", strategy.name, exc)
+
+            # AI reports run after the snapshots so they see today's state.
+            # Failures are non-fatal — refresh stays "ok" even if the API
+            # is offline or the key is missing.
+            try:
+                db.commit()
+                for strategy in strategies:
+                    try:
+                        ai_reports.generate_report(db, strategy)
+                    except Exception as exc:
+                        logger.warning("AI report failed for %s: %s", strategy.name, exc)
+                db.commit()
+            except Exception as exc:
+                logger.warning("AI report batch failed: %s", exc)
 
             log.finished_at = datetime.now(timezone.utc)
             log.status = "ok"

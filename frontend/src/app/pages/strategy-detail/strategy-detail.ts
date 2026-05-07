@@ -85,6 +85,26 @@ const BACKEND_URL = 'http://localhost:8000/api';
           </div>
         </div>
 
+        @if (strategy()!.report; as rep) {
+          <section class="report-card" [ngClass]="reportCls(rep.proximity_state)">
+            <div class="report-card__head">
+              <span class="report-card__tag">{{ proximityLabel(rep.proximity_state) }}</span>
+              <span class="report-card__date">
+                {{ rep.date }} · {{ rep.model }}
+              </span>
+              <button class="btn btn--ghost btn--sm report-card__regen"
+                      (click)="regenerateReport()" [disabled]="reportRegenerating()">
+                <svg class="ico" width="11" height="11" [class.spin]="reportRegenerating()">
+                  <use href="#refresh"/>
+                </svg>
+                @if (reportRegenerating()) { Gerando… } @else { Regenerar }
+              </button>
+            </div>
+            <h3 class="report-card__headline">{{ rep.headline }}</h3>
+            <p class="report-card__body">{{ rep.body }}</p>
+          </section>
+        }
+
         <div class="tabs" role="tablist">
           <button class="tab" role="tab"
                   [class.tab--active]="tab() === 'main'"
@@ -137,6 +157,44 @@ const BACKEND_URL = 'http://localhost:8000/api';
       border-bottom-color: var(--accent);
       font-weight: var(--fw-medium);
     }
+
+    .report-card {
+      margin-top: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+    }
+    .report-card--near_off { border-color: var(--warn); background: rgba(245, 158, 11, 0.06); }
+    .report-card--near_on  { border-color: var(--success); background: rgba(34, 197, 94, 0.06); }
+    .report-card__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .report-card__tag {
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: var(--fw-medium);
+    }
+    .report-card__date { font-family: var(--font-mono); }
+    .report-card__regen { margin-left: auto; }
+    .report-card__headline {
+      margin: 0 0 4px;
+      font-size: 14px;
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-tight);
+    }
+    .report-card__body {
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+    }
   `],
 })
 export class StrategyDetailComponent implements OnInit {
@@ -152,9 +210,38 @@ export class StrategyDetailComponent implements OnInit {
   backtestLoading = signal(false);
   backtestError = signal<string | null>(null);
   tab = signal<DetailTab>('main');
+  reportRegenerating = signal(false);
 
   setTab(t: DetailTab): void {
     this.tab.set(t);
+  }
+
+  reportCls(state: string | null | undefined): string {
+    if (!state) return '';
+    return `report-card--${state}`;
+  }
+
+  proximityLabel(state: string | null | undefined): string {
+    return ({
+      on: 'risk on',
+      off: 'risk off',
+      near_on: 'perto de virar on',
+      near_off: 'perto de virar off',
+      unknown: 'sem dados',
+    } as Record<string, string>)[state ?? ''] ?? '·';
+  }
+
+  regenerateReport(): void {
+    const s = this.strategy();
+    if (!s || this.reportRegenerating()) return;
+    this.reportRegenerating.set(true);
+    this.api.regenerateReport(s.id).subscribe({
+      next: (rep) => {
+        this.reportRegenerating.set(false);
+        this.strategy.set({ ...s, report: rep });
+      },
+      error: () => this.reportRegenerating.set(false),
+    });
   }
 
   statusLabel = computed(() => {

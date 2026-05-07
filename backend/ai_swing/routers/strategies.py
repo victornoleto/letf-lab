@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session, selectinload
 from ai_swing.db import get_db
 from ai_swing.db.models import Strategy, StrategyIndicator
 from ai_swing.schemas.strategy import StrategyCreate, StrategyDTO, StrategyUpdate
+from ai_swing.services import ai_reports
+from ai_swing.schemas.strategy import StrategyReportDTO
 from ai_swing.services.indicator_series import build_indicator_series
 from ai_swing.services.strategy_service import (
     attach_indicators,
@@ -130,3 +132,31 @@ def indicator_series_endpoint(
     if s is None:
         raise HTTPException(status_code=404, detail="Strategy not found")
     return build_indicator_series(s, range_label=range)
+
+
+@router.get("/{strategy_id}/report", response_model=StrategyReportDTO | None)
+def latest_report_endpoint(
+    strategy_id: int, db: Session = Depends(get_db)
+) -> StrategyReportDTO | None:
+    s = get_strategy(db, strategy_id)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    row = ai_reports.latest_report(db, s.id)
+    return StrategyReportDTO.model_validate(row) if row else None
+
+
+@router.post("/{strategy_id}/report", response_model=StrategyReportDTO)
+def regenerate_report_endpoint(
+    strategy_id: int, db: Session = Depends(get_db)
+) -> StrategyReportDTO:
+    s = get_strategy(db, strategy_id)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    report = ai_reports.generate_report(db, s, force=True)
+    if report is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI reports não disponíveis (configure ANTHROPIC_API_KEY)",
+        )
+    db.commit()
+    return StrategyReportDTO.model_validate(report)

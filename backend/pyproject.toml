@@ -20,6 +20,8 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "passlib[bcrypt]>=1.7",
     "pyjwt>=2.9",
+    "email-validator>=2.0",
+    "anthropic>=0.40",
 ]
 
 [project.optional-dependencies]

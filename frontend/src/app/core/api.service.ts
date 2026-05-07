@@ -9,6 +9,7 @@ import {
   SignalTransition,
   Strategy,
   StrategyCreate,
+  StrategyReport,
 } from './models';
 
 const BASE_URL = 'http://localhost:8000/api';
@@ -87,5 +88,14 @@ export class ApiService {
 
   refreshStatus(): Observable<RefreshStatus> {
     return this.http.get<RefreshStatus>(`${BASE_URL}/refresh/status`);
+  }
+
+  // AI reports
+  latestReport(strategyId: number): Observable<StrategyReport | null> {
+    return this.http.get<StrategyReport | null>(`${BASE_URL}/strategies/${strategyId}/report`);
+  }
+
+  regenerateReport(strategyId: number): Observable<StrategyReport> {
+    return this.http.post<StrategyReport>(`${BASE_URL}/strategies/${strategyId}/report`, {});
   }
 }
