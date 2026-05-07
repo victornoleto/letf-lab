@@ -275,14 +275,53 @@ export class IndicatorsTabComponent implements OnInit, OnDestroy {
     const pts = s.points as BandPoint[];
     const priceData = pts.map((p) => [p.date, p.price]);
     const refData = pts.map((p) => [p.date, p.ref]);
-    const upperData = s.threshold > 0
-      ? pts.map((p) => [p.date, p.ref != null ? p.ref * (1 + s.threshold) : null])
-      : null;
-    const lowerData = s.threshold > 0
-      ? pts.map((p) => [p.date, p.ref != null ? p.ref * (1 - s.threshold) : null])
-      : null;
 
-    const series: EChartsOption['series'] = [
+    const series: EChartsOption['series'] = [];
+
+    // When threshold > 0 the ref line becomes a filled tunnel between
+    // ref·(1-t) and ref·(1+t). The gate only flips when price exits the
+    // tunnel — visualizing the band as a region (not two dashed lines)
+    // makes the "how close to a flip" read instant.
+    //
+    // Tunnel is implemented as two stacked line series:
+    //   1. lower bound — invisible line, sets the stack baseline.
+    //   2. (upper - lower) delta — invisible line + areaStyle, fills.
+    // Pushed first so they render BEHIND the price + ref lines.
+    if (s.threshold > 0) {
+      const lowerData = pts.map((p) => [
+        p.date,
+        p.ref != null ? p.ref * (1 - s.threshold) : null,
+      ]);
+      const deltaData = pts.map((p) => [
+        p.date,
+        p.ref != null ? p.ref * 2 * s.threshold : null,
+      ]);
+      const bandColor = tok('--accent') || t.equity;
+      const baseSeries = {
+        type: 'line' as const,
+        stack: 'band',
+        symbol: 'none' as const,
+        lineStyle: { opacity: 0 },
+        emphasis: { disabled: true },
+        silent: true,
+        tooltip: { show: false },
+      };
+      series.push(
+        {
+          ...baseSeries,
+          name: '__band_lower__',
+          data: lowerData,
+        },
+        {
+          ...baseSeries,
+          name: `Banda ±${(s.threshold * 100).toFixed(1)}%`,
+          areaStyle: { color: bandColor, opacity: 0.18 },
+          data: deltaData,
+        },
+      );
+    }
+
+    series.push(
       {
         name: 'Price',
         type: 'line',
@@ -296,28 +335,17 @@ export class IndicatorsTabComponent implements OnInit, OnDestroy {
         type: 'line',
         showSymbol: false,
         smooth: false,
-        lineStyle: { color: t.textMuted, width: 1, type: [4, 3] },
+        lineStyle: {
+          color: t.textMuted,
+          width: 1,
+          // When the tunnel is on, the ref line is the centerline — keep
+          // it solid (not dashed) so it reads as the "axis" of the band.
+          type: s.threshold > 0 ? 'solid' : ([4, 3] as [number, number]),
+          opacity: s.threshold > 0 ? 0.6 : 1,
+        },
         data: refData,
       },
-    ];
-    if (upperData && lowerData) {
-      const successColor = tok('--success');
-      const dangerColor = tok('--danger');
-      series.push({
-        name: 'Upper band',
-        type: 'line',
-        showSymbol: false,
-        lineStyle: { color: successColor, width: 1, opacity: 0.4, type: [2, 3] },
-        data: upperData,
-      });
-      series.push({
-        name: 'Lower band',
-        type: 'line',
-        showSymbol: false,
-        lineStyle: { color: dangerColor, width: 1, opacity: 0.4, type: [2, 3] },
-        data: lowerData,
-      });
-    }
+    );
 
     return this.commonOption(series, t);
   }
@@ -382,6 +410,23 @@ export class IndicatorsTabComponent implements OnInit, OnDestroy {
         borderWidth: 1,
         padding: [6, 10],
         textStyle: { color: t.textPrimary, fontSize: 12, fontFamily: t.fontMono },
+        // Hide the invisible band-baseline series + format delta as the
+        // displayed band width when present. Names starting with `__` are
+        // implementation details and shouldn't show up in the tooltip.
+        formatter: (params: any) => {
+          const arr = Array.isArray(params) ? params : [params];
+          const visible = arr.filter((p) => !String(p.seriesName ?? '').startsWith('__'));
+          if (visible.length === 0) return '';
+          const date = visible[0].axisValueLabel ?? visible[0].axisValue ?? '';
+          const lines = visible.map((p) => {
+            const v = Array.isArray(p.value) ? p.value[1] : p.value;
+            const val = (v == null || Number.isNaN(v))
+              ? '—'
+              : typeof v === 'number' ? v.toFixed(2) : String(v);
+            return `${p.marker} ${p.seriesName}: <b>${val}</b>`;
+          });
+          return `${date}<br/>${lines.join('<br/>')}`;
+        },
       },
       dataZoom: [
         { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true },
