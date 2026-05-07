@@ -42,3 +42,6 @@ Thumbs.db
 
 # Redesign workspace (design creation, not part of repo)
 redesign/
+
+# Ad-hoc Playwright captures
+dashboard-current.png
