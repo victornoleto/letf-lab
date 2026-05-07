@@ -45,15 +45,15 @@ import { ToastService } from '../../shared/toast/toast.service';
         </div>
       } @else {
         <div class="table-wrap">
-          <table class="table">
+          <table class="table table--strategies">
             <thead>
               <tr>
                 <th>Nome</th>
                 <th>Status</th>
                 <th>Score</th>
                 <th>Tickers</th>
-                <th>k</th>
-                <th>Indicadores</th>
+                <th class="th--num">k</th>
+                <th class="th--num">Indicadores</th>
                 <th></th>
               </tr>
             </thead>
@@ -64,18 +64,25 @@ import { ToastService } from '../../shared/toast/toast.service';
                     <span class="mono" style="font-weight: 500;">{{ s.name }}</span>
                   </td>
                   <td>
-                    <span class="status-cell" [ngClass]="'status-cell--' + stateOf(s)">
-                      {{ stateText(s) }}
-                    </span>
+                    <span class="badge" [ngClass]="badgeCls(s)">{{ stateText(s) }}</span>
                   </td>
-                  <td class="mono">
-                    @if (s.current_signal) {
-                      {{ s.current_signal.score }}/{{ s.current_signal.total }}
-                    } @else { — }
+                  <td>
+                    <div class="score-cell">
+                      <div class="score-bar score-bar--sm">
+                        @for (i of segs(s); track i) {
+                          <span class="score-bar__seg" [ngClass]="segClass(s, i)"></span>
+                        }
+                      </div>
+                      <span class="mono score-cell__num" [ngClass]="scoreNumCls(s)">
+                        @if (s.current_signal) {
+                          {{ s.current_signal.score }}/{{ s.current_signal.total }}
+                        } @else { — }
+                      </span>
+                    </div>
                   </td>
                   <td class="mono">{{ s.benchmark_ticker }} → {{ s.risk_on_ticker }}</td>
-                  <td class="mono">{{ s.k_threshold }}</td>
-                  <td class="mono">{{ s.indicators.length }}</td>
+                  <td class="td--num mono">{{ s.k_threshold }}</td>
+                  <td class="td--num mono">{{ s.indicators.length }}</td>
                   <td>
                     <div class="table__actions">
                       <a class="icon-btn" (click)="$event.stopPropagation()"
@@ -97,6 +104,26 @@ import { ToastService } from '../../shared/toast/toast.service';
   `,
   styles: [`
     .table tr { cursor: pointer; }
+
+    .score-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .score-cell__num {
+      min-width: 30px;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+    }
+    .score-cell__num--on { color: var(--success); }
+    .score-cell__num--off { color: var(--danger); }
+    .score-cell__num--borderline { color: var(--warn); }
+
+    /* Slightly tighter than the dashboard card variant — fits a table row. */
+    .score-bar--sm .score-bar__seg {
+      width: 10px;
+      height: 5px;
+    }
   `],
 })
 export class StrategiesListComponent implements OnInit {
@@ -112,6 +139,36 @@ export class StrategiesListComponent implements OnInit {
   protected stateOf = stateOf;
   stateText(s: Strategy) {
     return ({ on: 'Risk on', off: 'Risk off', borderline: 'No fio' } as Record<CardState, string>)[stateOf(s)];
+  }
+
+  badgeCls(s: Strategy): string {
+    return ({ on: 'badge--on', off: 'badge--off', borderline: 'badge--borderline' } as Record<CardState, string>)[
+      stateOf(s)
+    ];
+  }
+
+  /** Segment indices — one per indicator on the strategy. */
+  segs(s: Strategy): number[] {
+    const total = s.current_signal?.total ?? s.indicators.length ?? 0;
+    return Array.from({ length: Math.max(total, 1) }, (_, i) => i);
+  }
+
+  /** Per-segment fill class, matching the dashboard card semantics. */
+  segClass(s: Strategy, i: number): string {
+    const score = s.current_signal?.score ?? 0;
+    const filled = i < score;
+    if (!filled) return 'score-bar__seg';
+    const stMap = {
+      on: 'score-bar__seg--filled-on',
+      off: 'score-bar__seg--filled-off',
+      borderline: 'score-bar__seg--filled-borderline',
+    } as const;
+    return 'score-bar__seg ' + stMap[stateOf(s)];
+  }
+
+  scoreNumCls(s: Strategy): string {
+    if (!s.current_signal) return '';
+    return 'score-cell__num--' + stateOf(s);
   }
 
   filteredStrategies = computed(() => {

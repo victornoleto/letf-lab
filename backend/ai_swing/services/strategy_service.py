@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from ai_swing.data import get_price_service
@@ -49,6 +49,37 @@ def latest_snapshot(db: Session, strategy_id: int) -> SignalSnapshot | None:
         .limit(1)
     )
     return db.scalars(stmt).first()
+
+
+def latest_snapshots_by_strategy_ids(
+    db: Session, strategy_ids: list[int]
+) -> dict[int, SignalSnapshot]:
+    """One query that returns the most recent snapshot per strategy.
+
+    Used by the dashboard / list endpoints to avoid an N+1 walk where each
+    strategy triggered its own SELECT for the latest snapshot.
+    """
+    if not strategy_ids:
+        return {}
+    max_date_sub = (
+        select(
+            SignalSnapshot.strategy_id.label("sid"),
+            func.max(SignalSnapshot.date).label("max_date"),
+        )
+        .where(SignalSnapshot.strategy_id.in_(strategy_ids))
+        .group_by(SignalSnapshot.strategy_id)
+        .subquery()
+    )
+    rows = db.scalars(
+        select(SignalSnapshot).join(
+            max_date_sub,
+            and_(
+                SignalSnapshot.strategy_id == max_date_sub.c.sid,
+                SignalSnapshot.date == max_date_sub.c.max_date,
+            ),
+        )
+    ).all()
+    return {r.strategy_id: r for r in rows}
 
 
 def attach_indicators(db: Session, strategy: Strategy, indicator_ids: list[int]) -> None:
@@ -135,3 +166,72 @@ def build_strategy_dto_with_signal(
         sparkline_90d=sparkline,
         report=report_dto,
     )
+
+
+def _snapshot_to_dto(snap: SignalSnapshot | None) -> SignalSnapshotDTO | None:
+    if snap is None:
+        return None
+    return SignalSnapshotDTO(
+        date=snap.date,
+        score=snap.score,
+        total=snap.total,
+        risk_on=snap.risk_on,
+        results=[IndicatorResultDTO(**r) for r in snap.indicator_results],
+    )
+
+
+def build_strategy_dtos_bulk(
+    db: Session, strategies: list[Strategy], fresh: bool = False
+) -> list[StrategyDTO]:
+    """Assemble many StrategyDTOs in one shot.
+
+    Pre-fetches snapshots and AI reports for every strategy in two queries
+    (instead of 2·N) and reads each parquet at most once via the in-memory
+    cache. With fresh=False (the default) we serve the persisted snapshot
+    from the daily refresh, which keeps the dashboard near-instant.
+    Pass fresh=True to recompute live (slower; matches the old behaviour
+    used on the strategy detail page).
+    """
+    if not strategies:
+        return []
+
+    ids = [s.id for s in strategies]
+    snapshots = latest_snapshots_by_strategy_ids(db, ids)
+    reports = ai_reports.reports_by_strategy_id(db, ids)
+    ps = get_price_service()
+
+    out: list[StrategyDTO] = []
+    for s in strategies:
+        snapshot_dto: SignalSnapshotDTO | None = None
+        if fresh:
+            try:
+                snap = compute_snapshot(s)
+                if snap is not None:
+                    snapshot_dto = snapshot_to_dto(snap)
+            except Exception as exc:
+                logger.warning("Failed live snapshot for strategy %s: %s", s.id, exc)
+        if snapshot_dto is None:
+            snapshot_dto = _snapshot_to_dto(snapshots.get(s.id))
+
+        sparkline: list[float] = []
+        try:
+            series = ps.get_recent_window(s.benchmark_ticker, days=130)
+            sparkline = [float(x) for x in series.dropna().tolist()[-90:]]
+        except Exception as exc:
+            logger.warning("Failed sparkline for %s: %s", s.benchmark_ticker, exc)
+
+        report_dto: StrategyReportDTO | None = None
+        report_row = reports.get(s.id)
+        if report_row is not None:
+            try:
+                report_dto = StrategyReportDTO.model_validate(report_row)
+            except Exception as exc:
+                logger.debug("Failed to load AI report for strategy %s: %s", s.id, exc)
+
+        out.append(strategy_to_dto(
+            s,
+            current_signal=snapshot_dto,
+            sparkline_90d=sparkline,
+            report=report_dto,
+        ))
+    return out

@@ -13,6 +13,7 @@ from ai_swing.services.indicator_series import build_indicator_series
 from ai_swing.services.strategy_service import (
     attach_indicators,
     build_strategy_dto_with_signal,
+    build_strategy_dtos_bulk,
     get_strategy,
     list_strategies,
 )
@@ -31,10 +32,20 @@ def _validate_k_threshold(k: int, n: int) -> None:
 
 @router.get("", response_model=list[StrategyDTO])
 def list_endpoint(
-    enabled_only: bool = False, db: Session = Depends(get_db)
+    enabled_only: bool = False,
+    fresh: bool = False,
+    db: Session = Depends(get_db),
 ) -> list[StrategyDTO]:
+    """List strategies with their current signals.
+
+    `fresh=false` (default) serves the persisted snapshot the cron writes —
+    near-instant since it's a couple of bulk SELECTs plus the in-memory
+    parquet cache for sparklines. `fresh=true` recomputes the gates live
+    from prices on every call (much slower; useful when you've just
+    edited an indicator and want the result without waiting for the cron).
+    """
     strategies = list_strategies(db, enabled_only=enabled_only)
-    return [build_strategy_dto_with_signal(db, s, fresh=True) for s in strategies]
+    return build_strategy_dtos_bulk(db, strategies, fresh=fresh)
 
 
 @router.get("/{strategy_id}", response_model=StrategyDTO)
@@ -42,6 +53,8 @@ def get_endpoint(strategy_id: int, db: Session = Depends(get_db)) -> StrategyDTO
     s = get_strategy(db, strategy_id)
     if s is None:
         raise HTTPException(status_code=404, detail="Strategy not found")
+    # Detail page always recomputes — it's a single strategy and the user
+    # navigated there explicitly, so the latency is acceptable for live data.
     return build_strategy_dto_with_signal(db, s, fresh=True)
 
 

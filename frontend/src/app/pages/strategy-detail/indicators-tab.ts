@@ -5,6 +5,7 @@ import {
   Injector,
   OnDestroy,
   OnInit,
+  afterNextRender,
   effect,
   inject,
   input,
@@ -206,8 +207,11 @@ export class IndicatorsTabComponent implements OnInit, OnDestroy {
         next: (rows) => {
           this.series.set(rows);
           this.loading.set(false);
-          // Charts mount/rerender on next tick once @for has rendered the hosts.
-          queueMicrotask(() => this.rerenderAll());
+          // In zoneless mode, signal.set schedules CD asynchronously — a plain
+          // microtask runs BEFORE @for has committed the new chart hosts to
+          // the DOM, so querySelectorAll comes back empty and charts stay
+          // blank. afterNextRender waits for the actual render commit.
+          afterNextRender(() => this.rerenderAll(), { injector: this.injector });
         },
         error: () => {
           this.series.set([]);
