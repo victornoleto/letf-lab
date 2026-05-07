@@ -47,10 +47,12 @@
     overflow-y: auto;
   }
 
+  // Foot stays on the same surface as the body — no contrasting fill —
+  // so it doesn't read as a separate card pinned to the bottom. A thin
+  // top border is enough to mark the action row.
   &__foot {
     padding: 12px 16px;
     border-top: 1px solid var(--border);
-    background: var(--bg);
     display: flex;
     gap: 8px;
     justify-content: flex-end;
