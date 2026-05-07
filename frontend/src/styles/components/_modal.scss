@@ -24,12 +24,15 @@
 
   &:not([open]) { display: none; }
 
-  &__header {
-    padding: 16px 20px;
+  // Names mirror the section component (head/body/foot) so consumers
+  // don't have to keep `__header` vs `__head` straight in their head.
+  &__head {
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
   }
 
   &__title {
@@ -40,12 +43,12 @@
   }
 
   &__body {
-    padding: 20px;
+    padding: 14px 16px;
     overflow-y: auto;
   }
 
-  &__footer {
-    padding: 12px 20px;
+  &__foot {
+    padding: 12px 16px;
     border-top: 1px solid var(--border);
     background: var(--bg);
     display: flex;

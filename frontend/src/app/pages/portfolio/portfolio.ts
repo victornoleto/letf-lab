@@ -315,12 +315,6 @@ type Tab = 'positions' | 'transactions';
     }
     .pl-pos { color: var(--success); }
     .pl-neg { color: var(--danger); }
-    .modal__foot {
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-      padding: 12px 0 0;
-    }
   `],
 })
 export class PortfolioComponent implements OnInit {
