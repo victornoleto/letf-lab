@@ -22,7 +22,7 @@ type Range = typeof RANGES[number];
   imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="section" style="margin-top: 12px;">
+    <section class="section">
       <header class="section__head">
         <div>
           <h3 class="section__title">Signal history</h3>
@@ -40,14 +40,18 @@ type Range = typeof RANGES[number];
       </header>
 
       @if (loading()) {
-        <div class="skeleton skeleton--block" style="height:120px"></div>
+        <div class="section__body">
+          <div class="skeleton skeleton--block" style="height:120px"></div>
+        </div>
       } @else if (snapshots().length === 0) {
-        <div class="empty" style="padding: 32px 16px;">
-          <div class="empty__title">Sem histórico ainda</div>
-          <div class="empty__copy">Será populado pelo cron diário (22h ET) ou ao usar refresh manual.</div>
+        <div class="section__body">
+          <div class="empty" style="padding: 32px 16px;">
+            <div class="empty__title">Sem histórico ainda</div>
+            <div class="empty__copy">Será populado pelo cron diário (22h ET) ou ao usar refresh manual.</div>
+          </div>
         </div>
       } @else {
-        <div class="table-wrap" style="border: none; border-radius: 0;">
+        <div class="section__body section__body--flush">
           <table class="table">
             <thead>
               <tr>

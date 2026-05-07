@@ -25,4 +25,30 @@
     margin-top: 2px;
     font-family: var(--font-mono);
   }
+
+  // Default body wrapper. Use for any content that should sit inside the
+  // section's border with breathing room (chart grids, metric blocks,
+  // forms). Tables that want to bleed to the section's border (the Stripe-y
+  // look used by signal-history) skip this and stay flush.
+  &__body {
+    padding: 14px 16px;
+
+    // Variant: flush content with no inner padding (e.g. for tables that
+    // already provide their own row padding right up to the border).
+    &--flush {
+      padding: 0;
+    }
+  }
+
+  // Optional footer for action rows / hint strips below the body.
+  &__foot {
+    padding: 10px 16px;
+    border-top: 1px dashed var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
 }

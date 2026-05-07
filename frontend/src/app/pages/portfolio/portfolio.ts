@@ -62,29 +62,31 @@ type Tab = 'positions' | 'transactions';
           </div>
         } @else {
           <section class="section">
-            <div class="portfolio-totals">
-              <div>
-                <div class="label">Investido</div>
-                <div class="val mono">{{ usd(portfolio()!.invested_usd) }}</div>
-              </div>
-              <div>
-                <div class="label">Mercado</div>
-                <div class="val mono">{{ usd(portfolio()!.market_value_usd) }}</div>
-              </div>
-              <div>
-                <div class="label">P/L</div>
-                <div class="val mono" [ngClass]="plCls(portfolio()!.pl_usd)">
-                  {{ usd(portfolio()!.pl_usd) }}
-                  @if (portfolio()!.pl_pct !== null) {
-                    <span style="margin-left: 6px; font-size: 11px; color: var(--text-muted);">
-                      {{ pct(portfolio()!.pl_pct) }}
-                    </span>
-                  }
+            <div class="section__body">
+              <div class="portfolio-totals">
+                <div>
+                  <div class="label">Investido</div>
+                  <div class="val mono">{{ usd(portfolio()!.invested_usd) }}</div>
+                </div>
+                <div>
+                  <div class="label">Mercado</div>
+                  <div class="val mono">{{ usd(portfolio()!.market_value_usd) }}</div>
+                </div>
+                <div>
+                  <div class="label">P/L</div>
+                  <div class="val mono" [ngClass]="plCls(portfolio()!.pl_usd)">
+                    {{ usd(portfolio()!.pl_usd) }}
+                    @if (portfolio()!.pl_pct !== null) {
+                      <span style="margin-left: 6px; font-size: 11px; color: var(--text-muted);">
+                        {{ pct(portfolio()!.pl_pct) }}
+                      </span>
+                    }
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="table-wrap">
+            <div class="section__body section__body--flush">
               <table class="table">
                 <thead>
                   <tr>

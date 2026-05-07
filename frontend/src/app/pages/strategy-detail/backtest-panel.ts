@@ -121,51 +121,55 @@ interface PerfRow {
       </header>
 
       @if (error()) {
-        <div class="error-state">
-          <svg class="error-state__icon" width="20" height="20"><use href="#alert-circle"/></svg>
-          <div class="error-state__title">Erro ao rodar backtest</div>
-          <div class="error-state__copy mono">{{ error() }}</div>
+        <div class="section__body">
+          <div class="error-state">
+            <svg class="error-state__icon" width="20" height="20"><use href="#alert-circle"/></svg>
+            <div class="error-state__title">Erro ao rodar backtest</div>
+            <div class="error-state__copy mono">{{ error() }}</div>
+          </div>
         </div>
       } @else if (result()) {
-        <div class="table-wrap perf-table-wrap">
-          <table class="table perf-table">
-            <thead>
-              <tr>
-                <th class="th--num">#</th>
-                <th>Comparativo</th>
-                <th class="th--num">CAGR</th>
-                <th class="th--num">Max. DD</th>
-                <th class="th--num">Sharpe</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of perfRows(); track row.label; let i = $index) {
-                <tr [class.perf-table__row--strategy]="i === 0">
-                  <td class="td--num mono">{{ i + 1 }}</td>
-                  <td>
-                    <span class="perf-table__label" [ngClass]="row.cls">{{ row.label }}</span>
-                  </td>
-                  <td class="td--num mono" [ngClass]="numCls(row.cagr)">{{ pct(row.cagr) }}</td>
-                  <td class="td--num mono" [ngClass]="numCls(row.max_dd)">{{ pct(row.max_dd) }}</td>
-                  <td class="td--num mono">{{ num(row.sharpe) }}</td>
+        <div class="section__body">
+          <div class="table-wrap perf-table-wrap">
+            <table class="table perf-table">
+              <thead>
+                <tr>
+                  <th class="th--num">#</th>
+                  <th>Comparativo</th>
+                  <th class="th--num">CAGR</th>
+                  <th class="th--num">Max. DD</th>
+                  <th class="th--num">Sharpe</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (row of perfRows(); track row.label; let i = $index) {
+                  <tr [class.perf-table__row--strategy]="i === 0">
+                    <td class="td--num mono">{{ i + 1 }}</td>
+                    <td>
+                      <span class="perf-table__label" [ngClass]="row.cls">{{ row.label }}</span>
+                    </td>
+                    <td class="td--num mono" [ngClass]="numCls(row.cagr)">{{ pct(row.cagr) }}</td>
+                    <td class="td--num mono" [ngClass]="numCls(row.max_dd)">{{ pct(row.max_dd) }}</td>
+                    <td class="td--num mono">{{ num(row.sharpe) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="charts-grid">
+            <div class="chart-cell">
+              <div class="chart-cap">Equity curve · Estratégia vs Buy &amp; Hold benchmark</div>
+              <div #equityHost style="height: 280px;"></div>
+            </div>
+            <div class="chart-cell">
+              <div class="chart-cap">Razão Estratégia / Benchmark · paridade em 1.0×</div>
+              <div #ratioHost style="height: 280px;"></div>
+            </div>
+          </div>
         </div>
 
-        <div class="charts-grid">
-          <div class="chart-cell">
-            <div class="chart-cap">Equity curve · Estratégia vs Buy &amp; Hold benchmark</div>
-            <div #equityHost style="height: 280px;"></div>
-          </div>
-          <div class="chart-cell">
-            <div class="chart-cap">Razão Estratégia / Benchmark · paridade em 1.0×</div>
-            <div #ratioHost style="height: 280px;"></div>
-          </div>
-        </div>
-
-        <div class="perf-footnotes">
+        <div class="section__foot">
           @if (result()!.metrics_strategy.n_trades != null) {
             <span class="perf-footnote">
               <span class="perf-footnote__k">Trades</span>
@@ -194,16 +198,6 @@ interface PerfRow {
     .perf-table__label--benchmark { color: var(--text-secondary); }
     .perf-table__label--letf { color: var(--text-secondary); }
 
-    .perf-footnotes {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 18px;
-      margin-top: 10px;
-      padding: 8px 14px;
-      border-top: 1px dashed var(--border);
-      font-size: 11.5px;
-    }
     .perf-footnote { display: inline-flex; align-items: center; gap: 6px; }
     .perf-footnote__k {
       color: var(--text-muted);

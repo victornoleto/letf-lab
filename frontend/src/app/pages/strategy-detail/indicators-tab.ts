@@ -81,31 +81,33 @@ const SYNC_GROUP = 'indicator-charts';
         </div>
       </header>
 
-      @if (loading()) {
-        <div class="skeleton skeleton--card" style="height: 240px;"></div>
-      } @else if (series().length === 0) {
-        <div class="empty" style="padding: 32px 16px;">
-          <div class="empty__title">Sem dados</div>
-          <div class="empty__copy">A estratégia não tem indicadores ou os preços ainda não foram baixados.</div>
-        </div>
-      } @else {
-        <div class="indicators-grid">
-          @for (s of series(); track s.indicator_id) {
-            <div class="indicator-card">
-              <header class="indicator-card__head">
-                <div>
-                  <h4 class="indicator-card__title">{{ s.indicator_name }}</h4>
-                  <p class="indicator-card__trigger mono">trigger: {{ s.trigger }}</p>
-                </div>
-                <span class="badge" [ngClass]="latestPassed(s) ? 'badge--on' : 'badge--off'">
-                  {{ latestPassed(s) ? 'on' : 'off' }}
-                </span>
-              </header>
-              <div class="indicator-card__chart" #host [attr.data-id]="s.indicator_id"></div>
-            </div>
-          }
-        </div>
-      }
+      <div class="section__body">
+        @if (loading()) {
+          <div class="skeleton skeleton--card" style="height: 240px;"></div>
+        } @else if (series().length === 0) {
+          <div class="empty" style="padding: 32px 16px;">
+            <div class="empty__title">Sem dados</div>
+            <div class="empty__copy">A estratégia não tem indicadores ou os preços ainda não foram baixados.</div>
+          </div>
+        } @else {
+          <div class="indicators-grid">
+            @for (s of series(); track s.indicator_id) {
+              <div class="indicator-card">
+                <header class="indicator-card__head">
+                  <div>
+                    <h4 class="indicator-card__title">{{ s.indicator_name }}</h4>
+                    <p class="indicator-card__trigger mono">trigger: {{ s.trigger }}</p>
+                  </div>
+                  <span class="badge" [ngClass]="latestPassed(s) ? 'badge--on' : 'badge--off'">
+                    {{ latestPassed(s) ? 'on' : 'off' }}
+                  </span>
+                </header>
+                <div class="indicator-card__chart" #host [attr.data-id]="s.indicator_id"></div>
+              </div>
+            }
+          </div>
+        }
+      </div>
     </section>
   `,
   styles: [`
@@ -113,7 +115,6 @@ const SYNC_GROUP = 'indicator-charts';
       display: grid;
       grid-template-columns: 1fr;
       gap: 14px;
-      margin-top: 12px;
     }
     @media (min-width: 1100px) {
       .indicators-grid { grid-template-columns: 1fr 1fr; }
