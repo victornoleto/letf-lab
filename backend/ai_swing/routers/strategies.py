@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from ai_swing.db import get_db
 from ai_swing.db.models import Strategy, StrategyIndicator
 from ai_swing.schemas.strategy import StrategyCreate, StrategyDTO, StrategyUpdate
+from ai_swing.services.indicator_series import build_indicator_series
 from ai_swing.services.strategy_service import (
     attach_indicators,
     build_strategy_dto_with_signal,
@@ -116,3 +117,16 @@ def delete_endpoint(strategy_id: int, db: Session = Depends(get_db)) -> None:
         raise HTTPException(status_code=404, detail="Strategy not found")
     db.delete(s)
     db.commit()
+
+
+@router.get("/{strategy_id}/indicator-series")
+def indicator_series_endpoint(
+    strategy_id: int,
+    range: str = "1y",
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """Per-indicator time series for the detail-page Indicators tab."""
+    s = get_strategy(db, strategy_id)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    return build_indicator_series(s, range_label=range)

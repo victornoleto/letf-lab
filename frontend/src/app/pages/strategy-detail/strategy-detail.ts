@@ -14,14 +14,23 @@ import { ApiService } from '../../core/api.service';
 import { Strategy } from '../../core/models';
 import { BacktestPanelComponent, BacktestResult } from './backtest-panel';
 import { SignalHistoryTableComponent } from './signal-history-table';
+import { IndicatorsTabComponent } from './indicators-tab';
 import { stateLabel, stateOf } from '../../shared/strategy-state';
+
+type DetailTab = 'main' | 'indicators';
 
 const BACKEND_URL = 'http://localhost:8000/api';
 
 @Component({
   selector: 'app-strategy-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, BacktestPanelComponent, SignalHistoryTableComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    BacktestPanelComponent,
+    SignalHistoryTableComponent,
+    IndicatorsTabComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page page--detail">
@@ -76,19 +85,59 @@ const BACKEND_URL = 'http://localhost:8000/api';
           </div>
         </div>
 
-        <app-backtest-panel
-          [result]="backtest()"
-          [range]="range()"
-          [loading]="backtestLoading()"
-          [error]="backtestError()"
-          (rangeChange)="onRangeChange($event)"
-          (forceRerun)="loadBacktest(true)"
-        />
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab"
+                  [class.tab--active]="tab() === 'main'"
+                  (click)="setTab('main')">Principal</button>
+          <button class="tab" role="tab"
+                  [class.tab--active]="tab() === 'indicators'"
+                  (click)="setTab('indicators')">Indicadores</button>
+        </div>
 
-        <app-signal-history-table [strategyId]="strategy()!.id" />
+        @if (tab() === 'main') {
+          <app-backtest-panel
+            [result]="backtest()"
+            [range]="range()"
+            [loading]="backtestLoading()"
+            [error]="backtestError()"
+            (rangeChange)="onRangeChange($event)"
+            (forceRerun)="loadBacktest(true)"
+          />
+          <app-signal-history-table [strategyId]="strategy()!.id" />
+        } @else {
+          <app-indicators-tab [strategyId]="strategy()!.id" />
+        }
       }
     </div>
   `,
+  styles: [`
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-top: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      appearance: none;
+      background: transparent;
+      border: none;
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color var(--duration-fast) var(--ease-out),
+                  border-color var(--duration-fast) var(--ease-out);
+    }
+    .tab:hover { color: var(--text-primary); }
+    .tab--active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      font-weight: var(--fw-medium);
+    }
+  `],
 })
 export class StrategyDetailComponent implements OnInit {
   private api = inject(ApiService);
@@ -102,6 +151,11 @@ export class StrategyDetailComponent implements OnInit {
   backtest = signal<BacktestResult | null>(null);
   backtestLoading = signal(false);
   backtestError = signal<string | null>(null);
+  tab = signal<DetailTab>('main');
+
+  setTab(t: DetailTab): void {
+    this.tab.set(t);
+  }
 
   statusLabel = computed(() => {
     const s = this.strategy();
