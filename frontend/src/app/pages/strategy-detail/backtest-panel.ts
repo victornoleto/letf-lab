@@ -9,6 +9,7 @@ import {
   inject,
   input,
   output,
+  signal,
   viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -50,6 +51,9 @@ export interface BacktestMetrics {
   sharpe: number;
   n_trades: number | null;
   hit_rate_vs_benchmark: number | null;
+  cagr_net: number | null;
+  sharpe_net: number | null;
+  tax_drag_pp: number | null;
 }
 
 export interface BacktestTransition {
@@ -65,6 +69,7 @@ export interface BacktestResult {
   asof_date: string;
   cached: boolean;
   equity_strategy: EquityPoint[];
+  equity_strategy_net: EquityPoint[];
   equity_benchmark_buyhold: EquityPoint[];
   equity_riskon_buyhold: EquityPoint[];
   equity_ratio_vs_benchmark: EquityPoint[];
@@ -104,6 +109,12 @@ interface PerfRow {
           }
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn btn--sm btn--ghost"
+                  [class.btn--active]="showNet()"
+                  (click)="toggleNet()"
+                  title="Aplica DARF anual da Lei 14.754 (15% sobre ganhos realizados)">
+            Net
+          </button>
           <div class="pills">
             @for (y of rangeOptions; track y) {
               <span
@@ -182,6 +193,12 @@ interface PerfRow {
               <span class="mono">{{ pct(result()!.metrics_strategy.hit_rate_vs_benchmark!) }}</span>
             </span>
           }
+          @if (showNet() && result()!.metrics_strategy.tax_drag_pp != null) {
+            <span class="perf-footnote">
+              <span class="perf-footnote__k">Tax drag</span>
+              <span class="mono num--neg">−{{ num(result()!.metrics_strategy.tax_drag_pp!) }} Sharpe</span>
+            </span>
+          }
           <span class="perf-footnote perf-footnote--hint">
             scroll = zoom · arraste o slider abaixo dos charts para ajustar a janela · cursor sincronizado entre charts
           </span>
@@ -224,6 +241,12 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
   forceRerun = output<void>();
 
   rangeOptions = RANGE_OPTIONS;
+  showNet = signal(false);
+
+  toggleNet(): void {
+    this.showNet.update((v) => !v);
+    this.redraw();
+  }
 
   private injector = inject(Injector);
   private equityHost = viewChild<ElementRef<HTMLDivElement>>('equityHost');
@@ -273,7 +296,7 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
   perfRows(): PerfRow[] {
     const r = this.result();
     if (!r) return [];
-    return [
+    const rows: PerfRow[] = [
       {
         label: 'Estratégia',
         cls: 'perf-table__label--strategy',
@@ -281,6 +304,19 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
         max_dd: r.metrics_strategy.max_dd,
         sharpe: r.metrics_strategy.sharpe,
       },
+    ];
+    if (this.showNet()
+        && r.metrics_strategy.cagr_net != null
+        && r.metrics_strategy.sharpe_net != null) {
+      rows.push({
+        label: 'Estratégia · Net',
+        cls: 'perf-table__label--strategy-net',
+        cagr: r.metrics_strategy.cagr_net,
+        max_dd: r.metrics_strategy.max_dd,  // MaxDD is structural, ~unchanged
+        sharpe: r.metrics_strategy.sharpe_net,
+      });
+    }
+    rows.push(
       {
         label: 'Benchmark',
         cls: 'perf-table__label--benchmark',
@@ -295,7 +331,8 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
         max_dd: r.metrics_riskon.max_dd,
         sharpe: r.metrics_riskon.sharpe,
       },
-    ];
+    );
+    return rows;
   }
 
   private disposeCharts(): void {

@@ -32,10 +32,19 @@ type Tab = 'positions' | 'transactions';
         <div>
           <h1 class="page-h1">Portfólio</h1>
           <div class="list-head__sub">
-            Posições agregadas em USD a partir das transações registradas
+            Posições agregadas em {{ currency() }} a partir das transações registradas
+            @if (portfolio()?.fx_rate_used) {
+              · USDBRL: {{ formatFxRate(portfolio()!.fx_rate_used!) }}
+            }
           </div>
         </div>
         <div class="list-head__actions">
+          <div class="pills">
+            <span class="pill" [class.pill--active]="currency() === 'USD'"
+                  (click)="setCurrency('USD')">USD</span>
+            <span class="pill" [class.pill--active]="currency() === 'BRL'"
+                  (click)="setCurrency('BRL')">BRL</span>
+          </div>
           <button class="btn btn--primary btn--sm" (click)="openCreate()">
             <svg class="ico" width="11" height="11"><use href="#plus"/></svg>
             Nova transação
@@ -346,6 +355,7 @@ export class PortfolioComponent implements OnInit {
   private toast = inject(ToastService);
 
   tab = signal<Tab>('positions');
+  currency = signal<'USD' | 'BRL'>('USD');
   portfolio = signal<PortfolioSummary | null>(null);
   portfolioLoading = signal(true);
   transactions = signal<Transaction[]>([]);
@@ -377,10 +387,16 @@ export class PortfolioComponent implements OnInit {
 
   loadPortfolio(): void {
     this.portfolioLoading.set(true);
-    this.api.getPortfolio().subscribe({
+    this.api.getPortfolio(this.currency()).subscribe({
       next: (p) => { this.portfolio.set(p); this.portfolioLoading.set(false); },
       error: () => this.portfolioLoading.set(false),
     });
+  }
+
+  setCurrency(c: 'USD' | 'BRL'): void {
+    if (this.currency() === c) return;
+    this.currency.set(c);
+    this.loadPortfolio();
   }
 
   loadTransactions(): void {
@@ -465,9 +481,15 @@ export class PortfolioComponent implements OnInit {
   }
 
   usd(v: string | null): string {
+    // Despite the name, formats in whatever currency the portfolio came back
+    // in (USD by default, BRL when the user toggled the BRL view).
     if (v === null || v === undefined) return '—';
     const n = typeof v === 'string' ? parseFloat(v) : v;
     if (Number.isNaN(n)) return '—';
+    const cur = this.portfolio()?.display_currency ?? 'USD';
+    if (cur === 'BRL') {
+      return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
     return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   }
 
@@ -488,5 +510,11 @@ export class PortfolioComponent implements OnInit {
     if (n > 0) return 'pl-pos';
     if (n < 0) return 'pl-neg';
     return '';
+  }
+
+  formatFxRate(v: string): string {
+    const n = parseFloat(v);
+    if (Number.isNaN(n)) return v;
+    return n.toFixed(2);
   }
 }

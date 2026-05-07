@@ -143,6 +143,8 @@ export interface PortfolioSummary {
   market_value_usd: string;
   pl_usd: string;
   pl_pct: number | null;
+  display_currency: 'USD' | 'BRL';
+  fx_rate_used: string | null;
 }
 
 export type CrisisVerdict = 'beats' | 'loses' | 'insufficient_data';
@@ -225,4 +227,23 @@ export interface CohortReport {
   asof_date: string;
   forward_years: number;
   entries: CohortEntry[];
+}
+
+export interface WalkForwardWindow {
+  index: number;
+  start: string;
+  end: string;
+  n_days: number;
+  sharpe: number | null;
+  cagr: number | null;
+  max_drawdown: number | null;
+  pct_above_benchmark: number | null;
+  passed: boolean;
+}
+
+export interface WalkForwardReport {
+  asof_date: string;
+  n_windows: number;
+  windows: WalkForwardWindow[];
+  n_passed: number;
 }

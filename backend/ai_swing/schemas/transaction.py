@@ -91,3 +91,8 @@ class PortfolioSummary(BaseModel):
     market_value_usd: Decimal
     pl_usd: Decimal
     pl_pct: Optional[float]
+    # Display-currency metadata. The values above are denominated in
+    # `display_currency` (default "USD"). When the caller asks for BRL we
+    # multiply through `fx_rate_used` (today's BRL=X close).
+    display_currency: str = "USD"
+    fx_rate_used: Optional[Decimal] = None

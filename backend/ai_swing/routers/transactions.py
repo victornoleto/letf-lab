@@ -77,7 +77,8 @@ def delete_transaction(
 
 @router.get("/portfolio", response_model=PortfolioSummary)
 def get_portfolio(
+    currency: str = "USD",
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> PortfolioSummary:
-    return compute_portfolio(db, user.id)
+    return compute_portfolio(db, user.id, display_currency=currency)

@@ -16,6 +16,11 @@ class Metrics:
     sharpe: float
     n_trades: int | None = None
     hit_rate_vs_benchmark: float | None = None
+    # Net-of-tax fields (Lei 14.754, annual_realize). Only populated on the
+    # strategy curve — buy-hold curves are gross.
+    cagr_net: float | None = None
+    sharpe_net: float | None = None
+    tax_drag_pp: float | None = None
 
 
 def cagr(equity: pd.Series) -> float:

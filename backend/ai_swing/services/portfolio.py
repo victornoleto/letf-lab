@@ -33,7 +33,18 @@ def _latest_price_usd(ticker: str) -> Decimal | None:
         return None
 
 
-def compute_portfolio(db: Session, user_id: int) -> PortfolioSummary:
+_BRL_TICKER = "BRL=X"  # yfinance: BRL per USD (e.g., 5.00 = R$5 per US$1)
+
+
+def _latest_brl_per_usd() -> Decimal | None:
+    """Today's USDBRL close (BRL per USD). None if the cache hasn't been
+    primed and the network fetch fails."""
+    return _latest_price_usd(_BRL_TICKER)
+
+
+def compute_portfolio(
+    db: Session, user_id: int, display_currency: str = "USD"
+) -> PortfolioSummary:
     rows = db.scalars(
         select(Transaction)
         .where(Transaction.user_id == user_id)
@@ -111,10 +122,45 @@ def compute_portfolio(db: Session, user_id: int) -> PortfolioSummary:
     if has_market_value and total_invested > 0:
         total_pl_pct = float(total_pl / total_invested)
 
-    return PortfolioSummary(
+    summary = PortfolioSummary(
         positions=positions,
         invested_usd=total_invested,
         market_value_usd=total_market,
         pl_usd=total_pl,
         pl_pct=total_pl_pct,
+        display_currency="USD",
+        fx_rate_used=None,
+    )
+
+    if display_currency.upper() != "BRL":
+        return summary
+
+    # BRL view: multiply every USD figure by today's BRL/USD close.
+    rate = _latest_brl_per_usd()
+    if rate is None:
+        # Fallback gracefully: keep USD numbers but flag the currency so the
+        # UI can warn the user instead of silently mixing units.
+        summary.display_currency = "USD"
+        return summary
+
+    return PortfolioSummary(
+        positions=[
+            PortfolioPosition(
+                asset_ticker=p.asset_ticker,
+                n_shares=p.n_shares,
+                avg_cost_usd=p.avg_cost_usd * rate,
+                invested_usd=p.invested_usd * rate,
+                current_price_usd=(p.current_price_usd * rate) if p.current_price_usd else None,
+                market_value_usd=(p.market_value_usd * rate) if p.market_value_usd else None,
+                pl_usd=(p.pl_usd * rate) if p.pl_usd is not None else None,
+                pl_pct=p.pl_pct,  # ratio is currency-invariant
+            )
+            for p in summary.positions
+        ],
+        invested_usd=summary.invested_usd * rate,
+        market_value_usd=summary.market_value_usd * rate,
+        pl_usd=summary.pl_usd * rate,
+        pl_pct=summary.pl_pct,
+        display_currency="BRL",
+        fx_rate_used=rate,
     )

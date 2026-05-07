@@ -22,6 +22,10 @@ class BacktestMetrics(BaseModel):
     sharpe: float
     n_trades: int | None = None
     hit_rate_vs_benchmark: float | None = None
+    # Net-of-tax (Lei 14.754) — only populated for the strategy curve.
+    cagr_net: float | None = None
+    sharpe_net: float | None = None
+    tax_drag_pp: float | None = None
 
 
 class BacktestResultDTO(BaseModel):
@@ -31,6 +35,7 @@ class BacktestResultDTO(BaseModel):
     asof_date: date
     cached: bool
     equity_strategy: list[BacktestPoint]
+    equity_strategy_net: list[BacktestPoint] = []
     equity_benchmark_buyhold: list[BacktestPoint]
     equity_riskon_buyhold: list[BacktestPoint]
     equity_ratio_vs_benchmark: list[BacktestPoint]

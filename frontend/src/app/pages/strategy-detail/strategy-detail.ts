@@ -19,6 +19,7 @@ import { DeployScoreCardComponent } from './deploy-score-card';
 import { RobustnessHeatmapComponent } from './robustness-heatmap';
 import { SignalHistoryTableComponent } from './signal-history-table';
 import { IndicatorsTabComponent } from './indicators-tab';
+import { WalkForwardPanelComponent } from './walk-forward-panel';
 import { stateLabel, stateOf } from '../../shared/strategy-state';
 
 type DetailTab = 'main' | 'indicators';
@@ -38,6 +39,7 @@ const BACKEND_URL = 'http://localhost:8000/api';
     RobustnessHeatmapComponent,
     SignalHistoryTableComponent,
     IndicatorsTabComponent,
+    WalkForwardPanelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -134,6 +136,7 @@ const BACKEND_URL = 'http://localhost:8000/api';
             (forceRerun)="loadBacktest(true)"
           />
           <app-crisis-lab [strategyId]="strategy()!.id" />
+          <app-walk-forward-panel [strategyId]="strategy()!.id" />
           <app-robustness-heatmap [strategyId]="strategy()!.id" />
           <app-cohort-entries [strategyId]="strategy()!.id" />
           <app-signal-history-table [strategyId]="strategy()!.id" />

@@ -17,6 +17,7 @@ import {
   StrategyReport,
   Transaction,
   TransactionCreate,
+  WalkForwardReport,
 } from './models';
 
 const BASE_URL = 'http://localhost:8000/api';
@@ -132,6 +133,11 @@ export class ApiService {
     return this.http.get<CohortReport>(url);
   }
 
+  walkForward(strategyId: number, nWindows = 8): Observable<WalkForwardReport> {
+    const url = `${BASE_URL}/backtest/${strategyId}/walk-forward?n_windows=${nWindows}`;
+    return this.http.post<WalkForwardReport>(url, {});
+  }
+
   // Transactions / portfolio
   listTransactions(): Observable<Transaction[]> {
     return this.http.get<Transaction[]>(`${BASE_URL}/transactions`);
@@ -145,7 +151,7 @@ export class ApiService {
     return this.http.delete<void>(`${BASE_URL}/transactions/${id}`);
   }
 
-  getPortfolio(): Observable<PortfolioSummary> {
-    return this.http.get<PortfolioSummary>(`${BASE_URL}/portfolio`);
+  getPortfolio(currency: 'USD' | 'BRL' = 'USD'): Observable<PortfolioSummary> {
+    return this.http.get<PortfolioSummary>(`${BASE_URL}/portfolio?currency=${currency}`);
   }
 }
