@@ -3,9 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   CohortReport,
-  CompareReport,
   CrisisAttribution,
   DeployScore,
+  ValidationSnapshot,
   Indicator,
   IndicatorTypeInfo,
   PortfolioSummary,
@@ -126,7 +126,13 @@ export class ApiService {
     return this.http.get<DeployScore>(url);
   }
 
-  rollingStress(strategyId: number, stepMonths = 3): Observable<RollingStress> {
+  validationSnapshot(strategyId: number, rangeYears = 10): Observable<ValidationSnapshot> {
+    return this.http.get<ValidationSnapshot>(
+      `${BASE_URL}/strategies/${strategyId}/validation-snapshot?range_years=${rangeYears}`
+    );
+  }
+
+  rollingStress(strategyId: number, stepMonths = 1): Observable<RollingStress> {
     const url = `${BASE_URL}/backtest/${strategyId}/rolling-stress?step_months=${stepMonths}`;
     return this.http.post<RollingStress>(url, {});
   }
@@ -139,11 +145,6 @@ export class ApiService {
   walkForward(strategyId: number, nWindows = 8): Observable<WalkForwardReport> {
     const url = `${BASE_URL}/backtest/${strategyId}/walk-forward?n_windows=${nWindows}`;
     return this.http.post<WalkForwardReport>(url, {});
-  }
-
-  compareStrategies(a: number, b: number, rangeYears = 10): Observable<CompareReport> {
-    const url = `${BASE_URL}/compare?strategy_a=${a}&strategy_b=${b}&range_years=${rangeYears}`;
-    return this.http.get<CompareReport>(url);
   }
 
   chat(question: string, includePortfolio = true): Observable<{ answer: string }> {

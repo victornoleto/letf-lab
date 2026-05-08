@@ -11,6 +11,8 @@ class RollingCellDTO(BaseModel):
     entry_date: DateT
     sortino: float | None
     pct_above_spy: float | None
+    final_equity_ratio: float | None
+    passed: bool
 
 
 class RollingRowDTO(BaseModel):

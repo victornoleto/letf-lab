@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../core/api.service';
-import { CohortReport } from '../../core/models';
+import { CohortEntry, CohortReport } from '../../core/models';
 
 @Component({
   selector: 'app-cohort-entries',
@@ -41,7 +41,9 @@ import { CohortReport } from '../../core/models';
                   <th>Cenário</th>
                   <th class="th--num">CAGR</th>
                   <th class="th--num">Sortino</th>
-                  <th class="th--num">MaxDD</th>
+                  <th>MaxDD</th>
+                  <th class="th--num">Final Edge</th>
+                  <th>Tempo atrás do benchmark</th>
                 </tr>
               </thead>
               <tbody>
@@ -56,11 +58,17 @@ import { CohortReport } from '../../core/models';
                       <td class="td--num mono" [ngClass]="sortinoCls(e.sortino)">
                         {{ formatNum(e.sortino) }}
                       </td>
-                      <td class="td--num mono" [ngClass]="mddCls(e.max_drawdown)">
+                      <td class="mono" [ngClass]="mddCls(e.max_drawdown)">
                         {{ formatPct(e.max_drawdown) }}
                       </td>
+                      <td class="td--num mono" [ngClass]="edgeCls(e.final_equity_ratio)">
+                        {{ formatRatio(e.final_equity_ratio) }}
+                      </td>
+                      <td class="mono under-cell">
+                        {{ formatUnderBenchmark(e) }}
+                      </td>
                     } @else {
-                      <td colspan="3" class="td--num cohort-table__no-data">
+                      <td colspan="5" class="td--num cohort-table__no-data">
                         sem histórico ({{ e.n_days }}d disponíveis)
                       </td>
                     }
@@ -83,6 +91,10 @@ import { CohortReport } from '../../core/models';
     .num--good { color: var(--success); }
     .num--bad  { color: var(--danger); }
     .num--warn { color: var(--warn); }
+    .under-cell {
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
   `],
 })
 export class CohortEntriesComponent implements OnInit {
@@ -113,6 +125,18 @@ export class CohortEntriesComponent implements OnInit {
     return v === null ? '—' : v.toFixed(2);
   }
 
+  formatRatio(v: number | null): string {
+    return v === null ? '—' : `${v.toFixed(2)}x`;
+  }
+
+  formatUnderBenchmark(e: CohortEntry): string {
+    if (e.under_benchmark_episodes === 0) return '0x';
+    const avg = e.under_benchmark_avg_days === null ? '—' : `${Math.round(e.under_benchmark_avg_days)}d`;
+    const min = e.under_benchmark_min_days === null ? '—' : `${e.under_benchmark_min_days}d`;
+    const max = e.under_benchmark_max_days === null ? '—' : `${e.under_benchmark_max_days}d`;
+    return `${e.under_benchmark_episodes}x · min ${min} · avg ${avg} · max ${max}`;
+  }
+
   cagrCls(v: number | null): string {
     if (v === null) return '';
     if (v > 0.15) return 'num--good';
@@ -131,6 +155,13 @@ export class CohortEntriesComponent implements OnInit {
     if (v === null) return '';
     if (v > -0.30) return 'num--good';
     if (v < -0.60) return 'num--bad';
+    return 'num--warn';
+  }
+
+  edgeCls(v: number | null): string {
+    if (v === null) return '';
+    if (v > 1) return 'num--good';
+    if (v < 1) return 'num--bad';
     return 'num--warn';
   }
 }

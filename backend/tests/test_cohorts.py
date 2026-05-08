@@ -78,5 +78,7 @@ def test_cohort_entries_computes_metrics_when_data_available(patch_prices):
         assert e.cagr is not None
         assert e.sortino is not None
         assert e.max_drawdown is not None
+        assert e.final_equity_ratio is not None
+        assert e.under_benchmark_episodes >= 0
         # MaxDD is negative or zero
         assert e.max_drawdown <= 0

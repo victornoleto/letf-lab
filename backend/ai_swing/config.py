@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    database_url: str = "sqlite:///../data/ai_swing.db"
+    database_url: str = "sqlite:///../data/letf_lab.db"
     price_cache_dir: str = "../data/prices"
     refresh_hour_et: int = 22
     log_level: str = "INFO"
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     auth_jwt_secret: str = "dev-only-change-me"
     auth_token_ttl_hours: int = 24
     auth_cookie_secure: bool = False
-    auth_cookie_name: str = "ai_swing_session"
+    auth_cookie_name: str = "letf_lab_session"
 
     # AI CLI integration (OpenCode by default). Empty command disables AI.
     ai_cli_command: str = "opencode"

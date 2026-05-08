@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 class LoginRequest(BaseModel):
     # Plain str + lightweight check on purpose. EmailStr (via email-validator)
     # rejects RFC 6761 reserved TLDs like .local, which we use for the seeded
-    # admin@ai-swing.local account. Auth itself just compares lowercased
+    # admin@letf-lab.local account. Auth itself just compares lowercased
     # strings against the DB, not the format.
     email: str = Field(..., min_length=3, max_length=255)
     password: str = Field(..., min_length=1, max_length=200)

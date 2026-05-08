@@ -28,25 +28,25 @@ type Tab = 'positions' | 'transactions';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
-      <header class="list-head">
+      <header class="page-head">
         <div>
-          <h1 class="page-h1">Portfólio</h1>
-          <div class="list-head__sub">
+          <h1 class="page-head__h1">Portfólio</h1>
+          <div class="page-head__sub">
             Posições agregadas em {{ currency() }} a partir das transações registradas
             @if (portfolio()?.fx_rate_used) {
               · USDBRL: {{ formatFxRate(portfolio()!.fx_rate_used!) }}
             }
           </div>
         </div>
-        <div class="list-head__actions">
+        <div class="page-head__actions">
           <div class="pills">
             <span class="pill" [class.pill--active]="currency() === 'USD'"
                   (click)="setCurrency('USD')">USD</span>
             <span class="pill" [class.pill--active]="currency() === 'BRL'"
                   (click)="setCurrency('BRL')">BRL</span>
           </div>
-          <button class="btn btn--primary btn--sm" (click)="openCreate()">
-            <svg class="ico" width="11" height="11"><use href="#plus"/></svg>
+          <button class="btn btn--primary" (click)="openCreate()">
+            <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
             Nova transação
           </button>
         </div>

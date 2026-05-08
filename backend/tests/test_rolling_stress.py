@@ -1,4 +1,4 @@
-"""Tests for the rolling-window Sharpe heatmap.
+"""Tests for the rolling-window benchmark-edge heatmap.
 
 Synthetic prices keep the test deterministic: a steadily rising QQQ keeps
 the SMA gate ON, so the strategy compounds the leveraged sleeve.
@@ -68,19 +68,20 @@ def test_rolling_stress_returns_grid(patch_prices):
     assert [r.window_years for r in result.rows] == [3, 5, 10]
     assert all(len(r.cells) == len(result.entry_dates) for r in result.rows)
 
-    # Some cells should have a numeric Sharpe
-    sortinos = [
-        c.sortino for r in result.rows for c in r.cells if c.sortino is not None
+    # Some cells should have a numeric final equity/benchmark ratio.
+    ratios = [
+        c.final_equity_ratio for r in result.rows for c in r.cells
+        if c.final_equity_ratio is not None
     ]
-    assert sortinos, "expected at least one cell with a Sortino value"
-    # In an uptrend the Sortino should be strongly positive
-    assert max(sortinos) > 0.5
+    assert ratios, "expected at least one cell with a final edge value"
+    # In an uptrend the strategy should finish ahead of benchmark.
+    assert max(ratios) > 1.0
 
     # The 10y row should have *some* None cells near the end of history
     # (windows past `history_end` don't fit) and *some* numeric cells early on.
     last_row = result.rows[-1]
-    nones = sum(1 for c in last_row.cells if c.sortino is None)
-    nums = sum(1 for c in last_row.cells if c.sortino is not None)
+    nones = sum(1 for c in last_row.cells if c.final_equity_ratio is None)
+    nums = sum(1 for c in last_row.cells if c.final_equity_ratio is not None)
     assert nones > 0 and nums > 0, "10y row should mix viable and overflow cells"
 
 
@@ -101,6 +102,6 @@ def test_rolling_stress_short_history_returns_few_cells(patch_prices):
     })
 
     result = rs.compute_rolling_stress(_make_strategy(), window_years=[3, 5], step_months=3)
-    # All rows present, but no cell should have a Sharpe (windows don't fit)
+    # All rows present, but no cell should have a final edge (windows don't fit)
     for row in result.rows:
-        assert all(c.sortino is None for c in row.cells)
+        assert all(c.final_equity_ratio is None for c in row.cells)

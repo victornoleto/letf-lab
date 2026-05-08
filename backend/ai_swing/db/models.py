@@ -128,6 +128,26 @@ class RefreshLog(Base):
     error: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
 
+class StrategyGatesSnapshot(Base):
+    """Daily snapshot of the 4-gate battery payload for a strategy."""
+    __tablename__ = "strategy_gates_snapshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "strategy_id", "asof_date", "range_years",
+            name="uq_gates_strategy_asof_range",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    strategy_id: Mapped[int] = mapped_column(
+        ForeignKey("strategies.id", ondelete="CASCADE"), index=True
+    )
+    asof_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    range_years: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    computed_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class User(Base):
     __tablename__ = "users"
 

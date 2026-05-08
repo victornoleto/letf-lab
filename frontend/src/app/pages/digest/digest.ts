@@ -17,17 +17,17 @@ import { ToastService } from '../../shared/toast/toast.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
-      <header class="list-head">
+      <header class="page-head">
         <div>
-          <h1 class="page-h1">Weekly Digest</h1>
-          <p class="list-head__sub">
+          <h1 class="page-head__h1">Weekly Digest</h1>
+          <p class="page-head__sub">
             Resumo IA por segunda-feira (gerado automaticamente 9h ET).
           </p>
         </div>
-        <div class="list-head__actions">
-          <button class="btn btn--primary btn--sm"
+        <div class="page-head__actions">
+          <button class="btn btn--primary"
                   (click)="regenerateLatest()" [disabled]="generating()">
-            <svg class="ico" width="11" height="11" [class.spin]="generating()">
+            <svg class="ico" width="12" height="12" [class.spin]="generating()">
               <use href="#refresh"/>
             </svg>
             @if (generating()) { Gerando… } @else { Gerar para esta semana }

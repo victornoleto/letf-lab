@@ -15,7 +15,7 @@ from ai_swing.db.models import (
     Strategy,
     StrategyIndicator,
 )
-from ai_swing.services import ai_reports
+from ai_swing.services import ai_reports, gates_service
 from ai_swing.services.signal_service import (
     compute_snapshot,
     serialize_results_for_storage,
@@ -71,6 +71,13 @@ class RefreshService:
                         n_transitions += 1
                 except Exception as exc:
                     logger.exception("Failed snapshot for strategy %s: %s", strategy.name, exc)
+
+                # Gates run after the signal snapshot so they see today's curves.
+                # Failures are non-fatal so one bad bootstrap does not abort refresh.
+                try:
+                    gates_service.refresh_gates(db, strategy)
+                except Exception as exc:
+                    logger.exception("Gates refresh failed for %s: %s", strategy.name, exc)
 
             # AI reports run after the snapshots so they see today's state.
             # Failures are non-fatal — refresh stays "ok" even if the API

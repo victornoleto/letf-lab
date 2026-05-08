@@ -42,6 +42,10 @@ Thumbs.db
 
 # Redesign workspace (design creation, not part of repo)
 redesign/
+design/
+
+# Local planning/superpowers workspace
+docs/superpowers/
 
 # Ad-hoc Playwright captures
 dashboard-current.png

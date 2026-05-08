@@ -13,19 +13,19 @@ import { ToastService } from '../../shared/toast/toast.service';
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="page">
-      <header class="list-head">
+      <header class="page-head">
         <div>
-          <h1 class="page-h1">Indicadores</h1>
-          <p class="list-head__sub">{{ indicators().length }} cadastrados</p>
+          <h1 class="page-head__h1">Indicadores</h1>
+          <p class="page-head__sub">{{ indicators().length }} cadastrados</p>
         </div>
-        <div class="list-head__actions">
+        <div class="page-head__actions">
           <div class="search">
             <svg class="ico" width="13" height="13"><use href="#search"/></svg>
             <input [(ngModel)]="searchTerm" placeholder="Buscar nome ou tipo…" />
           </div>
           <a routerLink="/indicators/new" class="btn btn--primary">
             <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
-            Novo
+            Novo indicador
           </a>
         </div>
       </header>

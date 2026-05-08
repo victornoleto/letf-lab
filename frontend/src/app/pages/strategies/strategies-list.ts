@@ -14,19 +14,19 @@ import { ToastService } from '../../shared/toast/toast.service';
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="page">
-      <header class="list-head">
+      <header class="page-head">
         <div>
-          <h1 class="page-h1">Estratégias</h1>
-          <p class="list-head__sub">{{ counts().total }} · {{ counts().on }} risk-on · {{ counts().borderline }} no fio · {{ counts().off }} risk-off</p>
+          <h1 class="page-head__h1">Estratégias</h1>
+          <p class="page-head__sub">{{ counts().total }} · {{ counts().on }} risk-on · {{ counts().borderline }} no fio · {{ counts().off }} risk-off</p>
         </div>
-        <div class="list-head__actions">
+        <div class="page-head__actions">
           <div class="search">
             <svg class="ico" width="13" height="13"><use href="#search"/></svg>
             <input [(ngModel)]="searchTerm" placeholder="Buscar nome ou ticker…" />
           </div>
           <a routerLink="/strategies/new" class="btn btn--primary">
             <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
-            Nova
+            Nova estratégia
           </a>
         </div>
       </header>

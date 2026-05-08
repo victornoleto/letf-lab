@@ -25,3 +25,20 @@ class DeployScoreDTO(BaseModel):
     tier_label: str
     winner_conditions_met: bool
     criteria: list[CriterionScoreDTO]
+
+
+class ValidationGateDTO(BaseModel):
+    key: str
+    label: str
+    value: str
+    passed: bool | None
+    description: str
+
+
+class ValidationSnapshotDTO(BaseModel):
+    asof_date: DateT | None
+    range_years: int
+    gates_available: bool
+    gates: list[ValidationGateDTO]
+    oos_fwd: ValidationGateDTO
+    dsr_note: str

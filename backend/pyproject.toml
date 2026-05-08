@@ -1,7 +1,7 @@
 [project]
-name = "ai-swing"
+name = "letf-lab"
 version = "0.1.0"
-description = "Personal ETF/LETF rotation monitor"
+description = "Research and validation tools for leveraged ETF strategies"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",
@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.3",
     "pandas>=2.2",
     "numpy>=1.26",
+    "scipy>=1.11",
     "pyarrow>=16.0",
     "yfinance>=0.2.40",
     "apscheduler>=3.10",

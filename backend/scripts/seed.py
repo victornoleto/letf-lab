@@ -76,7 +76,7 @@ def _get_or_create_strategy(db, name, benchmark, risk_on, risk_off, k, indicator
 
 
 def _get_or_create_default_user(db) -> User:
-    email = os.getenv("SEED_USER_EMAIL", "admin@ai-swing.local").lower()
+    email = os.getenv("SEED_USER_EMAIL", "admin@letf-lab.local").lower()
     password = os.getenv("SEED_USER_PASSWORD", "admin")
     existing = db.scalars(select(User).where(User.email == email)).first()
     if existing is not None:

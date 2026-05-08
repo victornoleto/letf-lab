@@ -1,14 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
   input,
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../core/api.service';
-import { CriterionStatus, DeployScore } from '../../core/models';
+import { ValidationGate, ValidationSnapshot } from '../../core/models';
 
 @Component({
   selector: 'app-deploy-score-card',
@@ -17,163 +16,120 @@ import { CriterionStatus, DeployScore } from '../../core/models';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (loading()) {
-      <div class="skeleton" style="height: 76px; margin-top: 12px;"></div>
+      <div class="skeleton" style="height: 176px; margin-top: 12px;"></div>
     } @else if (data(); as d) {
-      <section class="deploy-card" [ngClass]="tierCls(d.tier_label)">
-        <header class="deploy-card__head" (click)="toggleExpanded()">
-          <div class="deploy-card__score">
-            <span class="deploy-card__num">{{ d.total | number:'1.0-0' }}</span>
-            <span class="deploy-card__den">/100</span>
+      <section class="validation-card">
+        <header class="validation-card__head">
+          <div>
+            <h2 class="validation-card__title">Validation Snapshot</h2>
+            <p class="validation-card__sub">
+              Gates estatísticos e validações temporais da estratégia
+              @if (d.asof_date) { · {{ d.asof_date }} · {{ d.range_years }}y }
+            </p>
           </div>
-          <div class="deploy-card__meta">
-            <span class="deploy-card__tier" [ngClass]="tierBadgeCls(d.tier_label)">
-              {{ tierLabel(d.tier_label) }}
-            </span>
-            <span class="deploy-card__caption">
-              Deploy threshold ≥90 ·
-              {{ d.range_start }} → {{ d.range_end }}
-            </span>
-          </div>
-          <button class="deploy-card__chevron" type="button" [attr.aria-expanded]="expanded()">
-            <svg width="14" height="14"><use [attr.href]="expanded() ? '#chevron-down' : '#chevron-right'"/></svg>
-          </button>
+          <span class="validation-card__status" [ngClass]="d.gates_available ? 'status--ok' : 'status--pending'">
+            @if (d.gates_available) { refresh pronto } @else { aguardando refresh }
+          </span>
         </header>
 
-        @if (expanded()) {
-          <div class="deploy-card__breakdown">
-            @for (c of d.criteria; track c.key) {
-              <div class="crit" [ngClass]="critCls(c.status)">
-                <div class="crit__head">
-                  <span class="crit__label">{{ c.label }}</span>
-                  <span class="crit__pts mono">
-                    {{ c.points | number:'1.1-1' }}/{{ c.max_points }}
-                  </span>
-                </div>
-                <div class="crit__note">{{ c.note }}</div>
+        <div class="validation-card__grid">
+          @for (g of d.gates; track g.key) {
+            <article class="gate" [ngClass]="gateCls(g)">
+              <div class="gate__top">
+                <span class="gate__label">{{ g.label }}</span>
+                <span class="gate__value mono">{{ g.value }}</span>
               </div>
-            }
-            @if (!d.winner_conditions_met) {
-              <p class="deploy-card__hint">
-                Critérios 3 (gates) e 4 (DSR) ainda pendentes — chegam na Fase 3 com walk-forward + bootstrap.
-              </p>
-            }
-          </div>
-        }
+              <p class="gate__desc">{{ g.description }}</p>
+            </article>
+          }
+          <article class="gate gate--wide" [ngClass]="gateCls(d.oos_fwd)">
+            <div class="gate__top">
+              <span class="gate__label">{{ d.oos_fwd.label }}</span>
+              <span class="gate__value mono">{{ d.oos_fwd.value }}</span>
+            </div>
+            <p class="gate__desc">{{ d.oos_fwd.description }}</p>
+          </article>
+        </div>
+
+        <p class="validation-card__note">{{ d.dsr_note }}</p>
       </section>
     }
   `,
   styles: [`
-    .deploy-card {
+    .validation-card {
       margin-top: 12px;
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       background: var(--surface);
-      overflow: hidden;
+      padding: 14px 16px;
     }
-    .deploy-card--strong { border-color: color-mix(in oklab, var(--success) 30%, var(--border)); }
-    .deploy-card--promising { border-color: color-mix(in oklab, var(--warn) 30%, var(--border)); }
-    .deploy-card--marginal,
-    .deploy-card--near_fail,
-    .deploy-card--fail { border-color: color-mix(in oklab, var(--danger) 25%, var(--border)); }
-
-    .deploy-card__head {
+    .validation-card__head {
       display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 14px 18px;
-      cursor: pointer;
-      user-select: none;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
     }
-    .deploy-card__head:hover { background: var(--surface-muted); }
-    .deploy-card__score {
-      display: flex;
-      align-items: baseline;
-      gap: 2px;
-      font-family: var(--font-mono);
-    }
-    .deploy-card__num {
-      font-size: 26px;
+    .validation-card__title {
+      margin: 0;
+      font-size: 14px;
       font-weight: var(--fw-semibold);
       letter-spacing: var(--tracking-tight);
     }
-    .deploy-card__den {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-    .deploy-card__meta {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      flex: 1;
-    }
-    .deploy-card__tier {
-      font-family: var(--font-mono);
-      font-size: 10.5px;
-      font-weight: var(--fw-medium);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border-radius: 4px;
-      width: fit-content;
-      background: var(--surface-muted);
-      color: var(--text-muted);
-    }
-    .deploy-card__tier--ok   { color: var(--success); background: rgba(34,197,94,0.10); }
-    .deploy-card__tier--warn { color: var(--warn); background: rgba(245,158,11,0.10); }
-    .deploy-card__tier--bad  { color: var(--danger); background: rgba(239,68,68,0.10); }
-    .deploy-card__caption {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-    .deploy-card__chevron {
-      appearance: none;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 6px;
-    }
-
-    .deploy-card__breakdown {
-      padding: 10px 18px 16px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .crit {
-      padding: 10px 12px;
-      border-radius: var(--radius-md);
-      background: var(--surface-muted);
-    }
-    .crit__head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-    .crit__label { font-size: 12px; font-weight: var(--fw-medium); }
-    .crit__pts {
+    .validation-card__sub {
+      margin: 3px 0 0;
       font-size: 11.5px;
       color: var(--text-muted);
     }
-    .crit__note {
-      font-size: 11px;
-      line-height: 1.5;
-      color: var(--text-secondary);
-      margin-top: 3px;
-    }
-    .crit--ok { border-left: 2px solid var(--success); }
-    .crit--warn { border-left: 2px solid var(--warn); }
-    .crit--fail { border-left: 2px solid var(--danger); }
-    .crit--pending {
-      border-left: 2px solid var(--text-muted);
-      opacity: 0.75;
-    }
-
-    .deploy-card__hint {
-      margin: 4px 0 0;
+    .validation-card__status {
+      font-family: var(--font-mono);
       font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--surface-muted);
+      white-space: nowrap;
+    }
+    .status--ok { color: var(--success); background: rgba(34,197,94,0.10); }
+    .status--pending { color: var(--warn); background: rgba(245,158,11,0.10); }
+
+    .validation-card__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    @media (max-width: 720px) {
+      .validation-card__grid { grid-template-columns: 1fr; }
+    }
+    .gate {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-muted);
+    }
+    .gate--wide { grid-column: 1 / -1; }
+    .gate--ok { border-left: 2px solid var(--success); }
+    .gate--fail { border-left: 2px solid var(--danger); }
+    .gate--pending { border-left: 2px solid var(--text-muted); }
+    .gate__top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .gate__label { font-size: 12px; font-weight: var(--fw-medium); }
+    .gate__value { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+    .gate__desc {
+      margin: 4px 0 0;
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+    .validation-card__note {
+      margin: 10px 0 0;
+      font-size: 11px;
+      line-height: 1.45;
       color: var(--text-muted);
       font-style: italic;
     }
@@ -184,21 +140,16 @@ export class DeployScoreCardComponent {
 
   private api = inject(ApiService);
 
-  data = signal<DeployScore | null>(null);
+  data = signal<ValidationSnapshot | null>(null);
   loading = signal(true);
-  expanded = signal(false);
 
   constructor() {
     queueMicrotask(() => this.load());
   }
 
-  toggleExpanded(): void {
-    this.expanded.update((v) => !v);
-  }
-
   load(): void {
     this.loading.set(true);
-    this.api.deployScore(this.strategyId()).subscribe({
+    this.api.validationSnapshot(this.strategyId()).subscribe({
       next: (d) => {
         this.data.set(d);
         this.loading.set(false);
@@ -207,28 +158,9 @@ export class DeployScoreCardComponent {
     });
   }
 
-  tierCls(tier: DeployScore['tier_label']): string {
-    return 'deploy-card--' + tier.toLowerCase();
-  }
-
-  tierBadgeCls(tier: DeployScore['tier_label']): string {
-    if (tier === 'WINNER' || tier === 'STRONG') return 'deploy-card__tier--ok';
-    if (tier === 'PROMISING') return 'deploy-card__tier--warn';
-    return 'deploy-card__tier--bad';
-  }
-
-  tierLabel(tier: DeployScore['tier_label']): string {
-    return ({
-      WINNER: 'Deploy-ready',
-      STRONG: 'Strong',
-      PROMISING: 'Promising',
-      MARGINAL: 'Marginal',
-      NEAR_FAIL: 'Near fail',
-      FAIL: 'Fail',
-    } as Record<DeployScore['tier_label'], string>)[tier];
-  }
-
-  critCls(s: CriterionStatus): string {
-    return 'crit--' + s;
+  gateCls(g: ValidationGate): string {
+    if (g.passed === true) return 'gate--ok';
+    if (g.passed === false) return 'gate--fail';
+    return 'gate--pending';
   }
 }

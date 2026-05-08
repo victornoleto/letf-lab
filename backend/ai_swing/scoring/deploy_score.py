@@ -2,19 +2,21 @@
 
 Mirrors the 7-criterion rubric from
 `studies/letf_rotation_hunt/scoring.py::score_strategy` (v2, underwater-vs-
-benchmark) — but only for the criteria the app can compute today. Criteria
-that need the full 7-gate pipeline (PBO, DSR, walk-forward) are returned with
-status="pending" and 0 pts; they get filled in when Fase 3 ships the
-walk-forward + bootstrap modules.
+benchmark). Criteria 3 (gates) and 4 (DSR) consume a `StrategyGatesSnapshot`
+pre-computed by the daily refresh job; without a snapshot they fall back to
+status="pending" so the card stays useful for freshly-created strategies.
 
-What's wired up in Fase 2:
-  - Criterion 1 (Sharpe edge):    tiered points based on edge vs benchmark
-  - Criterion 2 (underwater):     pct_time_above_benchmark + min_relative_equity
-  - Criterion 3 (gates):          pending — Fase 3
-  - Criterion 4 (DSR):            pending — Fase 3
-  - Criterion 5 (OOS + FWD):      Sharpe on 70/30 split + post-2020 slice
-  - Criterion 6 (crisis vs SPY):  delegates to backtest.crisis
-  - Criterion 7 (manual bonus):   user-supplied 0-5
+Criterion -> source:
+  - Criterion 1 (Sortino edge):    inline (curves vs benchmark)
+  - Criterion 2 (underwater):      inline (pct_time_above_benchmark + min ratio)
+  - Criterion 3 (gates G2/G3/G6/G7): from gates_snapshot, 5 pts x N passing
+  - Criterion 4 (DSR):             from gates_snapshot.g2_dsr.p_value (piecewise)
+  - Criterion 5 (OOS + FWD):       inline (Sharpe on 70/30 split + post-2020)
+  - Criterion 6 (crisis vs SPY):   delegates to backtest.crisis
+  - Criterion 7 (manual bonus):    user-supplied 0-5
+
+G1 (PBO) is intentionally out of scope: PBO requires a multi-config CSCV
+which the app's per-strategy Deploy Score doesn't provide.
 """
 from __future__ import annotations
 
@@ -28,7 +30,7 @@ import pandas as pd
 from ai_swing.backtest import crisis
 from ai_swing.backtest.engine import compute_strategy_curves
 from ai_swing.backtest.metrics import sortino as sortino_metric
-from ai_swing.db.models import Strategy
+from ai_swing.db.models import Strategy, StrategyGatesSnapshot
 
 logger = logging.getLogger(__name__)
 
@@ -192,10 +194,51 @@ def _tier_label(total: float, winner_conditions_met: bool) -> str:
     return "FAIL"
 
 
+def _gates_points(gates: dict | None) -> tuple[int, str, str]:
+    """Crit 3: 5 pts per passing gate, 4 gates total -> max 20."""
+    if gates is None:
+        return 0, "pending", "Aguardando próximo daily refresh"
+    flags = [
+        bool(gates["g2_dsr"]["pass_gate"]),
+        bool(gates["g3_wf"]["pass_gate"]),
+        bool(gates["g6_bootstrap"]["pass_gate"]),
+        bool(gates["g7_xlib"]["pass_gate"]),
+    ]
+    n_pass = sum(flags)
+    pts = 5 * n_pass
+    if n_pass == 4:
+        status = "ok"
+    elif n_pass >= 2:
+        status = "warn"
+    else:
+        status = "fail"
+    marks = "".join("✓" if f else "✗" for f in flags)
+    note = (
+        f"{n_pass}/4 gates · G2(DSR){marks[0]} G3(WF){marks[1]} "
+        f"G6(boot){marks[2]} G7(xlib){marks[3]}"
+    )
+    return pts, status, note
+
+
+def _dsr_points(gates: dict | None) -> tuple[int, str, str]:
+    """Crit 4: piecewise on g2_dsr.p_value (max 10 pts)."""
+    if gates is None:
+        return 0, "pending", "Aguardando próximo daily refresh"
+    p = float(gates["g2_dsr"]["p_value"])
+    if p < 0.05:
+        return 10, "ok", f"DSR p={p:.3f} (PSR fallback, n_trials=1)"
+    if p < 0.10:
+        return 7, "warn", f"DSR p={p:.3f} marginal"
+    if p < 0.20:
+        return 3, "warn", f"DSR p={p:.3f} fraco"
+    return 0, "fail", f"DSR p={p:.3f} insuficiente"
+
+
 def compute_deploy_score(
     strategy: Strategy,
     range_years: int = 10,
     bonus_pts: float = 0.0,
+    gates_snapshot: StrategyGatesSnapshot | None = None,
 ) -> DeployScore:
     """Compute the full breakdown for the Deploy Readiness card."""
     curves = compute_strategy_curves(strategy, range_years=range_years)
@@ -208,36 +251,37 @@ def compute_deploy_score(
     bench_sortino = sortino_metric(bench_returns)
     edge = strat_sortino - bench_sortino
 
-    # Criterion 1: Sortino edge (LETF strategies are right-skewed under
-    # trend filters — Sortino captures the asymmetric upside that Sharpe
-    # underweights, per `SORTINO_REANALYSIS_REPORT.md`).
     pts1, status1, note1 = _edge_points(edge)
 
-    # Criterion 2: Underwater-vs-benchmark
     pct_above, min_ratio = _underwater_metrics(curves.equity_strategy, curves.equity_bench)
     pts2, status2, note2 = _underwater_points(pct_above, min_ratio)
 
-    # Criterion 5: OOS + FWD splits
     pts5, status5, note5 = _oos_fwd_points(strat_returns)
 
-    # Criterion 6: crisis attribution vs SPY
     pts6, status6, note6, n_beats, n_eligible = _crisis_points(strategy)
 
-    # Criterion 7: manual bonus
     pts7 = max(0.0, min(5.0, bonus_pts))
     status7 = "ok" if pts7 > 0 else "pending"
     note7 = "Bônus manual (0-5)"
 
-    total = pts1 + pts2 + pts5 + pts6 + pts7  # crit 3+4 contribute 0 pts
+    gates_payload = gates_snapshot.payload if gates_snapshot is not None else None
+    pts3, status3, note3 = _gates_points(gates_payload)
+    pts4, status4, note4 = _dsr_points(gates_payload)
 
-    # Winner strict bars (subset we can verify in Fase 2)
+    total = pts1 + pts2 + pts3 + pts4 + pts5 + pts6 + pts7
+
     edge_passed = edge >= 0.05
     underwater_bar_passed = (
         pct_above >= 0.95 if pct_above == pct_above else False
     )
-    # Gates G1/G2/G6/G7 not yet wired up; flag winner_conditions_met conservatively
-    # as False so the badge can't reach WINNER until Fase 3 fills the gates.
-    winner_conditions_met = False  # set to True in Fase 3 once gates are computed
+    winner_conditions_met = bool(
+        gates_payload is not None
+        and gates_payload["g2_dsr"]["pass_gate"]
+        and gates_payload["g6_bootstrap"]["pass_gate"]
+        and gates_payload["g7_xlib"]["pass_gate"]
+        and edge_passed
+        and underwater_bar_passed
+    )
 
     tier = _tier_label(total, winner_conditions_met)
 
@@ -251,14 +295,12 @@ def compute_deploy_score(
             points=pts2, max_points=15, status=status2, note=note2,
         ),
         CriterionScore(
-            key="3_gates", label="Bateria de gates (G1-G7)",
-            points=0, max_points=20, status="pending",
-            note="Pendente: walk-forward + bootstrap chegam na Fase 3",
+            key="3_gates", label="Bateria de gates (G2/G3/G6/G7)",
+            points=pts3, max_points=20, status=status3, note=note3,
         ),
         CriterionScore(
             key="4_dsr", label="DSR (Deflated Sharpe)",
-            points=0, max_points=10, status="pending",
-            note="Pendente: pipeline de bootstrap chegam na Fase 3",
+            points=pts4, max_points=10, status=status4, note=note4,
         ),
         CriterionScore(
             key="5_oos_fwd", label="OOS + FWD pós-2020",

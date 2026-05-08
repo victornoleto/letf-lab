@@ -197,6 +197,8 @@ export interface RollingCell {
   entry_date: string;
   sortino: number | null;
   pct_above_spy: number | null;
+  final_equity_ratio: number | null;
+  passed: boolean;
 }
 
 export interface RollingRow {
@@ -221,6 +223,11 @@ export interface CohortEntry {
   cagr: number | null;
   sortino: number | null;
   max_drawdown: number | null;
+  final_equity_ratio: number | null;
+  under_benchmark_episodes: number;
+  under_benchmark_min_days: number | null;
+  under_benchmark_avg_days: number | null;
+  under_benchmark_max_days: number | null;
 }
 
 export interface CohortReport {
@@ -248,61 +255,21 @@ export interface WalkForwardReport {
   n_passed: number;
 }
 
-export interface StrategyHeader {
-  id: number;
-  name: string;
-  benchmark_ticker: string;
-  risk_on_ticker: string;
-  risk_off_ticker: string;
-  k_threshold: number;
-  n_indicators: number;
-}
-
-export interface CompareCrisisRow {
-  name: string;
+export interface ValidationGate {
+  key: string;
   label: string;
-  a_verdict: CrisisVerdict;
-  a_pct_above_spy: number | null;
-  b_verdict: CrisisVerdict;
-  b_pct_above_spy: number | null;
+  value: string;
+  passed: boolean | null;
+  description: string;
 }
 
-// Importing the BacktestResult shape from the panel module would create a
-// dependency cycle (panel → models → panel). Re-declare the minimum we need
-// here; the panel re-uses this same structure.
-export interface CompareBacktestSnapshot {
-  range_start: string;
-  range_end: string;
+export interface ValidationSnapshot {
+  asof_date: string | null;
   range_years: number;
-  asof_date: string;
-  equity_strategy: { date: string; value: number }[];
-  equity_strategy_net: { date: string; value: number }[];
-  equity_benchmark_buyhold: { date: string; value: number }[];
-  metrics_strategy: {
-    cagr: number;
-    max_dd: number;
-    sortino: number;
-    cagr_net: number | null;
-    sortino_net: number | null;
-    tax_drag_pp: number | null;
-  };
-  metrics_benchmark: { cagr: number; max_dd: number; sortino: number };
-}
-
-export interface CompareReport {
-  asof_date: string;
-  range_years: number;
-  strategy_a: StrategyHeader;
-  strategy_b: StrategyHeader;
-  backtest_a: CompareBacktestSnapshot;
-  backtest_b: CompareBacktestSnapshot;
-  deploy_a: DeployScore;
-  deploy_b: DeployScore;
-  crisis_rows: CompareCrisisRow[];
-  n_beats_a: number;
-  n_beats_b: number;
-  n_eligible_a: number;
-  n_eligible_b: number;
+  gates_available: boolean;
+  gates: ValidationGate[];
+  oos_fwd: ValidationGate;
+  dsr_note: string;
 }
 
 export interface WeeklyDigestEntry {

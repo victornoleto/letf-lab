@@ -51,6 +51,11 @@ class CohortEntry:
     cagr: float | None
     sortino: float | None
     max_drawdown: float | None
+    final_equity_ratio: float | None
+    under_benchmark_episodes: int
+    under_benchmark_min_days: int | None
+    under_benchmark_avg_days: float | None
+    under_benchmark_max_days: int | None
 
 
 @dataclass
@@ -62,22 +67,59 @@ class CohortReport:
 
 def _entry_metrics(
     strat_eq: pd.Series,
+    bench_eq: pd.Series,
     strat_returns: pd.Series,
     entry: pd.Timestamp,
     forward_years: int,
-) -> tuple[bool, int, float | None, float | None, float | None]:
+) -> tuple[
+    bool,
+    int,
+    float | None,
+    float | None,
+    float | None,
+    float | None,
+    int,
+    int | None,
+    float | None,
+    int | None,
+]:
     end = entry + pd.Timedelta(days=int(forward_years * 365.25))
-    win_eq = strat_eq[(strat_eq.index >= entry) & (strat_eq.index <= end)]
+    aligned_eq = pd.concat({"s": strat_eq, "b": bench_eq}, axis=1).dropna()
+    win_eq = aligned_eq[(aligned_eq.index >= entry) & (aligned_eq.index <= end)]
     win_ret = strat_returns[(strat_returns.index >= entry) & (strat_returns.index <= end)]
     if len(win_eq) < _MIN_DAYS:
-        return False, len(win_eq), None, None, None
+        return False, len(win_eq), None, None, None, None, 0, None, None, None
+    s_norm = win_eq["s"] / win_eq["s"].iloc[0]
+    b_norm = win_eq["b"] / win_eq["b"].iloc[0]
+    rel = s_norm / b_norm
+    durations = _under_benchmark_durations(rel)
     return (
         True,
         len(win_eq),
-        cagr_metric(win_eq),
+        cagr_metric(win_eq["s"]),
         sortino_metric(win_ret),
-        mdd_metric(win_eq),
+        mdd_metric(win_eq["s"]),
+        float(rel.iloc[-1]),
+        len(durations),
+        min(durations) if durations else None,
+        float(sum(durations) / len(durations)) if durations else None,
+        max(durations) if durations else None,
     )
+
+
+def _under_benchmark_durations(relative_equity: pd.Series) -> list[int]:
+    """Return consecutive business-day episode lengths where strategy trails benchmark."""
+    durations: list[int] = []
+    current = 0
+    for is_under in (relative_equity < 1.0).to_list():
+        if is_under:
+            current += 1
+        elif current:
+            durations.append(current)
+            current = 0
+    if current:
+        durations.append(current)
+    return durations
 
 
 def compute_cohort_entries(
@@ -88,8 +130,9 @@ def compute_cohort_entries(
     entries: list[CohortEntry] = []
     for raw_date, label in COHORT_DATES:
         entry_ts = pd.Timestamp(raw_date)
-        has_data, n_days, c, s, mdd = _entry_metrics(
-            curves.equity_strategy, curves.strategy_returns, entry_ts, forward_years
+        has_data, n_days, c, s, mdd, ratio, n_ep, min_days, avg_days, max_days = _entry_metrics(
+            curves.equity_strategy, curves.equity_bench,
+            curves.strategy_returns, entry_ts, forward_years
         )
         entries.append(CohortEntry(
             entry_date=entry_ts.date(),
@@ -100,6 +143,11 @@ def compute_cohort_entries(
             cagr=c,
             sortino=s,
             max_drawdown=mdd,
+            final_equity_ratio=ratio,
+            under_benchmark_episodes=n_ep,
+            under_benchmark_min_days=min_days,
+            under_benchmark_avg_days=avg_days,
+            under_benchmark_max_days=max_days,
         ))
     return CohortReport(
         asof_date=curves.asof_date,

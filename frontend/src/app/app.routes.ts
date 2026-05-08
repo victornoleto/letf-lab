@@ -60,11 +60,6 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/portfolio/portfolio').then((m) => m.PortfolioComponent),
   },
   {
-    path: 'compare',
-    canActivate: [authGuard],
-    loadComponent: () => import('./pages/compare/compare').then((m) => m.CompareComponent),
-  },
-  {
     path: 'digest',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/digest/digest').then((m) => m.DigestComponent),

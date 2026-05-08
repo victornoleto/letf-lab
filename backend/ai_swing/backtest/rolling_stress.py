@@ -1,9 +1,10 @@
-"""Rolling-window stress: Sortino heatmap by entry date × window size.
+"""Rolling-window stress: benchmark-relative heatmap by entry date × window size.
 
-For every (entry_date, window_size) combination we slice the strategy's
-daily returns to a fixed window and recompute the Sortino. The result is
-a 2D grid the UI renders as a heatmap, exposing the worst-case entry
-dates the study identified across 37k rolling backtests.
+For every (entry_date, window_size) combination we slice strategy and
+benchmark equity to a fixed window and compute the final relative equity:
+strategy_equity / benchmark_equity, both renormalised at the entry date.
+The result is a 2D grid the UI renders as a heatmap, exposing whether each
+historical launch window ended ahead of (>1) or behind (<1) the benchmark.
 
 The strategy itself is computed *once* over the full available history (so
 indicator warmups use as much data as we have); the rolling step is just
@@ -15,11 +16,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date
 
-import numpy as np
 import pandas as pd
 
 from ai_swing.backtest.engine import compute_strategy_curves
-from ai_swing.backtest.metrics import sortino as sortino_metric
 from ai_swing.db.models import Strategy
 
 # Range_years=100 acts as "all available history": the engine's trim cutoff
@@ -30,8 +29,10 @@ _RANGE_YEARS_ALL = 100
 @dataclass
 class RollingCell:
     entry_date: date
-    sortino: float | None  # None if the window doesn't fit (too close to today)
+    sortino: float | None  # Kept for backwards-compatible clients; no longer populated.
     pct_above_spy: float | None  # ratio of days strategy > benchmark in window
+    final_equity_ratio: float | None  # final strategy equity / benchmark equity
+    passed: bool
 
 
 @dataclass
@@ -58,30 +59,21 @@ def _entry_grid(start: pd.Timestamp, end: pd.Timestamp, step_months: int) -> lis
     return [pd.Timestamp(ts) for ts in rng]
 
 
-def _window_sortino(
-    returns: pd.Series, entry: pd.Timestamp, window_years: int
-) -> float | None:
-    end = entry + pd.Timedelta(days=int(window_years * 365.25))
-    win = returns.loc[(returns.index >= entry) & (returns.index <= end)]
-    # Need at least 80% of the expected days for the Sortino to be meaningful
-    expected = int(window_years * 252)
-    if len(win) < int(expected * 0.8):
-        return None
-    return float(sortino_metric(win))
-
-
-def _window_pct_above(
+def _window_relative_metrics(
     strat_eq: pd.Series, bench_eq: pd.Series,
     entry: pd.Timestamp, window_years: int,
-) -> float | None:
+) -> tuple[float | None, float | None]:
     end = entry + pd.Timedelta(days=int(window_years * 365.25))
     aligned = pd.concat({"s": strat_eq, "b": bench_eq}, axis=1).dropna()
     aligned = aligned.loc[(aligned.index >= entry) & (aligned.index <= end)]
-    if len(aligned) < 50:
-        return None
+    expected = int(window_years * 252)
+    if len(aligned) < int(expected * 0.8):
+        return None, None
     s_norm = aligned["s"] / aligned["s"].iloc[0]
     b_norm = aligned["b"] / aligned["b"].iloc[0]
-    return float((s_norm > b_norm).mean())
+    pct_above = float((s_norm > b_norm).mean())
+    final_ratio = float(s_norm.iloc[-1] / b_norm.iloc[-1])
+    return pct_above, final_ratio
 
 
 def compute_rolling_stress(
@@ -94,12 +86,12 @@ def compute_rolling_stress(
     Parameters
     ----------
     window_years : list[int]
-        Window sizes to evaluate. Defaults to [3, 5, 10, 20].
+        Window sizes to evaluate. Defaults to [3, 5, 10, 15, 20].
     step_months : int
         Spacing between consecutive entry dates (in months).
     """
     if window_years is None:
-        window_years = [3, 5, 10, 20]
+        window_years = [3, 5, 10, 15, 20]
 
     curves = compute_strategy_curves(strategy, range_years=_RANGE_YEARS_ALL)
     rets = curves.strategy_returns.dropna()
@@ -131,12 +123,15 @@ def compute_rolling_stress(
     for wy in window_years:
         cells: list[RollingCell] = []
         for entry in entry_dates:
-            so = _window_sortino(rets, entry, wy)
-            p = _window_pct_above(curves.equity_strategy, curves.equity_bench, entry, wy)
+            p, final_ratio = _window_relative_metrics(
+                curves.equity_strategy, curves.equity_bench, entry, wy
+            )
             cells.append(RollingCell(
                 entry_date=entry.date(),
-                sortino=so,
+                sortino=None,
                 pct_above_spy=p,
+                final_equity_ratio=final_ratio,
+                passed=bool(final_ratio is not None and final_ratio > 1.0),
             ))
         rows.append(RollingRow(window_years=wy, cells=cells))
 

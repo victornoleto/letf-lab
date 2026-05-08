@@ -140,10 +140,10 @@ def walk_forward_endpoint(
 @router.post("/{strategy_id}/rolling-stress", response_model=RollingStressDTO)
 def rolling_stress_endpoint(
     strategy_id: int,
-    step_months: int = Query(default=3, ge=1, le=12),
+    step_months: int = Query(default=1, ge=1, le=12),
     db: Session = Depends(get_db),
 ) -> RollingStressDTO:
-    """Compute rolling-window Sortino heatmap (3y/5y/10y/20y × entry dates)."""
+    """Compute rolling-window final equity/benchmark heatmap."""
     strategy = get_strategy(db, strategy_id)
     if strategy is None:
         raise HTTPException(status_code=404, detail="Strategy not found")
@@ -164,6 +164,8 @@ def rolling_stress_endpoint(
                         entry_date=c.entry_date,
                         sortino=c.sortino,
                         pct_above_spy=c.pct_above_spy,
+                        final_equity_ratio=c.final_equity_ratio,
+                        passed=c.passed,
                     )
                     for c in row.cells
                 ],

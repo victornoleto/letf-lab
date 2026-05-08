@@ -13,7 +13,6 @@ from ai_swing.routers import (
     auth,
     backtest,
     chat,
-    compare,
     indicators,
     refresh,
     signals,
@@ -59,7 +58,6 @@ def create_app() -> FastAPI:
     app.include_router(signals.router, dependencies=protected)
     app.include_router(refresh.router, dependencies=protected)
     app.include_router(backtest.router, dependencies=protected)
-    app.include_router(compare.router, dependencies=protected)
     app.include_router(weekly_digest.router, dependencies=protected)
     # chat router consumes get_current_user directly (it needs the user id)
     app.include_router(chat.router)

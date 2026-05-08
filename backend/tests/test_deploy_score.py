@@ -7,14 +7,65 @@ contains the expected criteria and the total stays bounded.
 """
 from __future__ import annotations
 
+from datetime import date
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from ai_swing.backtest import crisis as crisis_module
 from ai_swing.backtest import engine as engine_module
-from ai_swing.db.models import Indicator, IndicatorType, Strategy, StrategyIndicator
+from ai_swing.db.models import (
+    Indicator,
+    IndicatorType,
+    Strategy,
+    StrategyGatesSnapshot,
+    StrategyIndicator,
+)
 from ai_swing.scoring import deploy_score
+
+
+def _make_snapshot(*, all_pass: bool, p_value: float = 0.01) -> StrategyGatesSnapshot:
+    payload = {
+        "g2_dsr": {
+            "p_value": p_value,
+            "observed_sharpe": 1.5,
+            "n_trials": 1,
+            "pass_gate": p_value < 0.05,
+        },
+        "g3_wf": {
+            "n_windows": 8,
+            "n_pass": 7 if all_pass else 3,
+            "pct_above_per_window": [0.7] * 8,
+            "pass_gate": all_pass,
+        },
+        "g6_bootstrap": {
+            "ci_low_sortino": 0.4 if all_pass else -0.1,
+            "n_resamples": 500,
+            "ci_pct": 99.0,
+            "pass_gate": all_pass,
+        },
+        "g7_xlib": {
+            "delta_pp": 0.05 if all_pass else 5.0,
+            "cagr_numpy": 0.1,
+            "cagr_pandas": 0.1 if all_pass else 0.05,
+            "pass_gate": all_pass,
+        },
+        "asof_date": date(2026, 5, 1).isoformat(),
+        "range_years": 10,
+    }
+    return StrategyGatesSnapshot(
+        strategy_id=1, asof_date=date(2026, 5, 1), range_years=10, payload=payload,
+    )
+
+
+def _install_score_prices(patch_prices) -> None:
+    idx = pd.bdate_range("2014-01-01", "2026-04-30")
+    bench = pd.Series(np.linspace(100, 350, len(idx)), index=idx)
+    risk_on = pd.Series(np.linspace(100, 600, len(idx)), index=idx)
+    risk_off = pd.Series(np.full(len(idx), 100.0), index=idx)
+    spy = pd.Series(np.linspace(100, 180, len(idx)), index=idx)
+    patch_prices({"QQQ": bench, "TQQQ": risk_on, "ZROZ": risk_off, "SPY": spy})
 
 
 def _make_strategy() -> Strategy:
@@ -110,16 +161,7 @@ def test_oos_fwd_points_full_credit_when_both_positive():
 
 
 def test_full_score_runs_end_to_end(patch_prices):
-    # Synthesize 12 years of trending up prices for QQQ/TQQQ (so the gate is
-    # ON nearly the whole time and the strategy holds the leveraged sleeve)
-    # plus a flat ZROZ. SPY rises slowly so the strategy beats SPY in COVID
-    # and 2022 windows but the older windows don't have data → "insufficient".
-    idx = pd.bdate_range("2014-01-01", "2026-04-30")
-    bench = pd.Series(np.linspace(100, 350, len(idx)), index=idx)
-    risk_on = pd.Series(np.linspace(100, 600, len(idx)), index=idx)
-    risk_off = pd.Series(np.full(len(idx), 100.0), index=idx)
-    spy = pd.Series(np.linspace(100, 180, len(idx)), index=idx)
-    patch_prices({"QQQ": bench, "TQQQ": risk_on, "ZROZ": risk_off, "SPY": spy})
+    _install_score_prices(patch_prices)
 
     score = deploy_score.compute_deploy_score(_make_strategy(), range_years=10, bonus_pts=2.0)
 
@@ -133,7 +175,7 @@ def test_full_score_runs_end_to_end(patch_prices):
     summed = sum(c.points for c in score.criteria)
     assert abs(summed - score.total) < 1e-6
 
-    # Crit 3 + 4 still pending in Fase 2
+    # Crit 3 + 4 stay pending until the daily refresh writes a gates snapshot.
     pending = {c.key for c in score.criteria if c.status == "pending"}
     assert {"3_gates", "4_dsr"}.issubset(pending)
 
@@ -145,5 +187,76 @@ def test_full_score_runs_end_to_end(patch_prices):
     assert score.tier_label in {
         "FAIL", "NEAR_FAIL", "MARGINAL", "PROMISING", "STRONG", "WINNER",
     }
-    # WINNER never reachable in Fase 2 (gates pending)
     assert score.winner_conditions_met is False
+
+
+def test_deploy_score_pending_when_no_snapshot(patch_prices):
+    from ai_swing.scoring.deploy_score import compute_deploy_score
+
+    _install_score_prices(patch_prices)
+    score = compute_deploy_score(_make_strategy(), gates_snapshot=None)
+    crit3 = next(c for c in score.criteria if c.key == "3_gates")
+    crit4 = next(c for c in score.criteria if c.key == "4_dsr")
+    assert crit3.status == "pending"
+    assert crit3.points == 0
+    assert crit4.status == "pending"
+    assert crit4.points == 0
+    assert score.winner_conditions_met is False
+
+
+def test_deploy_score_full_gates_pass_unlocks_max_pts(patch_prices):
+    from ai_swing.scoring.deploy_score import compute_deploy_score
+
+    _install_score_prices(patch_prices)
+    snap = _make_snapshot(all_pass=True, p_value=0.01)
+    score = compute_deploy_score(_make_strategy(), gates_snapshot=snap)
+    crit3 = next(c for c in score.criteria if c.key == "3_gates")
+    crit4 = next(c for c in score.criteria if c.key == "4_dsr")
+    assert crit3.points == 20
+    assert crit3.status == "ok"
+    assert crit4.points == 10
+    assert crit4.status == "ok"
+
+
+def test_deploy_score_partial_gates_pass(patch_prices):
+    from ai_swing.scoring.deploy_score import compute_deploy_score
+
+    _install_score_prices(patch_prices)
+    payload = _make_snapshot(all_pass=True).payload
+    payload["g3_wf"]["pass_gate"] = False
+    payload["g7_xlib"]["pass_gate"] = False
+    snap = StrategyGatesSnapshot(
+        strategy_id=1, asof_date=date(2026, 5, 1), range_years=10, payload=payload,
+    )
+    score = compute_deploy_score(_make_strategy(), gates_snapshot=snap)
+    crit3 = next(c for c in score.criteria if c.key == "3_gates")
+    assert crit3.points == 10
+    assert crit3.status == "warn"
+
+
+def test_deploy_score_dsr_piecewise_marginal(patch_prices):
+    from ai_swing.scoring.deploy_score import compute_deploy_score
+
+    _install_score_prices(patch_prices)
+    payload = _make_snapshot(all_pass=True).payload
+    payload["g2_dsr"]["p_value"] = 0.07
+    payload["g2_dsr"]["pass_gate"] = False
+    snap = StrategyGatesSnapshot(
+        strategy_id=1, asof_date=date(2026, 5, 1), range_years=10, payload=payload,
+    )
+    score = compute_deploy_score(_make_strategy(), gates_snapshot=snap)
+    crit4 = next(c for c in score.criteria if c.key == "4_dsr")
+    assert crit4.points == 7
+    assert crit4.status == "warn"
+
+
+def test_deploy_score_winner_tier_unlocks_when_score_reaches_90(patch_prices):
+    from ai_swing.scoring.deploy_score import compute_deploy_score
+
+    _install_score_prices(patch_prices)
+    snap = _make_snapshot(all_pass=True, p_value=0.001)
+    score = compute_deploy_score(_make_strategy(), gates_snapshot=snap)
+    if score.total < 90:
+        pytest.skip(f"synthetic score didn't reach 90 pts ({score.total})")
+    assert score.tier_label == "WINNER"
+    assert score.winner_conditions_met is True

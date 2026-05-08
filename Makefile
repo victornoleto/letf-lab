@@ -10,11 +10,11 @@ UVICORN  := $(VENV)/bin/uvicorn
 PYTEST   := $(VENV)/bin/pytest
 
 help:
-	@echo "AI-Swing — make targets"
+	@echo "LETF Lab — make targets"
 	@echo "  install         install backend + frontend deps"
 	@echo "  install-backend install backend deps in backend/.venv (uv preferred)"
 	@echo "  install-frontend install frontend deps (npm)"
-	@echo "  db-create       create the ai_swing role + database on local Postgres"
+	@echo "  db-create       create the letf_lab role + database on local Postgres"
 	@echo "  db-drop         drop the ai_swing database (data loss — confirm twice)"
 	@echo "  migrate         alembic upgrade head"
 	@echo "  seed            create default user + example strategies + indicators"
@@ -49,8 +49,8 @@ install-frontend:
 # (Debian/Ubuntu: `sudo systemctl start postgresql`). They run as the
 # `postgres` superuser via sudo, then create role + database matching
 # the credentials baked into backend/.env.example.
-DB_NAME ?= ai_swing
-DB_USER ?= ai_swing
+DB_NAME ?= letf_lab
+DB_USER ?= letf_lab
 DB_PASS ?= dev
 
 db-create:

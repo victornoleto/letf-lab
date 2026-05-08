@@ -16,6 +16,11 @@ class CohortEntryDTO(BaseModel):
     cagr: float | None
     sortino: float | None
     max_drawdown: float | None
+    final_equity_ratio: float | None
+    under_benchmark_episodes: int
+    under_benchmark_min_days: int | None
+    under_benchmark_avg_days: float | None
+    under_benchmark_max_days: int | None
 
 
 class CohortReportDTO(BaseModel):

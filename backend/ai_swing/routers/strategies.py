@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from ai_swing.backtest.cohorts import compute_cohort_entries
 from ai_swing.backtest.crisis import attribution_score, compute_crisis_attribution
+from ai_swing.backtest.engine import compute_strategy_curves
+from ai_swing.backtest.metrics import sortino as sortino_metric
 from ai_swing.db import get_db
 from ai_swing.db.models import Strategy, StrategyIndicator
 from ai_swing.schemas.cohorts import CohortEntryDTO, CohortReportDTO
@@ -14,10 +17,15 @@ from ai_swing.schemas.crisis import (
     CrisisPointDTO,
     CrisisResultDTO,
 )
-from ai_swing.schemas.deploy_score import CriterionScoreDTO, DeployScoreDTO
+from ai_swing.schemas.deploy_score import (
+    CriterionScoreDTO,
+    DeployScoreDTO,
+    ValidationGateDTO,
+    ValidationSnapshotDTO,
+)
 from ai_swing.schemas.strategy import StrategyCreate, StrategyDTO, StrategyUpdate
 from ai_swing.scoring.deploy_score import compute_deploy_score
-from ai_swing.services import ai_reports
+from ai_swing.services import ai_reports, gates_service
 from ai_swing.schemas.strategy import StrategyReportDTO
 from ai_swing.services.indicator_series import build_indicator_series
 from ai_swing.services.strategy_service import (
@@ -196,15 +204,19 @@ def deploy_score_endpoint(
 ) -> DeployScoreDTO:
     """Replicate the study's 7-criterion scoring (v2) on the strategy.
 
-    Phase 2 implements criteria 1, 2, 5, 6, 7. Criteria 3 (gates) and 4 (DSR)
-    are returned as `status="pending"` with 0 pts until Fase 3 ships the
-    walk-forward + bootstrap pipelines.
+    Criteria 3 (gates G2/G3/G6/G7) and 4 (DSR) are read from the most-recent
+    StrategyGatesSnapshot persisted by the daily refresh job. Strategies
+    without a snapshot yet keep those criteria as `status="pending"`.
     """
     s = get_strategy(db, strategy_id)
     if s is None:
         raise HTTPException(status_code=404, detail="Strategy not found")
+    gates_snap = gates_service.latest_gates(db, s.id, range_years=range_years)
     try:
-        score = compute_deploy_score(s, range_years=range_years, bonus_pts=bonus_pts)
+        score = compute_deploy_score(
+            s, range_years=range_years, bonus_pts=bonus_pts,
+            gates_snapshot=gates_snap,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return DeployScoreDTO(
@@ -226,6 +238,129 @@ def deploy_score_endpoint(
             for c in score.criteria
         ],
     )
+
+
+@router.get("/{strategy_id}/validation-snapshot", response_model=ValidationSnapshotDTO)
+def validation_snapshot_endpoint(
+    strategy_id: int,
+    range_years: int = 10,
+    db: Session = Depends(get_db),
+) -> ValidationSnapshotDTO:
+    """Return an informational view of validation gates and OOS/FWD checks."""
+    s = get_strategy(db, strategy_id)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+
+    gates_snap = gates_service.latest_gates(db, s.id, range_years=range_years)
+    gates_payload = gates_snap.payload if gates_snap is not None else None
+    gates = _validation_gate_dtos(gates_payload)
+
+    try:
+        curves = compute_strategy_curves(s, range_years=range_years)
+        rets = curves.strategy_returns.dropna()
+        cut = int(len(rets) * 0.70)
+        oos = rets.iloc[cut:]
+        fwd = rets[rets.index >= pd.Timestamp("2020-01-01")]
+        oos_value = _fmt_sortino(sortino_metric(oos)) if len(oos) >= 30 else "dados insuf."
+        fwd_value = _fmt_sortino(sortino_metric(fwd)) if len(fwd) >= 60 else "dados insuf."
+        oos_pass = bool(len(oos) >= 30 and sortino_metric(oos) > 0 and len(fwd) >= 60 and sortino_metric(fwd) > 0)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return ValidationSnapshotDTO(
+        asof_date=gates_snap.asof_date if gates_snap is not None else None,
+        range_years=range_years,
+        gates_available=gates_snap is not None,
+        gates=gates,
+        oos_fwd=ValidationGateDTO(
+            key="oos_fwd",
+            label="OOS + forward pós-2020",
+            value=f"OOS {oos_value} · pós-2020 {fwd_value}",
+            passed=oos_pass,
+            description=(
+                "Verifica se a estratégia manteve Sortino positivo no último "
+                "30% do histórico e no período posterior a 2020."
+            ),
+        ),
+        dsr_note=(
+            "DSR não é exibido como métrica separada: com uma única configuração "
+            "avaliada, o cálculo atual cai para PSR. DSR completo exigiria o número "
+            "real de configurações/testes candidatos."
+        ),
+    )
+
+
+def _fmt_sortino(value: float) -> str:
+    return f"Sortino {value:+.2f}"
+
+
+def _validation_gate_dtos(payload: dict | None) -> list[ValidationGateDTO]:
+    if payload is None:
+        return [
+            ValidationGateDTO(
+                key="g2",
+                label="G2 - Confiança estatística",
+                value="aguardando refresh",
+                passed=None,
+                description="PSR/DSR: estima se o Sharpe observado é estatisticamente defensável.",
+            ),
+            ValidationGateDTO(
+                key="g3",
+                label="G3 - Validação por janelas",
+                value="aguardando refresh",
+                passed=None,
+                description="Confere se a estratégia supera o benchmark em janelas cronológicas fora de uma única média histórica.",
+            ),
+            ValidationGateDTO(
+                key="g6",
+                label="G6 - Bootstrap de robustez",
+                value="aguardando refresh",
+                passed=None,
+                description="Reamostra retornos em blocos e exige limite inferior positivo para o Sortino.",
+            ),
+            ValidationGateDTO(
+                key="g7",
+                label="G7 - Consistência de cálculo",
+                value="aguardando refresh",
+                passed=None,
+                description="Compara implementações independentes de CAGR para detectar divergência aritmética relevante.",
+            ),
+        ]
+
+    g2 = payload.get("g2_dsr", {})
+    g3 = payload.get("g3_wf", {})
+    g6 = payload.get("g6_bootstrap", {})
+    g7 = payload.get("g7_xlib", {})
+    return [
+        ValidationGateDTO(
+            key="g2",
+            label="G2 - Confiança estatística",
+            value=f"p={float(g2.get('p_value', 1.0)):.3f} · Sharpe {float(g2.get('observed_sharpe', 0.0)):+.2f}",
+            passed=bool(g2.get("pass_gate")),
+            description="PSR/DSR: estima se o Sharpe observado é estatisticamente defensável.",
+        ),
+        ValidationGateDTO(
+            key="g3",
+            label="G3 - Validação por janelas",
+            value=f"{int(g3.get('n_pass', 0))}/{int(g3.get('n_windows', 0))} janelas passam",
+            passed=bool(g3.get("pass_gate")),
+            description="Confere se a estratégia supera o benchmark em janelas cronológicas fora de uma única média histórica.",
+        ),
+        ValidationGateDTO(
+            key="g6",
+            label="G6 - Bootstrap de robustez",
+            value=f"IC 99% Sortino low {float(g6.get('ci_low_sortino', 0.0)):+.2f}",
+            passed=bool(g6.get("pass_gate")),
+            description="Reamostra retornos em blocos e exige limite inferior positivo para o Sortino.",
+        ),
+        ValidationGateDTO(
+            key="g7",
+            label="G7 - Consistência de cálculo",
+            value=f"delta {float(g7.get('delta_pp', 0.0)):.2f}pp",
+            passed=bool(g7.get("pass_gate")),
+            description="Compara implementações independentes de CAGR para detectar divergência aritmética relevante.",
+        ),
+    ]
 
 
 @router.get("/{strategy_id}/cohort-entry", response_model=CohortReportDTO)
@@ -255,6 +390,11 @@ def cohort_entry_endpoint(
                 cagr=e.cagr,
                 sortino=e.sortino,
                 max_drawdown=e.max_drawdown,
+                final_equity_ratio=e.final_equity_ratio,
+                under_benchmark_episodes=e.under_benchmark_episodes,
+                under_benchmark_min_days=e.under_benchmark_min_days,
+                under_benchmark_avg_days=e.under_benchmark_avg_days,
+                under_benchmark_max_days=e.under_benchmark_max_days,
             )
             for e in report.entries
         ],
