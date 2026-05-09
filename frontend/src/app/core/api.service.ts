@@ -8,6 +8,7 @@ import {
   ValidationSnapshot,
   Indicator,
   IndicatorTypeInfo,
+  PortfolioHistory,
   PortfolioSummary,
   RefreshStatus,
   RollingStress,
@@ -23,7 +24,7 @@ import {
   WeeklyDigestList,
 } from './models';
 
-const BASE_URL = 'http://localhost:8000/api';
+const BASE_URL = '/api';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -180,5 +181,11 @@ export class ApiService {
 
   getPortfolio(currency: 'USD' | 'BRL' = 'USD'): Observable<PortfolioSummary> {
     return this.http.get<PortfolioSummary>(`${BASE_URL}/portfolio?currency=${currency}`);
+  }
+
+  getPortfolioHistory(benchmark = 'SPY'): Observable<PortfolioHistory> {
+    return this.http.get<PortfolioHistory>(
+      `${BASE_URL}/portfolio/history?benchmark=${encodeURIComponent(benchmark)}`
+    );
   }
 }

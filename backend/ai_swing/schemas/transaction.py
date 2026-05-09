@@ -96,3 +96,14 @@ class PortfolioSummary(BaseModel):
     # multiply through `fx_rate_used` (today's BRL=X close).
     display_currency: str = "USD"
     fx_rate_used: Optional[Decimal] = None
+
+
+class PortfolioHistoryPoint(BaseModel):
+    date: date_type
+    portfolio_value_usd: float
+    benchmark_value_usd: float
+
+
+class PortfolioHistory(BaseModel):
+    benchmark_ticker: str
+    points: list[PortfolioHistoryPoint]

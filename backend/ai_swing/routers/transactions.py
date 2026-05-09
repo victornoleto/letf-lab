@@ -9,12 +9,13 @@ from ai_swing.auth.security import get_current_user
 from ai_swing.db import get_db
 from ai_swing.db.models import Transaction, User
 from ai_swing.schemas.transaction import (
+    PortfolioHistory,
     PortfolioSummary,
     TransactionCreate,
     TransactionDTO,
     TransactionUpdate,
 )
-from ai_swing.services.portfolio import compute_portfolio
+from ai_swing.services.portfolio import compute_portfolio, compute_portfolio_history
 
 router = APIRouter(prefix="/api", tags=["transactions"])
 
@@ -82,3 +83,12 @@ def get_portfolio(
     user: User = Depends(get_current_user),
 ) -> PortfolioSummary:
     return compute_portfolio(db, user.id, display_currency=currency)
+
+
+@router.get("/portfolio/history", response_model=PortfolioHistory)
+def get_portfolio_history(
+    benchmark: str = "SPY",
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> PortfolioHistory:
+    return compute_portfolio_history(db, user.id, benchmark_ticker=benchmark)

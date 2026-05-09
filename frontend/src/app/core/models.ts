@@ -147,6 +147,17 @@ export interface PortfolioSummary {
   fx_rate_used: string | null;
 }
 
+export interface PortfolioHistoryPoint {
+  date: string;
+  portfolio_value_usd: number;
+  benchmark_value_usd: number;
+}
+
+export interface PortfolioHistory {
+  benchmark_ticker: string;
+  points: PortfolioHistoryPoint[];
+}
+
 export type CrisisVerdict = 'beats' | 'loses' | 'insufficient_data';
 
 export interface CrisisPoint {

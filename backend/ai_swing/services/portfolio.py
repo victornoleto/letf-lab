@@ -14,12 +14,18 @@ from __future__ import annotations
 from collections import defaultdict
 from decimal import Decimal
 
+import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ai_swing.data import get_price_service
 from ai_swing.db.models import Transaction, TransactionSide
-from ai_swing.schemas.transaction import PortfolioPosition, PortfolioSummary
+from ai_swing.schemas.transaction import (
+    PortfolioHistory,
+    PortfolioHistoryPoint,
+    PortfolioPosition,
+    PortfolioSummary,
+)
 
 
 def _latest_price_usd(ticker: str) -> Decimal | None:
@@ -164,3 +170,94 @@ def compute_portfolio(
         display_currency="BRL",
         fx_rate_used=rate,
     )
+
+
+def compute_portfolio_history(
+    db: Session,
+    user_id: int,
+    benchmark_ticker: str = "SPY",
+) -> PortfolioHistory:
+    rows = db.scalars(
+        select(Transaction)
+        .where(Transaction.user_id == user_id)
+        .order_by(Transaction.date, Transaction.id)
+    ).all()
+    benchmark_ticker = benchmark_ticker.strip().upper() or "SPY"
+    if not rows:
+        return PortfolioHistory(benchmark_ticker=benchmark_ticker, points=[])
+
+    ps = get_price_service()
+    tickers = sorted({t.asset_ticker for t in rows} | {benchmark_ticker})
+    prices = {
+        ticker: ps.get_close_series(ticker).dropna().sort_index()
+        for ticker in tickers
+    }
+    prices = {
+        ticker: series[~series.index.duplicated(keep="last")]
+        for ticker, series in prices.items()
+    }
+    benchmark = prices.get(benchmark_ticker, pd.Series(dtype=float)).dropna()
+    if benchmark.empty:
+        return PortfolioHistory(benchmark_ticker=benchmark_ticker, points=[])
+
+    start = min(t.date for t in rows)
+    tx_index = pd.DatetimeIndex(pd.Timestamp(t.date) for t in rows).unique()
+    index = benchmark[benchmark.index.date >= start].index.union(tx_index).unique().sort_values()
+    if index.empty:
+        return PortfolioHistory(benchmark_ticker=benchmark_ticker, points=[])
+
+    aligned = {
+        ticker: series.reindex(series.index.union(index)).ffill().reindex(index)
+        for ticker, series in prices.items()
+        if not series.empty
+    }
+    if benchmark_ticker not in aligned:
+        return PortfolioHistory(benchmark_ticker=benchmark_ticker, points=[])
+    shares: dict[str, Decimal] = defaultdict(Decimal)
+    benchmark_shares = Decimal(0)
+    points: list[PortfolioHistoryPoint] = []
+    tx_idx = 0
+
+    for ts in index:
+        day = ts.date()
+        bench_price_raw = aligned[benchmark_ticker].loc[ts]
+        if pd.isna(bench_price_raw) or float(bench_price_raw) <= 0:
+            continue
+        bench_price = Decimal(str(float(bench_price_raw)))
+
+        while tx_idx < len(rows) and rows[tx_idx].date <= day:
+            tx = rows[tx_idx]
+            n = Decimal(tx.n_shares)
+            price = Decimal(tx.price_per_share)
+            fx = Decimal(tx.fx_rate_to_usd)
+            fees = Decimal(tx.fees)
+            if tx.side == TransactionSide.BUY:
+                trade_cash_usd = (n * price + fees) * fx
+                shares[tx.asset_ticker] += n
+                benchmark_shares += trade_cash_usd / bench_price
+            else:
+                trade_cash_usd = max(Decimal(0), (n * price - fees) * fx)
+                shares[tx.asset_ticker] -= n
+                benchmark_shares = max(
+                    Decimal(0),
+                    benchmark_shares - (trade_cash_usd / bench_price),
+                )
+            tx_idx += 1
+
+        portfolio_value = Decimal(0)
+        for ticker, n in shares.items():
+            if n <= 0 or ticker not in aligned:
+                continue
+            px_raw = aligned[ticker].loc[ts]
+            if pd.isna(px_raw):
+                continue
+            portfolio_value += n * Decimal(str(float(px_raw)))
+
+        benchmark_value = benchmark_shares * bench_price
+        points.append(PortfolioHistoryPoint(
+            date=day,
+            portfolio_value_usd=float(portfolio_value),
+            benchmark_value_usd=float(benchmark_value),
+        ))
+
+    return PortfolioHistory(benchmark_ticker=benchmark_ticker, points=points)

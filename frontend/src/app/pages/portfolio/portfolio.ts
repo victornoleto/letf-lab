@@ -1,16 +1,30 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
+  ElementRef,
+  Injector,
+  effect,
   inject,
+  OnDestroy,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import * as echarts from 'echarts/core';
+import { LineChart } from 'echarts/charts';
+import {
+  AxisPointerComponent,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+import type { EChartsOption } from 'echarts';
 import { ApiService } from '../../core/api.service';
 import {
-  PortfolioPosition,
+  PortfolioHistory,
   PortfolioSummary,
   Transaction,
   TransactionCreate,
@@ -18,8 +32,26 @@ import {
 } from '../../core/models';
 import { ToastService } from '../../shared/toast/toast.service';
 import { ModalComponent } from '../../shared/modal/modal';
+import { readChartTokens, tok } from '../../shared/charts/chart-tokens';
+
+echarts.use([
+  LineChart,
+  AxisPointerComponent,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
 
 type Tab = 'positions' | 'transactions';
+
+function todayLocalIsoDate(): string {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 @Component({
   selector: 'app-portfolio',
@@ -71,6 +103,44 @@ type Tab = 'positions' | 'transactions';
           </div>
         } @else {
           <section class="section">
+            <header class="section__head portfolio-history-head">
+              <div>
+                <h3 class="section__title">Evolução do portfólio</h3>
+                <p class="section__sub">
+                  Valor de mercado em USD comparado ao benchmark com os mesmos fluxos de compra/venda.
+                </p>
+              </div>
+              <label class="benchmark-field">
+                <span class="label">Benchmark</span>
+                <input class="input input--mono benchmark-input"
+                       list="portfolio-benchmarks"
+                       [ngModel]="benchmark()"
+                       (change)="setBenchmark($any($event.target).value)" />
+                <datalist id="portfolio-benchmarks">
+                  @for (b of benchmarkOptions; track b) {
+                    <option [value]="b"></option>
+                  }
+                </datalist>
+              </label>
+            </header>
+            <div class="section__body">
+              @if (historyLoading()) {
+                <div class="skeleton skeleton--card" style="height: 260px;"></div>
+              } @else if (historyError()) {
+                <div class="banner banner--danger">
+                  <svg class="ico" width="13" height="13"><use href="#alert-circle"/></svg>
+                  <span>{{ historyError() }}</span>
+                </div>
+              } @else if (!history() || history()!.points.length === 0) {
+                <div class="empty" style="padding: 32px 16px;">
+                  <div class="empty__title">Histórico indisponível</div>
+                  <div class="empty__copy">Não há preços suficientes para montar a curva.</div>
+                </div>
+              } @else {
+                <div #historyHost class="portfolio-history-chart"></div>
+              }
+            </div>
+
             <div class="section__body">
               <div class="portfolio-totals">
                 <div>
@@ -231,21 +301,33 @@ type Tab = 'positions' | 'transactions';
           </div>
         </div>
 
-        <div class="row-2">
+        <div class="row-3">
           <div class="field">
-            <label class="label">N. Shares</label>
-            <input class="input input--mono" type="number" step="0.0001" min="0"
-                   [ngModel]="form.n_shares()" (ngModelChange)="form.n_shares.set(+$event)" name="n_shares" />
-          </div>
-          <div class="field">
-            <label class="label">Preço/share</label>
+            <label class="label">Preço da cota</label>
             <div class="input-affix input-affix--suffix">
               <input class="input input--mono" type="number" step="0.0001" min="0"
                      [ngModel]="form.price_per_share()"
-                     (ngModelChange)="form.price_per_share.set(+$event)"
+                     (ngModelChange)="setTradeAmount('price', $event)"
                      name="price" />
               <span class="input-affix__suffix">{{ form.currency() || 'USD' }}</span>
             </div>
+          </div>
+          <div class="field">
+            <label class="label">Valor pago</label>
+            <div class="input-affix input-affix--suffix">
+              <input class="input input--mono" type="number" step="0.01" min="0"
+                     [ngModel]="form.total_paid()"
+                     (ngModelChange)="setTradeAmount('total', $event)"
+                     name="total_paid" />
+              <span class="input-affix__suffix">{{ form.currency() || 'USD' }}</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">N. cotas</label>
+            <input class="input input--mono" type="number" step="0.00000001" min="0"
+                   [ngModel]="form.n_shares()"
+                   (ngModelChange)="setTradeAmount('shares', $event)"
+                   name="n_shares" />
           </div>
         </div>
 
@@ -302,6 +384,11 @@ type Tab = 'positions' | 'transactions';
           <kbd>Esc</kbd> fechar · <kbd>⌘</kbd><kbd>↵</kbd> salvar
         </span>
         <button type="button" class="btn btn--ghost btn--md" (click)="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn--secondary btn--md"
+                [disabled]="!canSave() || saving()"
+                (click)="save(true)">
+          @if (saving()) { Salvando… } @else { Salvar e criar outra }
+        </button>
         <button type="submit" form="portfolio-tx-form" class="btn btn--primary btn--md"
                 [disabled]="!canSave() || saving()">
           @if (saving()) { Salvando… } @else { Salvar }
@@ -346,30 +433,60 @@ type Tab = 'positions' | 'transactions';
       background: var(--surface-muted);
       margin-bottom: 12px;
     }
+    .portfolio-history-head {
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .benchmark-field {
+      display: grid;
+      gap: 6px;
+      min-width: 128px;
+    }
+    .benchmark-input {
+      width: 128px;
+      text-transform: uppercase;
+    }
+    .portfolio-history-chart { height: 280px; }
+    @media (max-width: 720px) {
+      .portfolio-history-head { display: grid; }
+      .benchmark-field, .benchmark-input { width: 100%; }
+    }
     .pl-pos { color: var(--success); }
     .pl-neg { color: var(--danger); }
   `],
 })
-export class PortfolioComponent implements OnInit {
+export class PortfolioComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private injector = inject(Injector);
+  private historyHost = viewChild<ElementRef<HTMLDivElement>>('historyHost');
 
   tab = signal<Tab>('positions');
   currency = signal<'USD' | 'BRL'>('USD');
   portfolio = signal<PortfolioSummary | null>(null);
   portfolioLoading = signal(true);
+  history = signal<PortfolioHistory | null>(null);
+  historyLoading = signal(true);
+  historyError = signal<string | null>(null);
+  benchmark = signal('SPY');
   transactions = signal<Transaction[]>([]);
   txLoading = signal(true);
+  benchmarkOptions = ['SPY', 'QQQ', 'VT', 'IVV', 'VOO'];
+
+  private historyChart?: echarts.ECharts;
+  private ro?: ResizeObserver;
+  private themeListener = () => this.redrawHistoryChart();
 
   showModal = signal(false);
   saving = signal(false);
   formError = signal<string | null>(null);
   form = {
-    date: signal(new Date().toISOString().slice(0, 10)),
+    date: signal(todayLocalIsoDate()),
     asset_ticker: signal(''),
     side: signal<TransactionSide>('buy'),
     n_shares: signal<number>(0),
     price_per_share: signal<number>(0),
+    total_paid: signal<number>(0),
     currency: signal('USD'),
     fx: signal<number>(1),
     fees: signal<number>(0),
@@ -378,7 +495,33 @@ export class PortfolioComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPortfolio();
+    this.loadHistory();
     this.loadTransactions();
+
+    effect(
+      () => {
+        const host = this.historyHost()?.nativeElement;
+        const h = this.history();
+        if (!host) {
+          this.disposeHistoryChart();
+          return;
+        }
+        if (!this.historyChart) {
+          this.historyChart = echarts.init(host);
+          this.ro = new ResizeObserver(() => this.historyChart?.resize());
+          this.ro.observe(host);
+        }
+        if (h) this.redrawHistoryChart();
+      },
+      { injector: this.injector },
+    );
+
+    document.addEventListener('themechange', this.themeListener);
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('themechange', this.themeListener);
+    this.disposeHistoryChart();
   }
 
   setTab(t: Tab): void {
@@ -391,6 +534,29 @@ export class PortfolioComponent implements OnInit {
       next: (p) => { this.portfolio.set(p); this.portfolioLoading.set(false); },
       error: () => this.portfolioLoading.set(false),
     });
+  }
+
+  loadHistory(): void {
+    this.historyLoading.set(true);
+    this.historyError.set(null);
+    this.api.getPortfolioHistory(this.benchmark()).subscribe({
+      next: (h) => {
+        this.history.set(h);
+        this.historyLoading.set(false);
+      },
+      error: () => {
+        this.history.set(null);
+        this.historyError.set('Falha ao carregar histórico do portfólio');
+        this.historyLoading.set(false);
+      },
+    });
+  }
+
+  setBenchmark(raw: string): void {
+    const next = (raw || 'SPY').trim().toUpperCase();
+    if (this.benchmark() === next) return;
+    this.benchmark.set(next);
+    this.loadHistory();
   }
 
   setCurrency(c: 'USD' | 'BRL'): void {
@@ -409,11 +575,12 @@ export class PortfolioComponent implements OnInit {
 
   openCreate(): void {
     this.formError.set(null);
-    this.form.date.set(new Date().toISOString().slice(0, 10));
+    this.form.date.set(todayLocalIsoDate());
     this.form.asset_ticker.set('');
     this.form.side.set('buy');
     this.form.n_shares.set(0);
     this.form.price_per_share.set(0);
+    this.form.total_paid.set(0);
     this.form.currency.set('USD');
     this.form.fx.set(1);
     this.form.fees.set(0);
@@ -434,7 +601,50 @@ export class PortfolioComponent implements OnInit {
     );
   }
 
-  save(): void {
+  setTradeAmount(field: 'price' | 'total' | 'shares', raw: string | number): void {
+    const value = this.toNumber(raw);
+    if (field === 'price') this.form.price_per_share.set(value);
+    if (field === 'total') this.form.total_paid.set(value);
+    if (field === 'shares') this.form.n_shares.set(value);
+
+    const price = this.form.price_per_share();
+    const total = this.form.total_paid();
+    const shares = this.form.n_shares();
+
+    if (field === 'price') {
+      if (price > 0 && total > 0) this.form.n_shares.set(this.roundShares(total / price));
+      else if (price > 0 && shares > 0) this.form.total_paid.set(this.roundMoney(price * shares));
+      return;
+    }
+
+    if (field === 'total') {
+      if (total > 0 && price > 0) this.form.n_shares.set(this.roundShares(total / price));
+      else if (total > 0 && shares > 0) this.form.price_per_share.set(this.roundPrice(total / shares));
+      return;
+    }
+
+    if (shares > 0 && price > 0) this.form.total_paid.set(this.roundMoney(shares * price));
+    else if (shares > 0 && total > 0) this.form.price_per_share.set(this.roundPrice(total / shares));
+  }
+
+  private toNumber(raw: string | number): number {
+    const value = typeof raw === 'number' ? raw : Number(raw);
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  private roundShares(value: number): number {
+    return Math.round(value * 100_000_000) / 100_000_000;
+  }
+
+  private roundPrice(value: number): number {
+    return Math.round(value * 1_000_000) / 1_000_000;
+  }
+
+  private roundMoney(value: number): number {
+    return Math.round(value * 100) / 100;
+  }
+
+  save(createAnother = false): void {
     if (!this.canSave() || this.saving()) return;
     this.saving.set(true);
     this.formError.set(null);
@@ -452,10 +662,12 @@ export class PortfolioComponent implements OnInit {
     this.api.createTransaction(body).subscribe({
       next: () => {
         this.saving.set(false);
-        this.showModal.set(false);
+        if (createAnother) this.resetTransactionFields();
+        else this.showModal.set(false);
         this.toast.push({ variant: 'success', message: 'Transação registrada' });
         this.loadTransactions();
         this.loadPortfolio();
+        this.loadHistory();
       },
       error: (err) => {
         this.saving.set(false);
@@ -469,6 +681,18 @@ export class PortfolioComponent implements OnInit {
     });
   }
 
+  private resetTransactionFields(): void {
+    this.form.date.set(todayLocalIsoDate());
+    this.form.asset_ticker.set('');
+    this.form.side.set('buy');
+    this.form.n_shares.set(0);
+    this.form.price_per_share.set(0);
+    this.form.total_paid.set(0);
+    this.form.fees.set(0);
+    this.form.notes.set('');
+    this.formError.set(null);
+  }
+
   remove(t: Transaction): void {
     if (!confirm(`Remover ${t.side} ${t.n_shares} ${t.asset_ticker}?`)) return;
     this.api.deleteTransaction(t.id).subscribe({
@@ -476,8 +700,90 @@ export class PortfolioComponent implements OnInit {
         this.toast.push({ variant: 'info', message: 'Removida' });
         this.loadTransactions();
         this.loadPortfolio();
+        this.loadHistory();
       },
     });
+  }
+
+  private disposeHistoryChart(): void {
+    this.ro?.disconnect();
+    this.ro = undefined;
+    this.historyChart?.dispose();
+    this.historyChart = undefined;
+  }
+
+  private redrawHistoryChart(): void {
+    const h = this.history();
+    if (!h || !this.historyChart) return;
+    const t = readChartTokens();
+    this.historyChart.setOption(this.historyOptions(h, t), true);
+  }
+
+  private historyOptions(h: PortfolioHistory, t = readChartTokens()): EChartsOption {
+    return {
+      animation: false,
+      grid: { left: 4, right: 8, top: 28, bottom: 24, containLabel: true },
+      textStyle: { fontFamily: t.fontMono, fontSize: 11, color: t.textMuted },
+      xAxis: {
+        type: 'time',
+        axisLine: { lineStyle: { color: t.border } },
+        axisTick: { show: false },
+        axisLabel: { color: t.textMuted, fontSize: 10, hideOverlap: true },
+        splitLine: { show: false },
+      },
+      yAxis: {
+        type: 'value',
+        position: 'right',
+        scale: true,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: t.textMuted, fontSize: 10, formatter: (v: number) => this.usdNumber(v) },
+        splitLine: { lineStyle: { color: t.grid, type: [3, 3] } },
+      },
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: tok('--surface-elevated'),
+        borderColor: t.border,
+        borderWidth: 1,
+        padding: [10, 12],
+        textStyle: { color: t.textPrimary, fontSize: 12, fontFamily: t.fontMono },
+        axisPointer: { lineStyle: { color: t.border, width: 1 } },
+        valueFormatter: (value: unknown) => this.usdNumber(Number(value)),
+      },
+      legend: {
+        top: 0,
+        left: 0,
+        itemWidth: 14,
+        itemHeight: 2,
+        itemGap: 16,
+        textStyle: { color: t.textMuted, fontSize: 11, fontFamily: tok('--font-sans') },
+      },
+      series: [
+        {
+          name: 'Portfólio',
+          type: 'line',
+          showSymbol: false,
+          lineStyle: { color: t.equity, width: 1.6 },
+          areaStyle: {
+            color: {
+              type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: t.equityFill },
+                { offset: 1, color: 'rgba(0,0,0,0)' },
+              ],
+            },
+          },
+          data: h.points.map((p) => [p.date, p.portfolio_value_usd]),
+        },
+        {
+          name: h.benchmark_ticker,
+          type: 'line',
+          showSymbol: false,
+          lineStyle: { color: t.textMuted, width: 1, type: [4, 3] },
+          data: h.points.map((p) => [p.date, p.benchmark_value_usd]),
+        },
+      ],
+    };
   }
 
   usd(v: string | null): string {
@@ -493,10 +799,19 @@ export class PortfolioComponent implements OnInit {
     return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   }
 
+  usdNumber(v: number): string {
+    if (!Number.isFinite(v)) return '—';
+    return v.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    });
+  }
+
   shares(v: string): string {
     const n = parseFloat(v);
     if (Number.isNaN(n)) return v;
-    return n.toLocaleString('en-US', { maximumFractionDigits: 4 });
+    return n.toLocaleString('en-US', { maximumFractionDigits: 8 });
   }
 
   pct(v: number | null): string {

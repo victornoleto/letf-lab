@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+import pandas as pd
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -198,3 +199,66 @@ def test_indicator_in_use_blocks_delete(client):
 
     r = client.delete(f"/api/indicators/{ind_id}")
     assert r.status_code == 409
+
+
+def test_transaction_creation_accepts_lowercase_enum_value(client):
+    r = client.post(
+        "/api/transactions",
+        json={
+            "date": "2026-05-08",
+            "asset_ticker": "tqqq",
+            "side": "buy",
+            "n_shares": 0.28613941,
+            "price_per_share": 174.74,
+            "currency": "USD",
+            "fx_rate_to_usd": 1,
+            "fees": 0,
+            "notes": None,
+        },
+    )
+
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["asset_ticker"] == "TQQQ"
+    assert body["side"] == "buy"
+    assert body["n_shares"] == "0.28613941"
+
+
+def test_portfolio_history_compares_with_default_benchmark(client, monkeypatch):
+    class FakePrices:
+        def get_close_series(self, ticker):
+            idx = pd.to_datetime(["2026-05-08", "2026-05-11"])
+            data = {
+                "TQQQ": [100.0, 110.0],
+                "SPY": [50.0, 55.0],
+            }
+            return pd.Series(data[ticker], index=idx, name=ticker)
+
+    import ai_swing.services.portfolio as portfolio_service
+
+    monkeypatch.setattr(portfolio_service, "get_price_service", lambda: FakePrices())
+
+    client.post(
+        "/api/transactions",
+        json={
+            "date": "2026-05-08",
+            "asset_ticker": "tqqq",
+            "side": "buy",
+            "n_shares": 2,
+            "price_per_share": 100,
+            "currency": "USD",
+            "fx_rate_to_usd": 1,
+            "fees": 0,
+        },
+    )
+
+    r = client.get("/api/portfolio/history")
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["benchmark_ticker"] == "SPY"
+    assert body["points"][-1] == {
+        "date": "2026-05-11",
+        "portfolio_value_usd": 220.0,
+        "benchmark_value_usd": 220.0,
+    }
