@@ -141,7 +141,7 @@ export class SettingsComponent {
 
   // TODO: wire to SettingsService / backend — values are local-only state for now.
   model = {
-    workspace: 'AI-Swing · trader@aiswing.dev',
+    workspace: 'LETF Lab · trader@letf-lab.local',
     tz: 'America/New_York (ET)',
     cron: '0 22 * * 1-5',
     provider: 'yfinance' as 'yfinance' | 'polygon' | 'tiingo',

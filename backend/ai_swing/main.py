@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="AI-Swing", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="LETF Lab", version="0.1.0", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,

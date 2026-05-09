@@ -15,7 +15,7 @@ help:
 	@echo "  install-backend install backend deps in backend/.venv (uv preferred)"
 	@echo "  install-frontend install frontend deps (npm)"
 	@echo "  db-create       create the letf_lab role + database on local Postgres"
-	@echo "  db-drop         drop the ai_swing database (data loss — confirm twice)"
+	@echo "  db-drop         drop the letf_lab database (data loss — confirm twice)"
 	@echo "  migrate         alembic upgrade head"
 	@echo "  seed            create default user + example strategies + indicators"
 	@echo "  dev             backend + frontend in parallel (foreground)"

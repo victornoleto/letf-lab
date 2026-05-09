@@ -26,7 +26,7 @@ import { AuthService } from '../../core/auth.service';
             </svg>
           </span>
           <span class="brand__name">
-            <span>AI</span><span class="brand__dot">·</span><span>Swing</span>
+            <span>LETF</span><span class="brand__dot">·</span><span>Lab</span>
           </span>
         </div>
 

@@ -14,8 +14,8 @@ import { ChatDrawerComponent } from './shared/chat-drawer/chat-drawer';
 import { ThemeSwitchComponent } from './shared/theme/theme-switch';
 import { AuthService } from './core/auth.service';
 
-const COLLAPSED_KEY = 'ai-swing.sidebar.collapsed';
-const BANNER_DISMISSED_KEY = 'ai-swing.banner.transitions.dismissed';
+const COLLAPSED_KEY = 'letf-lab.sidebar.collapsed';
+const BANNER_DISMISSED_KEY = 'letf-lab.banner.transitions.dismissed';
 
 @Component({
   selector: 'app-root',

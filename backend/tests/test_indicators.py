@@ -84,7 +84,7 @@ def test_vote_of_k_validates_inputs():
 
 # ---------- Parity tests vs letf_rotation_hunt ----------
 
-STUDY_PATH = Path("/var/www/pessoal/ai-trade/studies")
+STUDY_PATH = Path("/var/www/pessoal/letf-lab/studies")
 
 
 def _study_available() -> bool:

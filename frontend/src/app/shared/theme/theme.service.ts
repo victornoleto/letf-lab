@@ -2,7 +2,7 @@ import { Injectable, signal, effect, computed } from '@angular/core';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-const STORAGE_KEY = 'ai-swing.theme';
+const STORAGE_KEY = 'letf-lab.theme';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {

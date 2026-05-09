@@ -20,7 +20,7 @@ Capture date: 2026-05-07 · Resolved tokens: see `src/styles/tokens/_tokens.scss
 | `indicator-list.png` | `/indicators` populated (4 indicators) |
 | `indicator-form.png` | `/indicators/1/edit` |
 | `settings.png` | `/settings` |
-| `sidebar-collapsed.png` | `/dashboard` with `localStorage['ai-swing.sidebar.collapsed'] = '1'` |
+| `sidebar-collapsed.png` | `/dashboard` with `localStorage['letf-lab.sidebar.collapsed'] = '1'` |
 | `empty.png` | `/strategies` after deleting all strategies (re-seeded after capture) |
 | `loading.png` | `/dashboard`, `loading` signal pinned to true via `ng.getComponent` |
 | `modal.png` | `/strategies` confirm-delete dialog open |
@@ -62,7 +62,7 @@ Sampled live on `/strategies`, `data-theme="dark"`, body bg `rgb(8, 9, 10)`.
 ## Issues found (eyeball + measured)
 
 1. **Light, sidebar "Workspace" section label** — `--text-muted` (`rgb(115,115,115)`) on the sidebar surface `rgb(245,245,244)` yields **4.35:1**, just below AA. The same token on white card surfaces lands at 4.74:1, so the failure is specific to the sidebar background. Suggestion: darken `--text-muted` by ~1 step (e.g. `#6A6A6A`) only when over the sidebar surface, or lighten the sidebar bg slightly. This is the only color-pair that fails AA across the captured set.
-2. **Sidebar collapse style is wired but not implemented** — `app.html` toggles `.is-collapsed` on `aside.sidebar`, but `_sidebar.scss` only defines `.is-open` (mobile drawer). With `localStorage['ai-swing.sidebar.collapsed']='1'` the class is applied (verified: `sidebar is-collapsed`, width 232px) but the visual width / labels-hidden treatment never kicks in. As a result `light/sidebar-collapsed.png` and `dark/sidebar-collapsed.png` are visually identical to `dashboard.png`. The keyboard toggle in the topbar doesn't expose collapse either, so the feature is effectively dead. Functional bug, not a contrast issue.
+2. **Sidebar collapse style is wired but not implemented** — `app.html` toggles `.is-collapsed` on `aside.sidebar`, but `_sidebar.scss` only defines `.is-open` (mobile drawer). With `localStorage['letf-lab.sidebar.collapsed']='1'` the class is applied (verified: `sidebar is-collapsed`, width 232px) but the visual width / labels-hidden treatment never kicks in. As a result `light/sidebar-collapsed.png` and `dark/sidebar-collapsed.png` are visually identical to `dashboard.png`. The keyboard toggle in the topbar doesn't expose collapse either, so the feature is effectively dead. Functional bug, not a contrast issue.
 3. **Closed `<dialog>` from `app-confirm-dialog` renders as a visible empty pill at the top-center of every screen** — the `.modal` class sets `display: flex` which overrides the native HTML `<dialog>`'s default `display: none` when not `open`. Visible as a thin rounded rectangle near the top of every full-page screenshot (most obvious on `login.png` and `dashboard.png` because those have empty space there). Cosmetic only — confirm dialog still works correctly when triggered (see `modal.png`). Suggested fix in `_modal.scss`: `dialog.modal:not([open]) { display: none; }`.
 
 ## Visual diff vs v1-DNA (`prints/`)

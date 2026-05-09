@@ -18,7 +18,7 @@ interface ChatTurn {
   ts: number;
 }
 
-const STORAGE_KEY = 'ai-swing.chat.transcript';
+const STORAGE_KEY = 'letf-lab.chat.transcript';
 const MAX_TURNS = 60;
 
 @Component({
