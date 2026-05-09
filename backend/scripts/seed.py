@@ -76,7 +76,7 @@ def _get_or_create_strategy(db, name, benchmark, risk_on, risk_off, k, indicator
 
 
 def _get_or_create_default_user(db) -> User:
-    email = os.getenv("SEED_USER_EMAIL", "noletovasco@gmail.com").lower()
+    email = os.getenv("SEED_USER_EMAIL", "admin@example.com").lower()
     password = os.getenv("SEED_USER_PASSWORD", "password")
     existing = db.scalars(select(User).where(User.email == email)).first()
     if existing is not None:
