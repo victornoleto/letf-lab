@@ -22,7 +22,7 @@ import { stateLabel, stateOf } from '../../shared/strategy-state';
 
 type DetailTab = 'main' | 'indicators';
 
-const BACKEND_URL = 'http://localhost:8000/api';
+const BACKEND_URL = '/api';
 
 @Component({
   selector: 'app-strategy-detail',

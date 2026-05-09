@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
-const BASE_URL = 'http://localhost:8000/api/auth';
+const BASE_URL = '/api/auth';
 
 export interface AuthUser {
   id: number;

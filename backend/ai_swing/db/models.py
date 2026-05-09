@@ -179,7 +179,13 @@ class Transaction(Base):
     )
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     asset_ticker: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
-    side: Mapped[TransactionSide] = mapped_column(Enum(TransactionSide), nullable=False)
+    side: Mapped[TransactionSide] = mapped_column(
+        Enum(
+            TransactionSide,
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
+        nullable=False,
+    )
     n_shares: Mapped[float] = mapped_column(Numeric(18, 8), nullable=False)
     price_per_share: Mapped[float] = mapped_column(Numeric(18, 6), nullable=False)
     currency: Mapped[str] = mapped_column(String(8), nullable=False, default="USD")

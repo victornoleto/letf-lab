@@ -1,4 +1,4 @@
-"""Seed script: creates 4 standard indicators and 5 example strategies.
+"""Seed script: creates study-aligned indicators and example strategies.
 
 Run via: `python -m scripts.seed` (from backend/) or `make seed`.
 Idempotent — safe to re-run.
@@ -26,8 +26,8 @@ log = logging.getLogger("seed")
 
 
 INDICATORS_SEED = [
-    ("SMA200", IndicatorType.SMA_GATE, {"period": 200}, "Long-trend filter (price > SMA200)"),
-    ("SMA50", IndicatorType.SMA_GATE, {"period": 50}, "Short-trend filter (price > SMA50)"),
+    ("SMA250", IndicatorType.SMA_GATE, {"period": 250}, "Long-trend filter (price > SMA250)"),
+    ("SMA100", IndicatorType.SMA_GATE, {"period": 100}, "Short-trend filter (price > SMA100)"),
     ("Vol21d<40%", IndicatorType.VOL_GATE, {"window": 21, "threshold": 0.40},
      "Calm-regime filter (realized vol_21d < 40% annualized)"),
     ("AR(1)_30d>0", IndicatorType.AR1_GATE, {"window": 30, "threshold": 0.0},
@@ -36,7 +36,7 @@ INDICATORS_SEED = [
 
 
 STRATEGIES_SEED = [
-    ("QQQ → TQQQ vote-of-2", "QQQ", "TQQQ", "ZROZ", 2),
+    ("QQQ → QLD vote-of-2 sma250/100", "QQQ", "QLD", "ZROZ", 2),
     ("SPY → UPRO vote-of-2", "SPY", "UPRO", "ZROZ", 2),
     ("SMH → SOXL vote-of-2", "SMH", "SOXL", "ZROZ", 2),
     ("MU → MUU vote-of-2", "MU", "MUU", "ZROZ", 2),
@@ -76,8 +76,8 @@ def _get_or_create_strategy(db, name, benchmark, risk_on, risk_off, k, indicator
 
 
 def _get_or_create_default_user(db) -> User:
-    email = os.getenv("SEED_USER_EMAIL", "admin@letf-lab.local").lower()
-    password = os.getenv("SEED_USER_PASSWORD", "admin")
+    email = os.getenv("SEED_USER_EMAIL", "noletovasco@gmail.com").lower()
+    password = os.getenv("SEED_USER_PASSWORD", "password")
     existing = db.scalars(select(User).where(User.email == email)).first()
     if existing is not None:
         log.info("User already exists: %s", email)
@@ -85,7 +85,7 @@ def _get_or_create_default_user(db) -> User:
     user = User(email=email, password_hash=hash_password(password), name="Admin", is_active=True)
     db.add(user)
     db.flush()
-    log.info("Created user: %s (password from SEED_USER_PASSWORD or 'admin')", email)
+    log.info("Created user: %s (password from SEED_USER_PASSWORD or default seed password)", email)
     return user
 
 

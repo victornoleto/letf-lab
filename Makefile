@@ -4,10 +4,10 @@
 # in every recipe. If the venv doesn't exist yet, install-backend will create it.
 VENV := backend/.venv
 PY   := $(VENV)/bin/python
-PIP  := $(VENV)/bin/pip
-ALEMBIC  := $(VENV)/bin/alembic
-UVICORN  := $(VENV)/bin/uvicorn
-PYTEST   := $(VENV)/bin/pytest
+PIP  := $(PY) -m pip
+ALEMBIC  := $(PY) -m alembic
+UVICORN  := $(PY) -m uvicorn
+PYTEST   := $(PY) -m pytest
 
 help:
 	@echo "LETF Lab — make targets"
@@ -19,7 +19,7 @@ help:
 	@echo "  migrate         alembic upgrade head"
 	@echo "  seed            create default user + example strategies + indicators"
 	@echo "  dev             backend + frontend in parallel (foreground)"
-	@echo "  backend         FastAPI dev server (port 8000)"
+	@echo "  backend         FastAPI dev server (port from backend/.env API_PORT, default 8001)"
 	@echo "  frontend        Angular dev server (port 4200)"
 	@echo "  test            run pytest + Angular tests"
 	@echo "  refresh         trigger manual refresh via API"
@@ -39,7 +39,7 @@ install-backend:
 	@if command -v uv >/dev/null 2>&1; then \
 	  cd backend && uv pip install --python ../$(VENV)/bin/python -e ".[dev]"; \
 	else \
-	  cd backend && ../$(VENV)/bin/pip install -e ".[dev]"; \
+	  cd backend && ../$(PY) -m pip install -e ".[dev]"; \
 	fi
 
 install-frontend:
@@ -73,15 +73,15 @@ seed:
 	cd backend && ../$(PY) -m scripts.seed
 
 backend:
-	cd backend && ../$(UVICORN) ai_swing.main:app --reload --host 0.0.0.0 --port 8000
+	cd backend && set -a && [ -f .env ] && . ./.env || true; set +a; ../$(UVICORN) ai_swing.main:app --reload --host 0.0.0.0 --port $${API_PORT:-8001}
 
 frontend:
 	cd frontend && npm start
 
 dev:
-	@echo "Starting backend (8000) and frontend (4200)..."
+	@echo "Starting backend (API_PORT from backend/.env, default 8001) and frontend (4200)..."
 	@(trap 'kill 0' INT; \
-	  (cd backend && ../$(UVICORN) ai_swing.main:app --reload --host 0.0.0.0 --port 8000) & \
+	  (cd backend && set -a && [ -f .env ] && . ./.env || true; set +a; ../$(UVICORN) ai_swing.main:app --reload --host 0.0.0.0 --port $${API_PORT:-8001}) & \
 	  (cd frontend && npm start) & \
 	  wait)
 
@@ -94,7 +94,7 @@ test-frontend:
 	cd frontend && npm test -- --watch=false --browsers=ChromeHeadless
 
 refresh:
-	curl -X POST http://localhost:8000/api/refresh
+	@set -a && [ -f backend/.env ] && . ./backend/.env || true; set +a; curl -X POST http://localhost:$${API_PORT:-8001}/api/refresh
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

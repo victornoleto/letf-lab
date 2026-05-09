@@ -39,7 +39,7 @@ echarts.use([
   CanvasRenderer,
 ]);
 
-const BACKEND_URL = 'http://localhost:8000/api';
+const BACKEND_URL = '/api';
 
 type IndicatorKind = 'SMA_GATE' | 'EMA_GATE' | 'VOL_GATE' | 'AR1_GATE';
 
