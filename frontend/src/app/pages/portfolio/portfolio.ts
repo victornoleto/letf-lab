@@ -438,10 +438,11 @@ function todayLocalIsoDate(): string {
       gap: 16px;
     }
     .benchmark-field {
-      display: grid;
-      gap: 6px;
-      min-width: 128px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
+    .benchmark-field .label { margin-bottom: 0; }
     .benchmark-input {
       width: 128px;
       text-transform: uppercase;
@@ -449,6 +450,8 @@ function todayLocalIsoDate(): string {
     .portfolio-history-chart { height: 280px; }
     @media (max-width: 720px) {
       .portfolio-history-head { display: grid; }
+      .benchmark-field { display: grid; gap: 6px; }
+      .benchmark-field .label { margin-bottom: 0; }
       .benchmark-field, .benchmark-input { width: 100%; }
     }
     .pl-pos { color: var(--success); }
