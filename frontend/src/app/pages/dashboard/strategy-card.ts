@@ -42,8 +42,10 @@ import { stateOf, type CardState } from '../../shared/strategy-state';
             <span [class.ind-row__icon-pass]="r.gate_passed" [class.ind-row__icon-fail]="!r.gate_passed">
               <svg width="14" height="14"><use [attr.href]="r.gate_passed ? '#check' : '#x'"/></svg>
             </span>
-            <span class="ind-row__name">{{ r.indicator_name }}</span>
-            <span class="ind-row__detail">{{ r.raw_summary }}</span>
+            <span class="ind-row__body">
+              <span class="ind-row__name">{{ r.indicator_name }}</span>
+              <span class="ind-row__detail">{{ r.raw_summary }}</span>
+            </span>
             @if (r.headroom_pct !== null) {
               <span
                 class="headroom"
@@ -99,17 +101,15 @@ import { stateOf, type CardState } from '../../shared/strategy-state';
     .on { color: var(--success); }
     .off { color: var(--danger); }
     .headroom {
-      margin-left: auto;
       font-family: var(--font-mono);
       font-feature-settings: 'tnum' 1;
-      font-size: 10.5px;
-      padding: 1px 6px;
-      border-radius: 4px;
-      color: var(--text-muted);
+      font-size: 12px;
+      color: var(--success);
+      align-self: center;
     }
-    .headroom--good { color: var(--success); background: rgba(34, 197, 94, 0.10); }
-    .headroom--warn { color: var(--warn); background: rgba(245, 158, 11, 0.12); }
-    .headroom--bad  { color: var(--danger); background: rgba(239, 68, 68, 0.10); }
+    .headroom--good { color: var(--success); }
+    .headroom--warn { color: var(--warn); }
+    .headroom--bad  { color: var(--danger); }
   `],
 })
 export class StrategyCardComponent {

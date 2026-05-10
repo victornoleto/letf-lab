@@ -1,15 +1,27 @@
 .ind-row {
   display: grid;
-  grid-template-columns: 14px 84px 1fr;
-  gap: 8px;
+  grid-template-columns: 14px 1fr auto;
+  gap: 10px;
   align-items: center;
-  padding: 3px 0;
-  font-size: 11.5px;
+  padding: 7px 0;
+  min-width: 0;
+
+  & + & { border-top: 1px dashed var(--border-subtle); }
 
   &__icon-pass { color: var(--success); }
   &__icon-fail { color: var(--danger); }
 
-  &__name { color: var(--text-secondary); }
+  &__body {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  &__name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-primary);
+  }
 
   &__detail {
     font-family: var(--font-mono);
