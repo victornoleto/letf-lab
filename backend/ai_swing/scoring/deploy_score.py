@@ -77,7 +77,7 @@ def _edge_points(edge: float) -> tuple[int, str, str]:
             )
             return pts, "ok" if edge >= 0.15 else "warn", note
     return 0, "fail", (
-        f"Sortino edge {edge:+.2f} insuficiente — precisa ≥+0.05 vs benchmark"
+        f"Sortino edge {edge:+.2f} insufficient - needs >=+0.05 vs benchmark"
     )
 
 
@@ -104,17 +104,17 @@ def _underwater_metrics(
 def _underwater_points(pct_above: float, min_ratio: float) -> tuple[int, str, str]:
     """Two-axis tiering: replicates `_underwater_points` from the study."""
     if pct_above != pct_above:  # NaN
-        return 0, "fail", "Sem histórico pós-warmup suficiente"
+        return 0, "fail", "Not enough post-warmup history"
     if pct_above >= 1.0 - 1e-9 and (min_ratio != min_ratio or min_ratio >= 1.0):
-        return 15, "ok", f"100% do tempo acima do benchmark (mín ratio {min_ratio:.2f}×)"
+        return 15, "ok", f"100% of time above benchmark (min ratio {min_ratio:.2f}x)"
     if pct_above >= 0.99 and (min_ratio != min_ratio or min_ratio >= 0.8):
-        return 12, "ok", f"≥99% do tempo (mín ratio {min_ratio:.2f}×)"
+        return 12, "ok", f">=99% of time (min ratio {min_ratio:.2f}x)"
     if pct_above >= 0.95 and (min_ratio != min_ratio or min_ratio >= 0.7):
-        return 9, "warn", f"≥95% do tempo (mín ratio {min_ratio:.2f}×)"
+        return 9, "warn", f">=95% of time (min ratio {min_ratio:.2f}x)"
     if pct_above >= 0.90:
-        return 6, "warn", f"≥90% do tempo (mín ratio {min_ratio:.2f}×)"
+        return 6, "warn", f">=90% of time (min ratio {min_ratio:.2f}x)"
     return 0, "fail", (
-        f"Apenas {pct_above * 100:.0f}% do tempo acima do benchmark"
+        f"Only {pct_above * 100:.0f}% of time above benchmark"
     )
 
 
@@ -150,16 +150,16 @@ def _oos_fwd_points(strat_returns: pd.Series) -> tuple[int, str, str]:
         else:
             notes.append(f"OOS 30%: Sortino {oos_sortino:+.2f}")
     else:
-        notes.append("OOS 30%: dados insuficientes")
+        notes.append("OOS 30%: insufficient data")
     if len(fwd) >= 60:
         fwd_sortino = sortino_metric(fwd)
         if fwd_sortino > 0:
             pts += 5
-            notes.append(f"FWD pós-2020: Sortino {fwd_sortino:+.2f} ✓")
+            notes.append(f"Post-2020 FWD: Sortino {fwd_sortino:+.2f} ✓")
         else:
-            notes.append(f"FWD pós-2020: Sortino {fwd_sortino:+.2f}")
+            notes.append(f"Post-2020 FWD: Sortino {fwd_sortino:+.2f}")
     else:
-        notes.append("FWD pós-2020: dados insuficientes")
+        notes.append("Post-2020 FWD: insufficient data")
     status = "ok" if pts == 10 else ("warn" if pts >= 5 else "fail")
     return pts, status, " · ".join(notes)
 
@@ -172,7 +172,7 @@ def _crisis_points(strategy: Strategy) -> tuple[float, str, str, int, int]:
         "warn" if n_beats >= 1 else "fail"
     )
     note = (
-        f"Bate o SPY em {n_beats} de {n_eligible} crises elegíveis "
+        f"Beats SPY in {n_beats} of {n_eligible} eligible crises "
         f"(2.5 pts cada)"
     )
     return pts, status, note, n_beats, n_eligible
@@ -197,7 +197,7 @@ def _tier_label(total: float, winner_conditions_met: bool) -> str:
 def _gates_points(gates: dict | None) -> tuple[int, str, str]:
     """Crit 3: 5 pts per passing gate, 4 gates total -> max 20."""
     if gates is None:
-        return 0, "pending", "Aguardando próximo daily refresh"
+        return 0, "pending", "Waiting for next daily refresh"
     flags = [
         bool(gates["g2_dsr"]["pass_gate"]),
         bool(gates["g3_wf"]["pass_gate"]),
@@ -223,15 +223,15 @@ def _gates_points(gates: dict | None) -> tuple[int, str, str]:
 def _dsr_points(gates: dict | None) -> tuple[int, str, str]:
     """Crit 4: piecewise on g2_dsr.p_value (max 10 pts)."""
     if gates is None:
-        return 0, "pending", "Aguardando próximo daily refresh"
+        return 0, "pending", "Waiting for next daily refresh"
     p = float(gates["g2_dsr"]["p_value"])
     if p < 0.05:
         return 10, "ok", f"DSR p={p:.3f} (PSR fallback, n_trials=1)"
     if p < 0.10:
         return 7, "warn", f"DSR p={p:.3f} marginal"
     if p < 0.20:
-        return 3, "warn", f"DSR p={p:.3f} fraco"
-    return 0, "fail", f"DSR p={p:.3f} insuficiente"
+        return 3, "warn", f"DSR p={p:.3f} weak"
+    return 0, "fail", f"DSR p={p:.3f} insufficient"
 
 
 def compute_deploy_score(
@@ -262,7 +262,7 @@ def compute_deploy_score(
 
     pts7 = max(0.0, min(5.0, bonus_pts))
     status7 = "ok" if pts7 > 0 else "pending"
-    note7 = "Bônus manual (0-5)"
+    note7 = "Manual bonus (0-5)"
 
     gates_payload = gates_snapshot.payload if gates_snapshot is not None else None
     pts3, status3, note3 = _gates_points(gates_payload)
@@ -295,7 +295,7 @@ def compute_deploy_score(
             points=pts2, max_points=15, status=status2, note=note2,
         ),
         CriterionScore(
-            key="3_gates", label="Bateria de gates (G2/G3/G6/G7)",
+            key="3_gates", label="Gate battery (G2/G3/G6/G7)",
             points=pts3, max_points=20, status=status3, note=note3,
         ),
         CriterionScore(
@@ -303,7 +303,7 @@ def compute_deploy_score(
             points=pts4, max_points=10, status=status4, note=note4,
         ),
         CriterionScore(
-            key="5_oos_fwd", label="OOS + FWD pós-2020",
+            key="5_oos_fwd", label="OOS + post-2020 FWD",
             points=pts5, max_points=10, status=status5, note=note5,
         ),
         CriterionScore(
@@ -311,7 +311,7 @@ def compute_deploy_score(
             points=pts6, max_points=10, status=status6, note=note6,
         ),
         CriterionScore(
-            key="7_bonus", label="Bônus discricionário",
+            key="7_bonus", label="Discretionary bonus",
             points=pts7, max_points=5, status=status7, note=note7,
         ),
     ]

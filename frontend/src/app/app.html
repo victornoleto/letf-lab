@@ -35,19 +35,19 @@
         <span class="nav-item__label">Dashboard</span>
       </a>
       <a class="nav-item" routerLink="/strategies" routerLinkActive="nav-item--active"
-         [attr.title]="collapsed() ? 'Estratégias' : null">
+         [attr.title]="collapsed() ? 'Strategies' : null">
         <svg class="ico" width="14" height="14"><use href="#strategies"/></svg>
-        <span class="nav-item__label">Estratégias</span>
+        <span class="nav-item__label">Strategies</span>
       </a>
       <a class="nav-item" routerLink="/indicators" routerLinkActive="nav-item--active"
-         [attr.title]="collapsed() ? 'Indicadores' : null">
+         [attr.title]="collapsed() ? 'Indicators' : null">
         <svg class="ico" width="14" height="14"><use href="#indicators"/></svg>
-        <span class="nav-item__label">Indicadores</span>
+        <span class="nav-item__label">Indicators</span>
       </a>
       <a class="nav-item" routerLink="/portfolio" routerLinkActive="nav-item--active"
-         [attr.title]="collapsed() ? 'Portfólio' : null">
+         [attr.title]="collapsed() ? 'Portfolio' : null">
         <svg class="ico" width="14" height="14"><use href="#holdings"/></svg>
-        <span class="nav-item__label">Portfólio</span>
+        <span class="nav-item__label">Portfolio</span>
       </a>
       <a class="nav-item" routerLink="/digest" routerLinkActive="nav-item--active"
          [attr.title]="collapsed() ? 'Weekly Digest' : null">
@@ -58,7 +58,7 @@
 
     <div class="sidebar-foot">
       <div class="sidebar-foot__theme">
-        <span class="sidebar-foot__caption">Tema</span>
+        <span class="sidebar-foot__caption">Theme</span>
         <app-theme-switch />
       </div>
 
@@ -66,7 +66,7 @@
         <div class="sidebar-foot__user" [title]="user.email">
           <span class="sidebar-foot__avatar">{{ avatarInitial() }}</span>
           <span class="sidebar-foot__email">{{ user.email }}</span>
-          <button class="icon-btn" (click)="logout()" aria-label="Sair" title="Sair">
+          <button class="icon-btn" (click)="logout()" aria-label="Sign out" title="Sign out">
             <svg class="ico" width="13" height="13"><use href="#logout"/></svg>
           </button>
         </div>
@@ -75,12 +75,12 @@
       <div class="status-bar">
         <div class="status-bar__row">
           <span class="status-bar__dot"></span>
-          <span>Atualizado <span class="mono">{{ lastRefreshLabel() }}</span></span>
+          <span>Updated <span class="mono">{{ lastRefreshLabel() }}</span></span>
         </div>
         <button class="btn btn--sm" style="width: 100%; margin-top: 8px;"
                 (click)="triggerRefresh()" [disabled]="refreshing()">
           <svg class="ico" width="11" height="11" [class.spin]="refreshing()"><use href="#refresh"/></svg>
-          @if (refreshing()) { Atualizando… } @else { Refresh }
+          @if (refreshing()) { Refreshing... } @else { Refresh }
         </button>
       </div>
     </div>
@@ -100,11 +100,11 @@
       <div class="banner banner--warn">
         <svg class="ico" width="14" height="14"><use href="#alert-circle"/></svg>
         <span>
-          <strong>{{ recentTransitions().length }} transições nos últimos 7 dias</strong>
+          <strong>{{ recentTransitions().length }} transitions in the last 7 days</strong>
           @for (t of recentTransitions().slice(0, 2); track t.id) {
             · #{{ t.strategy_id }} {{ t.from_state ? 'ON' : 'OFF' }} → {{ t.to_state ? 'ON' : 'OFF' }}
           }
-          <a routerLink="/strategies" style="margin-left: 8px;">Ver →</a>
+          <a routerLink="/strategies" style="margin-left: 8px;">View →</a>
         </span>
         <button class="banner__close" (click)="dismissBanner()" aria-label="Dismiss">
           <svg class="ico" width="12" height="12"><use href="#x"/></svg>
@@ -116,7 +116,7 @@
       <div class="banner banner--danger">
         <svg class="ico" width="14" height="14"><use href="#alert-circle"/></svg>
         <span>{{ refreshError() }}</span>
-        <button class="banner__close" (click)="dismissError()" aria-label="Fechar">
+        <button class="banner__close" (click)="dismissError()" aria-label="Close">
           <svg class="ico" width="12" height="12"><use href="#x"/></svg>
         </button>
       </div>

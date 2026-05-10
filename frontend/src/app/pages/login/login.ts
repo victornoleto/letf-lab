@@ -30,8 +30,8 @@ import { AuthService } from '../../core/auth.service';
           </span>
         </div>
 
-        <h1 class="login-title">Entrar</h1>
-        <p class="login-sub">Acesso ao monitor de estratégias rotacionais.</p>
+        <h1 class="login-title">Sign In</h1>
+        <p class="login-sub">Access the rotational strategies monitor.</p>
 
         <form (submit)="$event.preventDefault(); submit()">
           <div class="field">
@@ -42,7 +42,7 @@ import { AuthService } from '../../core/auth.service';
           </div>
 
           <div class="field">
-            <label class="label" for="login-pass">Senha</label>
+            <label class="label" for="login-pass">Password</label>
             <input id="login-pass" class="input" type="password"
                    [ngModel]="password()" (ngModelChange)="password.set($event)" name="password"
                    autocomplete="current-password" required />
@@ -60,9 +60,9 @@ import { AuthService } from '../../core/auth.service';
                   style="width: 100%; justify-content: center; padding: 9px 12px; margin-top: 4px;">
             @if (submitting()) {
               <svg class="ico spin" width="13" height="13"><use href="#refresh"/></svg>
-              Entrando…
+              Signing in...
             } @else {
-              Entrar
+              Sign in
             }
           </button>
 
@@ -97,7 +97,7 @@ export class LoginComponent {
       error: (err) => {
         this.submitting.set(false);
         const detail = err?.error?.detail;
-        this.error.set(typeof detail === 'string' ? detail : 'Falha ao autenticar');
+        this.error.set(typeof detail === 'string' ? detail : 'Authentication failed');
       },
     });
   }

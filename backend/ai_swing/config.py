@@ -14,6 +14,13 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     allow_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
 
+    # Portfolio display currency. USD remains the internal base currency.
+    portfolio_base_currency: str = "USD"
+    portfolio_local_currency: str = "BRL"
+    portfolio_local_fx_ticker: str = "BRL=X"
+    portfolio_local_fx_invert: bool = False
+    portfolio_locale: str = "pt-BR"
+
     # Auth — JWT in HttpOnly cookie. The default secret is unsafe; override in .env.
     auth_jwt_secret: str = "dev-only-change-me"
     auth_token_ttl_hours: int = 24

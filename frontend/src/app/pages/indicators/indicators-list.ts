@@ -15,17 +15,17 @@ import { ToastService } from '../../shared/toast/toast.service';
     <div class="page">
       <header class="page-head">
         <div>
-          <h1 class="page-head__h1">Indicadores</h1>
-          <p class="page-head__sub">{{ indicators().length }} cadastrados</p>
+          <h1 class="page-head__h1">Indicators</h1>
+          <p class="page-head__sub">{{ indicators().length }} registered</p>
         </div>
         <div class="page-head__actions">
           <div class="search">
             <svg class="ico" width="13" height="13"><use href="#search"/></svg>
-            <input [(ngModel)]="searchTerm" placeholder="Buscar nome ou tipo…" />
+            <input [(ngModel)]="searchTerm" placeholder="Search name or type..." />
           </div>
           <a routerLink="/indicators/new" class="btn btn--primary">
             <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
-            Novo indicador
+            New indicator
           </a>
         </div>
       </header>
@@ -35,11 +35,11 @@ import { ToastService } from '../../shared/toast/toast.service';
       } @else if (indicators().length === 0) {
         <div class="empty">
           <svg class="empty__icon" width="24" height="24"><use href="#indicators"/></svg>
-          <div class="empty__title">Nenhum indicador ainda</div>
-          <div class="empty__copy">Adicione indicadores para usar em estratégias.</div>
+          <div class="empty__title">No indicators yet</div>
+          <div class="empty__copy">Add indicators to use in strategies.</div>
           <a routerLink="/indicators/new" class="btn btn--primary">
             <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
-            Novo indicador
+            New indicator
           </a>
         </div>
       } @else {
@@ -47,8 +47,8 @@ import { ToastService } from '../../shared/toast/toast.service';
           <table class="table">
             <thead>
               <tr>
-                <th>Nome</th><th>Tipo</th><th>Parâmetros</th>
-                <th>Descrição</th><th></th>
+                <th>Name</th><th>Type</th><th>Parameters</th>
+                <th>Description</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -61,10 +61,10 @@ import { ToastService } from '../../shared/toast/toast.service';
                   <td>
                     <div class="table__actions">
                       <a class="icon-btn" (click)="$event.stopPropagation()"
-                         [routerLink]="['/indicators', ind.id, 'edit']" aria-label="Editar">
+                         [routerLink]="['/indicators', ind.id, 'edit']" aria-label="Edit">
                         <svg width="13" height="13"><use href="#pencil"/></svg>
                       </a>
-                      <button class="icon-btn" (click)="$event.stopPropagation(); remove(ind)" aria-label="Remover">
+                      <button class="icon-btn" (click)="$event.stopPropagation(); remove(ind)" aria-label="Remove">
                         <svg width="13" height="13"><use href="#trash"/></svg>
                       </button>
                     </div>
@@ -119,21 +119,21 @@ export class IndicatorsListComponent implements OnInit {
 
   async remove(ind: Indicator): Promise<void> {
     const ok = await this.confirm.ask({
-      title: 'Remover indicador',
-      message: `${ind.name} será removido permanentemente. Esta ação não pode ser desfeita.`,
-      confirmLabel: 'Remover',
+      title: 'Remove indicator',
+      message: `${ind.name} will be permanently removed. This action cannot be undone.`,
+      confirmLabel: 'Remove',
       variant: 'danger',
     });
     if (!ok) return;
     this.api.deleteIndicator(ind.id).subscribe({
       next: () => {
-        this.toast.push({ variant: 'success', message: 'Indicador removido' });
+        this.toast.push({ variant: 'success', message: 'Indicator removed' });
         this.load();
       },
       error: (err) =>
         this.toast.push({
           variant: 'danger',
-          message: err?.error?.detail ?? 'Erro ao remover',
+          message: err?.error?.detail ?? 'Failed to remove',
           duration: 8000,
         }),
     });

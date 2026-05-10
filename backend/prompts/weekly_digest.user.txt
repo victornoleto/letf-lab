@@ -1,6 +1,6 @@
-Gere o digest semanal a partir do contexto abaixo.
+Generate the weekly digest from the context below.
 
-Semana: {week_start} a {week_end}
+Week: {week_start} to {week_end}
 
-Contexto:
+Context:
 {context_json}

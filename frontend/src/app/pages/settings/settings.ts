@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ThemeSwitchComponent } from '../../shared/theme/theme-switch';
 
-type Section = 'geral' | 'cron' | 'feeds' | 'notif' | 'aparencia' | 'api';
+type Section = 'general' | 'cron' | 'feeds' | 'notifications' | 'appearance' | 'api';
 
 @Component({
   selector: 'app-settings',
@@ -14,36 +14,36 @@ type Section = 'geral' | 'cron' | 'feeds' | 'notif' | 'aparencia' | 'api';
     <div class="page">
       <header class="page-head">
         <div>
-          <h1 class="page-h1">Configurações</h1>
-          <p class="page-sub">Workspace · cron · feeds · aparência</p>
+          <h1 class="page-h1">Settings</h1>
+          <p class="page-sub">Workspace · cron · feeds · appearance</p>
         </div>
       </header>
 
       <div class="settings-grid">
-        <nav class="settings-nav" aria-label="Configurações">
-          <span class="item" [class.active]="active() === 'geral'"     (click)="active.set('geral')">Geral</span>
+        <nav class="settings-nav" aria-label="Settings">
+          <span class="item" [class.active]="active() === 'general'"   (click)="active.set('general')">General</span>
           <span class="item" [class.active]="active() === 'cron'"      (click)="active.set('cron')">Cron & jobs</span>
-          <span class="item" [class.active]="active() === 'feeds'"     (click)="active.set('feeds')">Feeds de preço</span>
-          <span class="item" [class.active]="active() === 'notif'"     (click)="active.set('notif')">Notificações</span>
-          <span class="item" [class.active]="active() === 'aparencia'" (click)="active.set('aparencia')">Aparência</span>
+          <span class="item" [class.active]="active() === 'feeds'"     (click)="active.set('feeds')">Price feeds</span>
+          <span class="item" [class.active]="active() === 'notifications'" (click)="active.set('notifications')">Notifications</span>
+          <span class="item" [class.active]="active() === 'appearance'" (click)="active.set('appearance')">Appearance</span>
           <span class="item" [class.active]="active() === 'api'"       (click)="active.set('api')">API & tokens</span>
         </nav>
 
         <div class="settings-content">
           @switch (active()) {
-            @case ('geral') {
+            @case ('general') {
               <section class="settings-section">
                 <div class="settings-row">
                   <div>
-                    <div class="lbl">Nome do workspace</div>
-                    <div class="desc">Aparece no header e em emails de transição.</div>
+                    <div class="lbl">Workspace name</div>
+                    <div class="desc">Appears in the header and transition emails.</div>
                   </div>
                   <input class="input" [(ngModel)]="model.workspace" />
                 </div>
                 <div class="settings-row">
                   <div>
                     <div class="lbl">Timezone</div>
-                    <div class="desc">Usado para timestamps do cron diário.</div>
+                    <div class="desc">Used for daily cron timestamps.</div>
                   </div>
                   <select class="input" [(ngModel)]="model.tz">
                     <option>America/New_York (ET)</option>
@@ -58,19 +58,19 @@ type Section = 'geral' | 'cron' | 'feeds' | 'notif' | 'aparencia' | 'api';
               <section class="settings-section">
                 <div class="settings-row">
                   <div>
-                    <div class="lbl">Cron diário</div>
-                    <div class="desc">Quando rodar o pipeline de sinais. Default 22h ET (após close).</div>
+                    <div class="lbl">Daily cron</div>
+                    <div class="desc">When to run the signal pipeline. Default is 10pm ET (after close).</div>
                   </div>
                   <input class="input input--mono" [(ngModel)]="model.cron" />
                 </div>
                 <div class="settings-row">
                   <div>
-                    <div class="lbl">Cache de backtest</div>
-                    <div class="desc">Local. Limpe se mudar a definição de indicadores.</div>
+                    <div class="lbl">Backtest cache</div>
+                    <div class="desc">Local. Clear it if indicator definitions change.</div>
                   </div>
                   <button class="btn">
                     <svg class="ico" width="12" height="12"><use href="#trash"/></svg>
-                    Limpar cache (124 MB)
+                    Clear cache (124 MB)
                   </button>
                 </div>
               </section>
@@ -80,8 +80,8 @@ type Section = 'geral' | 'cron' | 'feeds' | 'notif' | 'aparencia' | 'api';
               <section class="settings-section">
                 <div class="settings-row">
                   <div>
-                    <div class="lbl">Provider de preços</div>
-                    <div class="desc">Fonte primária dos OHLC.</div>
+                    <div class="lbl">Price provider</div>
+                    <div class="desc">Primary OHLC source.</div>
                   </div>
                   <div class="pills">
                     <span class="pill" [class.pill--active]="model.provider === 'yfinance'" (click)="model.provider = 'yfinance'">yfinance</span>
@@ -92,12 +92,12 @@ type Section = 'geral' | 'cron' | 'feeds' | 'notif' | 'aparencia' | 'api';
               </section>
             }
 
-            @case ('notif') {
+            @case ('notifications') {
               <section class="settings-section">
                 <div class="settings-row">
                   <div>
-                    <div class="lbl">Email em transição</div>
-                    <div class="desc">Avisa quando uma estratégia muda de estado (on ↔ off ↔ borderline).</div>
+                    <div class="lbl">Transition email</div>
+                    <div class="desc">Sends an alert when a strategy changes state (on ↔ off ↔ borderline).</div>
                   </div>
                   <div class="pills">
                     <span class="pill" [class.pill--active]="model.emailNotif"  (click)="model.emailNotif = true">on</span>
@@ -107,12 +107,12 @@ type Section = 'geral' | 'cron' | 'feeds' | 'notif' | 'aparencia' | 'api';
               </section>
             }
 
-            @case ('aparencia') {
+            @case ('appearance') {
               <section class="settings-section">
                 <div class="settings-row">
                   <div>
-                    <div class="lbl">Aparência</div>
-                    <div class="desc">Tema do app · respeita preferência do SO quando "System".</div>
+                    <div class="lbl">Appearance</div>
+                    <div class="desc">App theme · follows the OS preference when set to "System".</div>
                   </div>
                   <app-theme-switch />
                 </div>
@@ -124,9 +124,9 @@ type Section = 'geral' | 'cron' | 'feeds' | 'notif' | 'aparencia' | 'api';
                 <div class="settings-row">
                   <div>
                     <div class="lbl">API tokens</div>
-                    <div class="desc">Em breve.</div>
+                    <div class="desc">Coming soon.</div>
                   </div>
-                  <span class="badge badge--neutral">Em breve</span>
+                  <span class="badge badge--neutral">Coming soon</span>
                 </div>
               </section>
             }
@@ -137,7 +137,7 @@ type Section = 'geral' | 'cron' | 'feeds' | 'notif' | 'aparencia' | 'api';
   `,
 })
 export class SettingsComponent {
-  active = signal<Section>('geral');
+  active = signal<Section>('general');
 
   // TODO: wire to SettingsService / backend — values are local-only state for now.
   model = {

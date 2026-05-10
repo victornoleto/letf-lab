@@ -1,7 +1,7 @@
-Pergunta do usuário:
+User question:
 {question}
 
-Contexto da carteira (JSON):
+Portfolio context (JSON):
 {context_json}
 
-Use o contexto acima para responder.
+Use the context above to answer.

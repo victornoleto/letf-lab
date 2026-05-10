@@ -23,12 +23,12 @@ import { ValidationGate, ValidationSnapshot } from '../../core/models';
           <div>
             <h2 class="validation-card__title">Validation Snapshot</h2>
             <p class="validation-card__sub">
-              Gates estatísticos e validações temporais da estratégia
+              Statistical gates and time-based strategy validations
               @if (d.asof_date) { · {{ d.asof_date }} · {{ d.range_years }}y }
             </p>
           </div>
           <span class="validation-card__status" [ngClass]="d.gates_available ? 'status--ok' : 'status--pending'">
-            @if (d.gates_available) { refresh pronto } @else { aguardando refresh }
+             @if (d.gates_available) { refresh ready } @else { waiting for refresh }
           </span>
         </header>
 

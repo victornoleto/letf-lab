@@ -1,9 +1,9 @@
 // =============================================================================
 // LETF Lab — Modal (refresh)
-// <dialog>::backdrop blur, animação, sizes, sectioning, segmented form helpers
+// <dialog>::backdrop blur, animation, sizes, sectioning, segmented form helpers
 // =============================================================================
 
-// Mantido p/ compat: command palette + confirm dialog usam <div>.modal-backdrop
+// Kept for compatibility: command palette + confirm dialog use <div>.modal-backdrop
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -17,7 +17,7 @@
   animation: modal-fadeIn 140ms var(--ease-out);
 }
 
-// <dialog> nativo (ModalComponent)
+// Native <dialog> (ModalComponent)
 dialog.modal {
   margin: auto;
   padding: 0;

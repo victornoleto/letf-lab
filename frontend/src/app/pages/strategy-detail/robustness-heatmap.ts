@@ -37,13 +37,13 @@ echarts.use([HeatmapChart, GridComponent, TooltipComponent, VisualMapComponent, 
         <div>
           <h2 class="section__title">Benchmark Edge Windows</h2>
           <p class="section__sub">
-            Duas leituras por janela rolante: tempo acima do benchmark e edge final
-            de equity/benchmark em 3/5/10/15/20 anos.
+            Two readings per rolling window: time above benchmark and final
+            equity/benchmark edge over 3/5/10/15/20 years.
           </p>
         </div>
         @if (data(); as d) {
           <span class="edge-summary" [ngClass]="summaryCls(d)">
-            {{ countPassed(d) }}/{{ countValid(d) }} acima de 1x
+            {{ countPassed(d) }}/{{ countValid(d) }} above 1x
           </span>
         }
       </header>
@@ -56,7 +56,7 @@ echarts.use([HeatmapChart, GridComponent, TooltipComponent, VisualMapComponent, 
         } @else if (data(); as d) {
           <div class="heatmap-grid">
             <article class="heatmap-panel">
-              <div class="heatmap-panel__title">% acima do benchmark</div>
+              <div class="heatmap-panel__title">% above benchmark</div>
               <div #pctChart class="heatmap"></div>
             </article>
             <article class="heatmap-panel">
@@ -65,7 +65,7 @@ echarts.use([HeatmapChart, GridComponent, TooltipComponent, VisualMapComponent, 
             </article>
           </div>
           <p class="heatmap__caption">
-            Histórico desde {{ d.history_start }} · {{ d.entry_dates.length }} datas mensais amostradas
+            History since {{ d.history_start }} · {{ d.entry_dates.length }} sampled monthly dates
           </p>
         }
       </div>
@@ -133,7 +133,7 @@ export class RobustnessHeatmapComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Falha ao calcular rolling-window stress');
+        this.error.set(err?.error?.detail ?? 'Failed to compute rolling-window stress');
         this.loading.set(false);
       },
     });
@@ -209,7 +209,7 @@ export class RobustnessHeatmapComponent implements OnInit, OnDestroy {
       },
       series: [
         {
-          name: '% acima bench',
+          name: '% above bench',
           type: 'heatmap',
           data: pctSeries,
           itemStyle: { borderRadius: 1, borderWidth: 0 },
@@ -284,7 +284,7 @@ export class RobustnessHeatmapComponent implements OnInit, OnDestroy {
         const ratio = cell.final_equity_ratio !== null ? `${cell.final_equity_ratio.toFixed(2)}x` : '—';
         return [
           `<div style="font-weight:500;">${entry} → +${window}y</div>`,
-          `<div>% acima bench: ${pct}</div>`,
+          `<div>% above bench: ${pct}</div>`,
           `<div>Equity/benchmark final: ${ratio}</div>`,
         ].join('');
       },

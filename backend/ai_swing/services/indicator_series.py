@@ -1,4 +1,4 @@
-"""Build per-indicator time series for the strategy detail "Indicadores" tab.
+"""Build per-indicator time series for the strategy detail "Indicators" tab.
 
 The frontend renders one chart per strategy indicator: each chart compares
 the price/return path against the indicator's reference curve (SMA, EMA,

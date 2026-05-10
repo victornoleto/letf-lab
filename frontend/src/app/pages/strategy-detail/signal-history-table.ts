@@ -46,8 +46,8 @@ type Range = typeof RANGES[number];
       } @else if (snapshots().length === 0) {
         <div class="section__body">
           <div class="empty" style="padding: 32px 16px;">
-            <div class="empty__title">Sem histórico ainda</div>
-            <div class="empty__copy">Será populado pelo cron diário (22h ET) ou ao usar refresh manual.</div>
+            <div class="empty__title">No history yet</div>
+            <div class="empty__copy">Daily cron (10pm ET) or manual refresh will populate it.</div>
           </div>
         </div>
       } @else {
@@ -55,9 +55,9 @@ type Range = typeof RANGES[number];
           <table class="table">
             <thead>
               <tr>
-                <th>Data</th>
+                <th>Date</th>
                 <th>Score</th>
-                <th>Estado</th>
+                <th>State</th>
                 @for (col of indicatorColumns(); track col) {
                   <th class="th--icon">{{ col }}</th>
                 }

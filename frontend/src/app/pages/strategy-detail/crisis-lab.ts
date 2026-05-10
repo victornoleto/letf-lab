@@ -37,12 +37,12 @@ echarts.use([LineChart, GridComponent, TooltipComponent, AxisPointerComponent, C
         <div>
           <h2 class="section__title">Crisis Lab</h2>
           <p class="section__sub">
-            Como a estratégia se comportou em 4 crises canônicas vs SPY (renormalizado).
+            How the strategy behaved across 4 canonical crises vs SPY (renormalized).
           </p>
         </div>
         @if (data(); as d) {
           <span class="crisis-lab__score" [ngClass]="scoreCls(d.n_beats, d.n_eligible)">
-            {{ d.n_beats }} de {{ d.n_eligible }} crises batem o SPY
+            {{ d.n_beats }} of {{ d.n_eligible }} crises beat SPY
           </span>
         }
       </header>
@@ -63,12 +63,12 @@ echarts.use([LineChart, GridComponent, TooltipComponent, AxisPointerComponent, C
               </header>
               @if (r.verdict === 'insufficient_data') {
                 <div class="crisis-card__empty">
-                  Sem dados suficientes — risk-on ou benchmark ainda não existia.
+                  Not enough data. Risk-on or benchmark did not exist yet.
                 </div>
               } @else {
                 <div #chart class="crisis-card__chart" [attr.data-name]="r.name"></div>
                 <footer class="crisis-card__foot">
-                  <span class="mono">% acima SPY: {{ formatPct(r.pct_above_spy) }}</span>
+                  <span class="mono">% above SPY: {{ formatPct(r.pct_above_spy) }}</span>
                   <span class="mono">final: {{ formatRatio(r.end_ratio) }}×</span>
                 </footer>
               }
@@ -169,7 +169,7 @@ export class CrisisLabComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Falha ao carregar crisis attribution');
+        this.error.set(err?.error?.detail ?? 'Failed to load crisis attribution');
         this.loading.set(false);
       },
     });
@@ -245,7 +245,7 @@ export class CrisisLabComponent implements OnInit, OnDestroy {
         },
         series: [
           {
-            name: 'Estratégia',
+            name: 'Strategy',
             type: 'line',
             data: strat,
             showSymbol: false,

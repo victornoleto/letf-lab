@@ -12,7 +12,7 @@
   margin-bottom: 6px;
   letter-spacing: 0.01em;
 
-  // Hint inline (pequeno texto à direita do label)
+  // Inline hint (small text on the right side of the label)
   .label__hint {
     float: right;
     font-weight: var(--fw-regular);
@@ -81,7 +81,7 @@ select.input {
   background-repeat: no-repeat;
 }
 
-// ---- Input affix group: input com prefixo ou sufixo (USD, %, etc) ----
+// ---- Input affix group: input with a prefix or suffix (USD, %, etc) ----
 .input-affix {
   position: relative;
   display: flex;
@@ -120,7 +120,7 @@ select.input {
     border-radius: var(--radius-md) 0 0 var(--radius-md);
   }
 
-  // Focus ring engloba o group inteiro
+  // Focus ring wraps the whole group.
   &:focus-within {
     .input { border-color: var(--accent); box-shadow: none; }
     .input-affix__prefix,
@@ -163,7 +163,7 @@ select.input {
       box-shadow: var(--shadow-xs);
     }
 
-    // Variants semânticas (buy=green, sell=red) quando ativos
+    // Semantic variants (buy=green, sell=red) when active.
     &--buy.segmented__opt--active   { color: var(--success-fg); }
     &--sell.segmented__opt--active  { color: var(--danger-fg); }
   }

@@ -4,26 +4,26 @@
 // Drop-in @use as: @use './styles/tokens';
 // =============================================================================
 //
-// Princípios:
-// - Densidade alta: 13px corpo, 12.5px botões, 6px radius (linear-grade sharpness).
-// - Neutros frios e sóbrios: cinzas neutros (zinc-ish) no light, slate frio profundo no dark.
-// - 1 accent só: indigo Linear (#5E6AD2). Tudo o mais é estado (success/danger/warn).
-// - Cantos sutis (4–6px), sombras quase imperceptíveis. Hierarquia vem de borda + bg, não de elevation.
-// - Mono em tudo que é ticker / score / valor numérico (`tnum`).
+// Principles:
+// - High density: 13px body, 12.5px buttons, 6px radius (linear-grade sharpness).
+// - Cool, sober neutrals: neutral grays (zinc-ish) in light mode, deep cool slate in dark mode.
+// - Single accent: Linear indigo (#5E6AD2). Everything else is state (success/danger/warn).
+// - Subtle corners (4-6px), nearly imperceptible shadows. Hierarchy comes from border + bg, not elevation.
+// - Mono for every ticker / score / numeric value (`tnum`).
 //
-// Como estender:
-// - NUNCA hardcode hex em componentes. Sempre via var(--*).
-// - Estados: aplicar `*-soft` para fills e `*-fg` para texto. Não inventar tons.
-// - Para foco use `--focus-ring` (sempre o accent, com 33% alpha).
+// How to extend:
+// - NEVER hardcode hex values in components. Always use var(--*).
+// - States: apply `*-soft` for fills and `*-fg` for text. Do not invent tones.
+// - For focus, use `--focus-ring` (always the accent, with 33% alpha).
 
 // ============== Light theme (default — :root) ==============
 :root {
   // Surfaces
-  --bg:               #fafafa;   // page background (off-white frio)
+  --bg:               #fafafa;   // page background (cool off-white)
   --surface:          #ffffff;   // cards, modals, inputs
-  --surface-elevated: #ffffff;   // popovers, dropdowns (idêntico — diferença vem da sombra)
+  --surface-elevated: #ffffff;   // popovers, dropdowns (identical; difference comes from shadow)
   --surface-muted:    #f4f4f5;   // table header, code chips, hover
-  --sidebar-bg:       #f5f5f4;   // sidebar 1 nível mais escuro que --bg
+  --sidebar-bg:       #f5f5f4;   // sidebar 1 level darker than --bg
   --overlay:          rgba(10, 10, 10, 0.45); // modal backdrop
 
   // Text
@@ -33,12 +33,12 @@
   --text-disabled:    #a3a3a3;
   --text-on-accent:   #ffffff;
 
-  // Borders (frias, sem warm-bias)
+  // Borders (cool, no warm bias)
   --border:           #e5e5e5;
   --border-subtle:    #ededed;
   --border-strong:    #d4d4d4;
 
-  // Brand / interactive — accent canônico Linear
+  // Brand / interactive - canonical Linear accent
   --accent:           #5e6ad2;   // indigo Linear
   --accent-hover:     #6872d8;
   --accent-active:    #4d59c4;
@@ -46,7 +46,7 @@
   --accent-fg:        #5e6ad2;
   --focus-ring:       rgba(94, 106, 210, 0.33);
 
-  // Status — cores planas, sem gradiente
+  // Status - flat colors, no gradient
   --success:          #16a34a;
   --success-soft:     rgba(22, 163, 74, 0.10);
   --success-fg:       #15803d;
@@ -66,9 +66,9 @@
   // Sparkline / chart neutrals (gridlines, axis)
   --chart-grid:       #ededed;
   --chart-axis:       #a3a3a3;
-  --chart-equity:     #16a34a;   // linha principal sobe
+  --chart-equity:     #16a34a;   // main line rises
   --chart-equity-fill: rgba(22, 163, 74, 0.08);
-  --chart-ratio:      #5e6ad2;   // razão entre tickers
+  --chart-ratio:      #5e6ad2;   // ratio between tickers
 
   // Typography
   --font-sans:        'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -76,11 +76,11 @@
 
   --fs-xs:            11px;
   --fs-sm:            11.5px;    // labels uppercase, kbd hints
-  --fs-base:          13px;      // body padrão (denso)
-  --fs-md:            13.5px;    // botões primários, brand
+  --fs-base:          13px;      // default body (dense)
+  --fs-md:            13.5px;    // primary buttons, brand
   --fs-lg:            16px;      // h3
-  --fs-xl:            20px;      // h1 página
-  --fs-2xl:           28px;      // hero numérico (CAGR card)
+  --fs-xl:            20px;      // page h1
+  --fs-2xl:           28px;      // numeric hero (CAGR card)
 
   --lh-tight:         1.25;
   --lh-snug:          1.35;
@@ -98,34 +98,34 @@
   --radius-xs:        3px;       // kbd hints
   --radius-sm:        4px;       // badges, tag chips
   --radius-md:        5px;       // inputs, nav items, small buttons
-  --radius-lg:        6px;       // cards, modals, primary buttons (canônico)
-  --radius-xl:        8px;       // raramente — só hero/empty state
+  --radius-lg:        6px;       // cards, modals, primary buttons (canonical)
+  --radius-xl:        8px;       // rare - only hero/empty state
   --radius-pill:      999px;
 
   // Spacing scale (4px base)
   --space-0:          0;
   --space-1:          4px;
-  --space-2:          6px;       // gap interno denso (chips, kbd)
+  --space-2:          6px;       // dense internal gap (chips, kbd)
   --space-3:          8px;
-  --space-4:          12px;      // gap entre cards
-  --space-5:          16px;      // padding de section
+  --space-4:          12px;      // gap between cards
+  --space-5:          16px;      // section padding
   --space-6:          20px;      // header bottom margin
   --space-7:          24px;      // page padding top
   --space-8:          32px;      // page padding x
   --space-9:          48px;
   --space-10:         64px;      // page padding bottom
 
-  // Shadows — quase invisíveis (Linear não usa elevation pesada)
+  // Shadows - nearly invisible (Linear does not use heavy elevation)
   --shadow-xs:        0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-sm:        0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 1px rgba(0, 0, 0, 0.04);
   --shadow-md:        0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-lg:        0 12px 32px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.05);
 
-  // Density — alturas canônicas
-  --h-input:          35px;      // canônico — inputs e botões alinhados
-  --h-btn:            35px;      // alinhado com input para evitar saltos visuais
+  // Density - canonical heights
+  --h-input:          35px;      // canonical - aligned inputs and buttons
+  --h-btn:            35px;      // aligned with input to avoid visual jumps
   --h-btn-sm:         30px;
-  --h-row:            36px;      // table rows densas
+  --h-row:            36px;      // dense table rows
   --h-nav-item:       28px;      // sidebar items
   --h-topbar:         48px;
 
@@ -136,14 +136,14 @@
   --z-modal:          1000;
   --z-toast:          1100;
 
-  // Motion — Linear é rápido (120–180ms), curva linear ou ease-out
+  // Motion - Linear is fast (120-180ms), linear or ease-out curve
   --ease-out:         cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast:    120ms;
   --duration-base:    180ms;
 }
 
 // ============== Dark theme ==============
-// Estratégia: slate frio profundo. Bordas sutis. Accent indigo brilha mais para contrast.
+// Strategy: deep cool slate. Subtle borders. Indigo accent glows more for contrast.
 // Hex values: JSX-canonical (capture-shell.jsx TOKENS_DARK) — overrides 01-tokens.scss markdown
 // where the two disagreed.
 [data-theme="dark"] {
@@ -214,13 +214,13 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
-// Tabular nums em qualquer .mono — essencial pra alinhar tickers/valores
+// Tabular nums in any .mono - essential for aligning tickers/values.
 .mono, code, kbd, pre, .num {
   font-family: var(--font-mono);
   font-feature-settings: 'tnum' 1, 'cv02' 1, 'cv03' 1, 'cv04' 1;
 }
 
-// Foco consistente: 2px ring no accent (sem outline default browser)
+// Consistent focus: 2px ring on accent (without default browser outline).
 :focus { outline: none; }
 :focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -228,7 +228,7 @@ html, body {
   border-radius: var(--radius-md);
 }
 
-// Scrollbar discreta (webkit) — opcional mas recomendado
+// Subtle scrollbar (webkit) - optional but recommended.
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; border: 2px solid var(--bg); }

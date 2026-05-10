@@ -9,7 +9,7 @@ from ai_swing.services import ai_chat
 def test_chat_raises_when_cli_not_configured(monkeypatch, db_session):
     monkeypatch.setattr(ai_chat.ai_cli.settings, "ai_cli_command", "")
     with pytest.raises(RuntimeError, match=r"not configured"):
-        ai_chat.chat(db_session, user_id=1, question="oi")
+        ai_chat.chat(db_session, user_id=1, question="hi")
 
 
 def test_chat_rejects_empty_question(monkeypatch, db_session):
@@ -31,16 +31,16 @@ def test_chat_calls_ai_cli_with_serialized_context(monkeypatch, db_session):
     def fake_run_prompt(system, user, **kw):
         captured["system"] = system
         captured["user"] = user
-        return "Resposta sintética"
+        return "Synthetic answer"
 
     monkeypatch.setattr(ai_chat.ai_cli, "run_prompt", fake_run_prompt)
 
     answer = ai_chat.chat(
-        db_session, user_id=1, question="Como está minha carteira?",
+        db_session, user_id=1, question="How is my portfolio doing?",
         include_portfolio=False,
     )
-    assert answer == "Resposta sintética"
-    assert "Como está minha carteira?" in captured["user"]
+    assert answer == "Synthetic answer"
+    assert "How is my portfolio doing?" in captured["user"]
     # The serialized context should be embedded as JSON in the user prompt
     assert '"strategies"' in captured["user"]
     assert '"recent_transitions_90d"' in captured["user"]

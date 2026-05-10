@@ -16,10 +16,10 @@ import { ToastService } from '../../shared/toast/toast.service';
         <span style="display: inline-flex; transform: rotate(180deg);">
           <svg width="12" height="12"><use href="#chevron-right"/></svg>
         </span>
-        Indicadores
+        Indicators
       </a>
 
-      <h1 class="page-h1">{{ indicatorId() ? 'Editar' : 'Novo' }} indicador</h1>
+      <h1 class="page-h1">{{ indicatorId() ? 'Edit' : 'New' }} indicator</h1>
 
       @if (loading()) {
         <div class="skeleton skeleton--card" style="height: 320px; max-width: 560px;"></div>
@@ -27,17 +27,17 @@ import { ToastService } from '../../shared/toast/toast.service';
         <form class="form" (submit)="$event.preventDefault(); save()">
 
           <div class="field" [class.is-invalid]="touched().has('name') && !name()">
-            <label class="label" for="iname">Nome</label>
+            <label class="label" for="iname">Name</label>
             <input id="iname" class="input"
                    [ngModel]="name()" (ngModelChange)="name.set($event)" name="name"
                    (blur)="markTouched('name')" />
             @if (touched().has('name') && !name()) {
-              <p class="error">Nome é obrigatório</p>
+              <p class="error">Name is required</p>
             }
           </div>
 
           <div class="field">
-            <label class="label" for="itype">Tipo</label>
+            <label class="label" for="itype">Type</label>
             <select id="itype" class="input"
                     [ngModel]="type()" (ngModelChange)="onTypeChange($event)" name="type"
                     [disabled]="!!indicatorId()">
@@ -69,12 +69,12 @@ import { ToastService } from '../../shared/toast/toast.service';
           }
 
           <div class="field">
-            <label class="label" for="idesc">Descrição</label>
+            <label class="label" for="idesc">Description</label>
             <textarea id="idesc" class="input" rows="3"
                       [ngModel]="description()" (ngModelChange)="description.set($event)"
                       name="description"
                       style="height: auto; padding: 8px 10px;"></textarea>
-            <p class="hint">Opcional · explica o uso do indicador</p>
+            <p class="hint">Optional · explains how the indicator is used</p>
           </div>
 
           @if (error()) {
@@ -85,13 +85,13 @@ import { ToastService } from '../../shared/toast/toast.service';
           }
 
           <div class="form-footer">
-            <a routerLink="/indicators" class="btn">Cancelar</a>
+            <a routerLink="/indicators" class="btn">Cancel</a>
             <button type="submit" class="btn btn--primary" [disabled]="!canSave() || saving()">
               @if (saving()) {
                 <svg class="ico spin" width="11" height="11"><use href="#refresh"/></svg>
-                Salvando…
+                Saving...
               } @else {
-                {{ indicatorId() ? 'Salvar' : 'Criar' }}
+                {{ indicatorId() ? 'Save' : 'Create' }}
               }
             </button>
           </div>
@@ -144,7 +144,7 @@ export class IndicatorFormComponent implements OnInit {
               this.description.set(ind.description ?? '');
               this.loading.set(false);
             },
-            error: () => { this.error.set('Indicador não encontrado'); this.loading.set(false); },
+            error: () => { this.error.set('Indicator not found'); this.loading.set(false); },
           });
         } else {
           this.applyDefaultsForType();
@@ -230,7 +230,7 @@ export class IndicatorFormComponent implements OnInit {
     obs.subscribe({
       next: () => {
         this.saving.set(false);
-        this.toast.push({ variant: 'success', message: 'Indicador salvo' });
+        this.toast.push({ variant: 'success', message: 'Indicator saved' });
         this.router.navigate(['/indicators']);
       },
       error: (err) => {
@@ -246,7 +246,7 @@ export class IndicatorFormComponent implements OnInit {
     const detail = err?.error?.detail;
     if (typeof detail === 'string') return detail;
     if (Array.isArray(detail)) return detail.map((d) => d.msg ?? JSON.stringify(d)).join('; ');
-    return err?.message ?? 'Erro ao salvar';
+    return err?.message ?? 'Failed to save';
   }
 }
 
@@ -255,15 +255,15 @@ export class IndicatorFormComponent implements OnInit {
  * when no override is registered. Keep in sync with backend catalog.
  */
 const PARAM_LABELS: Record<string, string> = {
-  'SMA_GATE.period': 'Período (dias)',
-  'SMA_GATE.threshold': 'Banda (% acima/abaixo da SMA)',
-  'EMA_GATE.period': 'Span (dias)',
-  'EMA_GATE.threshold': 'Banda (% acima/abaixo da EMA)',
-  'VOL_GATE.window': 'Janela (dias)',
-  'VOL_GATE.threshold': 'Vol máx anualizada',
-  'AR1_GATE.window': 'Janela (dias)',
-  'AR1_GATE.threshold': 'Coef. mínimo AR(1)',
-  period: 'Período',
-  window: 'Janela',
+  'SMA_GATE.period': 'Period (days)',
+  'SMA_GATE.threshold': 'Band (% above/below SMA)',
+  'EMA_GATE.period': 'Span (days)',
+  'EMA_GATE.threshold': 'Band (% above/below EMA)',
+  'VOL_GATE.window': 'Window (days)',
+  'VOL_GATE.threshold': 'Max annualized vol',
+  'AR1_GATE.window': 'Window (days)',
+  'AR1_GATE.threshold': 'Min AR(1) coef.',
+  period: 'Period',
+  window: 'Window',
   threshold: 'Threshold',
 };

@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
 /**
  * Reusable HTML5 <dialog>-based modal.
  * Usage:
- *   <app-modal [open]="isOpen()" [size]="'wide'" [title]="'Nova estratégia'" (close)="onClose()">
+ *   <app-modal [open]="isOpen()" [size]="'wide'" [title]="'New strategy'" (close)="onClose()">
  *     <!-- body content -->
  *     <div modal-footer class="modal__foot">
  *       <button class="btn btn--ghost btn--md">Cancel</button>

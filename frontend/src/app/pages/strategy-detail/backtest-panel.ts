@@ -112,7 +112,7 @@ interface PerfRow {
           <button class="btn btn--sm btn--ghost"
                   [class.btn--active]="showNet()"
                   (click)="toggleNet()"
-                  title="Aplica DARF anual da Lei 14.754 (15% sobre ganhos realizados)">
+                  title="Applies annual DARF under Law 14.754 (15% on realized gains)">
             Net
           </button>
           <div class="pills">
@@ -126,7 +126,7 @@ interface PerfRow {
           </div>
           <button class="btn btn--sm" (click)="forceRerun.emit()" [disabled]="loading()">
             <svg class="ico" width="11" height="11" [class.spin]="loading()"><use href="#refresh"/></svg>
-            @if (loading()) { Rodando… } @else { Rerun }
+             @if (loading()) { Running... } @else { Rerun }
           </button>
         </div>
       </header>
@@ -135,7 +135,7 @@ interface PerfRow {
         <div class="section__body">
           <div class="error-state">
             <svg class="error-state__icon" width="20" height="20"><use href="#alert-circle"/></svg>
-            <div class="error-state__title">Erro ao rodar backtest</div>
+             <div class="error-state__title">Failed to run backtest</div>
             <div class="error-state__copy mono">{{ error() }}</div>
           </div>
         </div>
@@ -146,7 +146,7 @@ interface PerfRow {
               <thead>
                 <tr>
                   <th class="th--num">#</th>
-                  <th>Comparativo</th>
+                  <th>Comparison</th>
                   <th class="th--num">CAGR</th>
                   <th class="th--num">Max. DD</th>
                   <th class="th--num">Sortino</th>
@@ -170,11 +170,11 @@ interface PerfRow {
 
           <div class="charts-grid">
             <div class="chart-cell">
-              <div class="chart-cap">Equity curve · Estratégia vs Buy &amp; Hold benchmark</div>
+              <div class="chart-cap">Equity curve · Strategy vs Buy &amp; Hold benchmark</div>
               <div #equityHost style="height: 280px;"></div>
             </div>
             <div class="chart-cell">
-              <div class="chart-cap">Razão Estratégia / Benchmark · paridade em 1.0×</div>
+              <div class="chart-cap">Strategy / benchmark ratio · parity at 1.0×</div>
               <div #ratioHost style="height: 280px;"></div>
             </div>
           </div>
@@ -200,7 +200,7 @@ interface PerfRow {
             </span>
           }
           <span class="perf-footnote perf-footnote--hint">
-            scroll = zoom · arraste o slider abaixo dos charts para ajustar a janela · cursor sincronizado entre charts
+            scroll = zoom · drag the slider below the charts to adjust the window · cursor synchronized across charts
           </span>
         </div>
       }
@@ -298,7 +298,7 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
     if (!r) return [];
     const rows: PerfRow[] = [
       {
-        label: 'Estratégia',
+        label: 'Strategy',
         cls: 'perf-table__label--strategy',
         cagr: r.metrics_strategy.cagr,
         max_dd: r.metrics_strategy.max_dd,
@@ -309,7 +309,7 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
         && r.metrics_strategy.cagr_net != null
         && r.metrics_strategy.sortino_net != null) {
       rows.push({
-        label: 'Estratégia · Net',
+        label: 'Strategy · Net',
         cls: 'perf-table__label--strategy-net',
         cagr: r.metrics_strategy.cagr_net,
         max_dd: r.metrics_strategy.max_dd,  // MaxDD is structural, ~unchanged

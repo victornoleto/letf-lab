@@ -41,7 +41,7 @@ interface Group {
           <div class="palette__input">
             <svg class="ico" width="14" height="14" style="color: var(--text-muted);"><use href="#search"/></svg>
             <input #q [ngModel]="query()" (ngModelChange)="query.set($event)"
-                   placeholder="Buscar estratégias, indicadores, comandos…"
+                   placeholder="Search strategies, indicators, commands..."
                    (keydown.arrowdown)="moveSelection(1); $event.preventDefault()"
                    (keydown.arrowup)="moveSelection(-1); $event.preventDefault()"
                    (keydown.enter)="runActive(); $event.preventDefault()"
@@ -66,10 +66,10 @@ interface Group {
           </div>
 
           <div class="palette__foot">
-            <span><span class="kbd">↑↓</span> navegar</span>
-            <span><span class="kbd">↵</span> selecionar</span>
-            <span><span class="kbd">esc</span> fechar</span>
-            <span style="margin-left: auto;">{{ filtered().length }} resultados</span>
+            <span><span class="kbd">↑↓</span> navigate</span>
+            <span><span class="kbd">↵</span> select</span>
+            <span><span class="kbd">esc</span> close</span>
+            <span style="margin-left: auto;">{{ filtered().length }} results</span>
           </div>
         </div>
       </div>
@@ -109,14 +109,14 @@ export class CommandPaletteComponent implements AfterViewInit {
   ngAfterViewInit(): void {}
 
   private actions: Item[] = [
-    { type: 'action', label: 'Nova estratégia',     ctx: '⌘N', icon: 'plus',    run: () => this.router.navigate(['/strategies/new']) },
-    { type: 'action', label: 'Refresh sinais agora', ctx: '⌘R', icon: 'refresh', run: () => this.refresh() },
+    { type: 'action', label: 'New strategy',        ctx: '⌘N', icon: 'plus',    run: () => this.router.navigate(['/strategies/new']) },
+    { type: 'action', label: 'Refresh signals now', ctx: '⌘R', icon: 'refresh', run: () => this.refresh() },
   ];
   private navItems: Item[] = [
-    { type: 'nav', label: 'Ir para Dashboard',    ctx: 'G 1', icon: 'dashboard',  run: () => this.router.navigate(['/dashboard']) },
-    { type: 'nav', label: 'Ir para Estratégias',  ctx: 'G 2', icon: 'strategies', run: () => this.router.navigate(['/strategies']) },
-    { type: 'nav', label: 'Ir para Indicadores',  ctx: 'G 3', icon: 'indicators', run: () => this.router.navigate(['/indicators']) },
-    { type: 'nav', label: 'Configurações',        icon: 'settings', run: () => this.router.navigate(['/settings']) },
+    { type: 'nav', label: 'Go to Dashboard',   ctx: 'G 1', icon: 'dashboard',  run: () => this.router.navigate(['/dashboard']) },
+    { type: 'nav', label: 'Go to Strategies',  ctx: 'G 2', icon: 'strategies', run: () => this.router.navigate(['/strategies']) },
+    { type: 'nav', label: 'Go to Indicators',  ctx: 'G 3', icon: 'indicators', run: () => this.router.navigate(['/indicators']) },
+    { type: 'nav', label: 'Settings',          icon: 'settings', run: () => this.router.navigate(['/settings']) },
   ];
 
   private matches(s: string): boolean {
@@ -159,10 +159,10 @@ export class CommandPaletteComponent implements AfterViewInit {
     const inds   = f.filter(i => i.type === 'indicator');
     const acts   = f.filter(i => i.type === 'action');
     const navs   = f.filter(i => i.type === 'nav');
-    if (strats.length) groups.push({ label: 'Estratégias', items: strats });
-    if (inds.length)   groups.push({ label: 'Indicadores', items: inds });
-    if (acts.length)   groups.push({ label: 'Ações',       items: acts });
-    if (navs.length)   groups.push({ label: 'Navegação',   items: navs });
+    if (strats.length) groups.push({ label: 'Strategies', items: strats });
+    if (inds.length)   groups.push({ label: 'Indicators', items: inds });
+    if (acts.length)   groups.push({ label: 'Actions',    items: acts });
+    if (navs.length)   groups.push({ label: 'Navigation', items: navs });
     return groups;
   });
 

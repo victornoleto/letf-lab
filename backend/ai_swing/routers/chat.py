@@ -25,7 +25,7 @@ def chat_endpoint(
     if not ai_chat.is_available():
         raise HTTPException(
             status_code=503,
-            detail="AI chat indisponível (configure AI_CLI_COMMAND)",
+            detail="AI chat unavailable (configure AI_CLI_COMMAND)",
         )
     try:
         answer = ai_chat.chat(

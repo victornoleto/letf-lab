@@ -21,7 +21,7 @@ import { CohortEntry, CohortReport } from '../../core/models';
         <div>
           <h2 class="section__title">Cohort Entry</h2>
           <p class="section__sub">
-            Como a estratégia teria se saído começando em 8 datas históricas relevantes
+            How the strategy would have performed from 8 relevant historical start dates
             (forward {{ forwardYears() }}y).
           </p>
         </div>
@@ -37,13 +37,13 @@ import { CohortEntry, CohortReport } from '../../core/models';
             <table class="table cohort-table">
               <thead>
                 <tr>
-                  <th>Data</th>
-                  <th>Cenário</th>
+                  <th>Date</th>
+                  <th>Scenario</th>
                   <th class="th--num">CAGR</th>
                   <th class="th--num">Sortino</th>
                   <th>MaxDD</th>
                   <th class="th--num">Final Edge</th>
-                  <th>Tempo atrás do benchmark</th>
+                  <th>Time behind benchmark</th>
                 </tr>
               </thead>
               <tbody>
@@ -69,7 +69,7 @@ import { CohortEntry, CohortReport } from '../../core/models';
                       </td>
                     } @else {
                       <td colspan="5" class="td--num cohort-table__no-data">
-                        sem histórico ({{ e.n_days }}d disponíveis)
+                        no history ({{ e.n_days }}d available)
                       </td>
                     }
                   </tr>
@@ -111,7 +111,7 @@ export class CohortEntriesComponent implements OnInit {
     this.api.cohortEntry(this.strategyId(), this.forwardYears()).subscribe({
       next: (d) => { this.data.set(d); this.loading.set(false); },
       error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Falha ao calcular cohort entry');
+        this.error.set(err?.error?.detail ?? 'Failed to compute cohort entry');
         this.loading.set(false);
       },
     });

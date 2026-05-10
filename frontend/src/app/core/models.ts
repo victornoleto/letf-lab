@@ -143,8 +143,16 @@ export interface PortfolioSummary {
   market_value_usd: string;
   pl_usd: string;
   pl_pct: number | null;
-  display_currency: 'USD' | 'BRL';
+  display_currency: string;
   fx_rate_used: string | null;
+}
+
+export interface PortfolioConfig {
+  base_currency: string;
+  local_currency: string;
+  local_fx_ticker: string;
+  local_fx_invert: boolean;
+  locale: string;
 }
 
 export interface PortfolioHistoryPoint {

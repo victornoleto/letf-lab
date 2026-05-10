@@ -1,15 +1,15 @@
-"""Lei 14.754/2023 (Brasil) — DARF anual sobre ganhos realizados.
+"""Brazilian Law 14.754/2023 - annual DARF on realized gains.
 
-Port do `studies/letf_rotation_hunt/tax_layer.py`. Mantém a lógica
-``annual_realize`` (que é o modo das estratégias swing/T1+):
+Port of `studies/letf_rotation_hunt/tax_layer.py`. Keeps the
+``annual_realize`` logic (the mode used by swing/T1+ strategies):
 
-- 15% de DARF sobre o ganho realizado no ano
-- Prejuízo carrega adiante indefinidamente
-- Imposto pago apenas no último pregão de cada ano-calendário
+- 15% DARF on realized gains in the year
+- Losses carry forward indefinitely
+- Tax is paid only on the last trading day of each calendar year
 
-A entrada é a equity curve bruta (que já vem do engine compondo
-``(1 + retornos).cumprod()`` a partir de 1.0). A saída é a equity
-curve líquida com a mesma indexação temporal.
+The input is the gross equity curve (already produced by the engine as
+``(1 + returns).cumprod()`` starting from 1.0). The output is the net equity
+curve with the same time index.
 """
 from __future__ import annotations
 
@@ -24,25 +24,25 @@ def apply_annual_darf(
     returns: pd.Series,
     initial: float | None = None,
 ) -> pd.Series:
-    """Aplica DARF anual (Lei 14.754) sobre uma equity curve bruta.
+    """Apply annual DARF (Law 14.754) to a gross equity curve.
 
-    ``gross_equity.iloc[0]`` é o valor APÓS o retorno do primeiro pregão,
-    não o capital inicial. ``initial`` é inferido a partir de ``returns``
-    se não passado: ``initial = gross_equity[0] / (1 + returns[0])``.
+    ``gross_equity.iloc[0]`` is the value AFTER the first trading day's return,
+    not the initial capital. ``initial`` is inferred from ``returns`` when not
+    passed: ``initial = gross_equity[0] / (1 + returns[0])``.
     """
     if initial is None:
         if returns is None or len(returns) == 0:
-            raise ValueError("Não dá pra inferir initial sem returns")
+            raise ValueError("Cannot infer initial without returns")
         initial = float(gross_equity.iloc[0]) / (1.0 + float(returns.iloc[0]))
     return _apply_annual_darf(gross_equity, initial)
 
 
 def _apply_annual_darf(gross_equity: pd.Series, initial: float) -> pd.Series:
-    """15% DARF sobre ganho anual; perda acumula como carry-forward.
+    """15% DARF on annual gains; losses accumulate as carry-forward.
 
-    Dentro do ano, a equity líquida é a equity bruta rebaseada para o
-    anchor líquido do final do ano anterior (preserva compounding diário).
-    No último bar do ano-calendário, o imposto é descontado.
+    During the year, net equity is gross equity rebased to the net anchor from
+    the end of the previous year (preserving daily compounding). On the last
+    bar of the calendar year, tax is deducted.
     """
     net_equity = gross_equity.copy().astype(float)
     carry_forward_loss = 0.0
@@ -85,6 +85,6 @@ def _apply_annual_darf(gross_equity: pd.Series, initial: float) -> pd.Series:
 
 
 def net_returns_from_curve(net_equity: pd.Series) -> pd.Series:
-    """Retornos diários derivados da equity líquida (incluindo o ‘furo’ de
-    DARF no último dia do ano)."""
+    """Daily returns derived from net equity, including the DARF dip on the
+    year's last day."""
     return net_equity.pct_change().fillna(0.0)

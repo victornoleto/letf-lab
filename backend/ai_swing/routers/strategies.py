@@ -261,8 +261,8 @@ def validation_snapshot_endpoint(
         cut = int(len(rets) * 0.70)
         oos = rets.iloc[cut:]
         fwd = rets[rets.index >= pd.Timestamp("2020-01-01")]
-        oos_value = _fmt_sortino(sortino_metric(oos)) if len(oos) >= 30 else "dados insuf."
-        fwd_value = _fmt_sortino(sortino_metric(fwd)) if len(fwd) >= 60 else "dados insuf."
+        oos_value = _fmt_sortino(sortino_metric(oos)) if len(oos) >= 30 else "insufficient data"
+        fwd_value = _fmt_sortino(sortino_metric(fwd)) if len(fwd) >= 60 else "insufficient data"
         oos_pass = bool(len(oos) >= 30 and sortino_metric(oos) > 0 and len(fwd) >= 60 and sortino_metric(fwd) > 0)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -274,18 +274,18 @@ def validation_snapshot_endpoint(
         gates=gates,
         oos_fwd=ValidationGateDTO(
             key="oos_fwd",
-            label="OOS + forward pós-2020",
-            value=f"OOS {oos_value} · pós-2020 {fwd_value}",
+            label="OOS + post-2020 forward",
+            value=f"OOS {oos_value} · post-2020 {fwd_value}",
             passed=oos_pass,
             description=(
-                "Verifica se a estratégia manteve Sortino positivo no último "
-                "30% do histórico e no período posterior a 2020."
+                "Checks whether the strategy kept positive Sortino in the last "
+                "30% of history and in the post-2020 period."
             ),
         ),
         dsr_note=(
-            "DSR não é exibido como métrica separada: com uma única configuração "
-            "avaliada, o cálculo atual cai para PSR. DSR completo exigiria o número "
-            "real de configurações/testes candidatos."
+            "DSR is not displayed as a separate metric: with a single evaluated "
+            "configuration, the current calculation falls back to PSR. Full DSR would require "
+            "the real number of candidate configurations/tests."
         ),
     )
 
@@ -299,31 +299,31 @@ def _validation_gate_dtos(payload: dict | None) -> list[ValidationGateDTO]:
         return [
             ValidationGateDTO(
                 key="g2",
-                label="G2 - Confiança estatística",
-                value="aguardando refresh",
+                label="G2 - Statistical confidence",
+                value="waiting for refresh",
                 passed=None,
-                description="PSR/DSR: estima se o Sharpe observado é estatisticamente defensável.",
+                description="PSR/DSR: estimates whether the observed Sharpe is statistically defensible.",
             ),
             ValidationGateDTO(
                 key="g3",
-                label="G3 - Validação por janelas",
-                value="aguardando refresh",
+                label="G3 - Window validation",
+                value="waiting for refresh",
                 passed=None,
-                description="Confere se a estratégia supera o benchmark em janelas cronológicas fora de uma única média histórica.",
+                description="Checks whether the strategy beats the benchmark across chronological windows outside a single historical average.",
             ),
             ValidationGateDTO(
                 key="g6",
-                label="G6 - Bootstrap de robustez",
-                value="aguardando refresh",
+                label="G6 - Robustness bootstrap",
+                value="waiting for refresh",
                 passed=None,
-                description="Reamostra retornos em blocos e exige limite inferior positivo para o Sortino.",
+                description="Resamples returns in blocks and requires a positive lower bound for Sortino.",
             ),
             ValidationGateDTO(
                 key="g7",
-                label="G7 - Consistência de cálculo",
-                value="aguardando refresh",
+                label="G7 - Calculation consistency",
+                value="waiting for refresh",
                 passed=None,
-                description="Compara implementações independentes de CAGR para detectar divergência aritmética relevante.",
+                description="Compares independent CAGR implementations to detect material arithmetic divergence.",
             ),
         ]
 
@@ -334,31 +334,31 @@ def _validation_gate_dtos(payload: dict | None) -> list[ValidationGateDTO]:
     return [
         ValidationGateDTO(
             key="g2",
-            label="G2 - Confiança estatística",
+            label="G2 - Statistical confidence",
             value=f"p={float(g2.get('p_value', 1.0)):.3f} · Sharpe {float(g2.get('observed_sharpe', 0.0)):+.2f}",
             passed=bool(g2.get("pass_gate")),
-            description="PSR/DSR: estima se o Sharpe observado é estatisticamente defensável.",
+            description="PSR/DSR: estimates whether the observed Sharpe is statistically defensible.",
         ),
         ValidationGateDTO(
             key="g3",
-            label="G3 - Validação por janelas",
-            value=f"{int(g3.get('n_pass', 0))}/{int(g3.get('n_windows', 0))} janelas passam",
+            label="G3 - Window validation",
+            value=f"{int(g3.get('n_pass', 0))}/{int(g3.get('n_windows', 0))} windows pass",
             passed=bool(g3.get("pass_gate")),
-            description="Confere se a estratégia supera o benchmark em janelas cronológicas fora de uma única média histórica.",
+            description="Checks whether the strategy beats the benchmark across chronological windows outside a single historical average.",
         ),
         ValidationGateDTO(
             key="g6",
-            label="G6 - Bootstrap de robustez",
+            label="G6 - Robustness bootstrap",
             value=f"IC 99% Sortino low {float(g6.get('ci_low_sortino', 0.0)):+.2f}",
             passed=bool(g6.get("pass_gate")),
-            description="Reamostra retornos em blocos e exige limite inferior positivo para o Sortino.",
+            description="Resamples returns in blocks and requires a positive lower bound for Sortino.",
         ),
         ValidationGateDTO(
             key="g7",
-            label="G7 - Consistência de cálculo",
+            label="G7 - Calculation consistency",
             value=f"delta {float(g7.get('delta_pp', 0.0)):.2f}pp",
             passed=bool(g7.get("pass_gate")),
-            description="Compara implementações independentes de CAGR para detectar divergência aritmética relevante.",
+            description="Compares independent CAGR implementations to detect material arithmetic divergence.",
         ),
     ]
 
@@ -449,7 +449,7 @@ def regenerate_report_endpoint(
     if report is None:
         raise HTTPException(
             status_code=503,
-            detail="AI reports não disponíveis (configure AI_CLI_COMMAND)",
+            detail="AI reports unavailable (configure AI_CLI_COMMAND)",
         )
     db.commit()
     return StrategyReportDTO.model_validate(report)

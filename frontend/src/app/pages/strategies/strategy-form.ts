@@ -18,10 +18,10 @@ type Touched = { name: boolean; benchmark: boolean; riskOn: boolean; riskOff: bo
         <span style="display: inline-flex; transform: rotate(180deg);">
           <svg width="12" height="12"><use href="#chevron-right"/></svg>
         </span>
-        Estratégias
+        Strategies
       </a>
 
-      <h1 class="page-h1">{{ strategyId() ? 'Editar' : 'Nova' }} estratégia</h1>
+      <h1 class="page-h1">{{ strategyId() ? 'Edit' : 'New' }} strategy</h1>
 
       @if (loading()) {
         <div class="skeleton skeleton--card" style="height: 360px; max-width: 560px;"></div>
@@ -29,13 +29,13 @@ type Touched = { name: boolean; benchmark: boolean; riskOn: boolean; riskOff: bo
         <form class="form" (submit)="$event.preventDefault(); save()">
 
           <div class="field" [class.is-invalid]="touched.name && !validName()">
-            <label class="label" for="name">Nome</label>
+            <label class="label" for="name">Name</label>
             <input id="name" class="input" [class.input--error]="touched.name && !validName()"
                    [(ngModel)]="model.name" name="name" maxlength="64"
                    (blur)="touched.name = true" />
-            <p class="hint">{{ model.name.length }}/64 caracteres</p>
+            <p class="hint">{{ model.name.length }}/64 characters</p>
             @if (touched.name && !validName()) {
-              <p class="error">Nome é obrigatório</p>
+              <p class="error">Name is required</p>
             }
           </div>
 
@@ -44,7 +44,7 @@ type Touched = { name: boolean; benchmark: boolean; riskOn: boolean; riskOff: bo
             <input id="bench" class="input input--mono" [(ngModel)]="model.benchmark_ticker"
                    name="benchmark" maxlength="6" (blur)="touched.benchmark = true"
                    (input)="model.benchmark_ticker = $any($event.target).value.toUpperCase()" />
-            <p class="hint">Index/ETF de referência (ex: QQQ, SPY, IWM)</p>
+            <p class="hint">Reference index/ETF (for example: QQQ, SPY, IWM)</p>
           </div>
 
           <div class="row-2">
@@ -53,22 +53,22 @@ type Touched = { name: boolean; benchmark: boolean; riskOn: boolean; riskOff: bo
               <input id="riskOn" class="input input--mono" [(ngModel)]="model.risk_on_ticker"
                      name="risk_on" maxlength="6"
                      (input)="model.risk_on_ticker = $any($event.target).value.toUpperCase()" />
-              <p class="hint">Quando indicators ativos</p>
+              <p class="hint">When indicators are active</p>
             </div>
             <div class="field">
               <label class="label" for="riskOff">Risk-off ticker</label>
               <input id="riskOff" class="input input--mono" [(ngModel)]="model.risk_off_ticker"
                      name="risk_off" maxlength="6"
                      (input)="model.risk_off_ticker = $any($event.target).value.toUpperCase()" />
-              <p class="hint">Quando indicators desativam</p>
+              <p class="hint">When indicators deactivate</p>
             </div>
           </div>
 
           <div class="field">
             <label class="label">
-              Indicadores (k de N)
+              Indicators (k of N)
               <span class="kmin">
-                k mínimo:
+                min k:
                 <select [ngModel]="kThreshold()" (ngModelChange)="kThreshold.set(+$event)" name="k">
                   @for (i of kOptions(); track i) { <option [value]="i">{{ i }}</option> }
                 </select>
@@ -84,7 +84,7 @@ type Touched = { name: boolean; benchmark: boolean; riskOn: boolean; riskOff: bo
                 </button>
               }
             </div>
-            <p class="hint">{{ indicatorIds().length }} selecionado(s) · {{ kThreshold() }} mínimo(s) para risk-on</p>
+            <p class="hint">{{ indicatorIds().length }} selected · {{ kThreshold() }} minimum for risk-on</p>
           </div>
 
           @if (error()) {
@@ -95,13 +95,13 @@ type Touched = { name: boolean; benchmark: boolean; riskOn: boolean; riskOff: bo
           }
 
           <div class="form-footer">
-            <a routerLink="/strategies" class="btn">Cancelar</a>
+            <a routerLink="/strategies" class="btn">Cancel</a>
             <button type="submit" class="btn btn--primary" [disabled]="!canSave() || saving()">
               @if (saving()) {
                 <svg class="ico spin" width="11" height="11"><use href="#refresh"/></svg>
-                Salvando…
+                Saving...
               } @else {
-                {{ strategyId() ? 'Salvar' : 'Criar e rodar' }}
+                {{ strategyId() ? 'Save' : 'Create and run' }}
               }
             </button>
           </div>
@@ -152,7 +152,7 @@ export class StrategyFormComponent implements OnInit {
           this.strategyId.set(+idParam);
           this.api.getStrategy(+idParam).subscribe({
             next: (s) => { this.populate(s); this.loading.set(false); },
-            error: () => { this.error.set('Estratégia não encontrada'); this.loading.set(false); },
+            error: () => { this.error.set('Strategy not found'); this.loading.set(false); },
           });
         } else {
           this.loading.set(false);
@@ -211,7 +211,7 @@ export class StrategyFormComponent implements OnInit {
     obs.subscribe({
       next: (s) => {
         this.saving.set(false);
-        this.toast.push({ variant: 'success', message: 'Estratégia salva' });
+        this.toast.push({ variant: 'success', message: 'Strategy saved' });
         this.router.navigate(['/strategies', s.id]);
       },
       error: (err) => {
@@ -227,6 +227,6 @@ export class StrategyFormComponent implements OnInit {
     const detail = err?.error?.detail;
     if (typeof detail === 'string') return detail;
     if (Array.isArray(detail)) return detail.map(d => d.msg ?? JSON.stringify(d)).join('; ');
-    return err?.message ?? 'Erro ao salvar';
+    return err?.message ?? 'Failed to save';
   }
 }

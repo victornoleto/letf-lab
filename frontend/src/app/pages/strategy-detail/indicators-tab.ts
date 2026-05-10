@@ -70,9 +70,9 @@ const SYNC_GROUP = 'indicator-charts';
     <section class="section">
       <header class="section__head">
         <div>
-          <h3 class="section__title">Indicadores</h3>
+          <h3 class="section__title">Indicators</h3>
           <p class="section__sub">
-            Cada chart mostra a referência do gate · cursor sincronizado · scroll p/ zoom
+            Each chart shows the gate reference · synchronized cursor · scroll to zoom
           </p>
         </div>
         <div class="pills">
@@ -87,8 +87,8 @@ const SYNC_GROUP = 'indicator-charts';
           <div class="skeleton skeleton--card" style="height: 240px;"></div>
         } @else if (series().length === 0) {
           <div class="empty" style="padding: 32px 16px;">
-            <div class="empty__title">Sem dados</div>
-            <div class="empty__copy">A estratégia não tem indicadores ou os preços ainda não foram baixados.</div>
+            <div class="empty__title">No data</div>
+            <div class="empty__copy">The strategy has no indicators or prices have not been downloaded yet.</div>
           </div>
         } @else {
           <div class="indicators-grid">

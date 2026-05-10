@@ -43,7 +43,7 @@ const BACKEND_URL = '/api';
       <nav class="breadcrumb">
         <a routerLink="/dashboard" class="breadcrumb__back">← Dashboard</a>
         <svg class="ico" width="12" height="12"><use href="#chevron-right"/></svg>
-        <a routerLink="/strategies" class="breadcrumb__back">Estratégias</a>
+        <a routerLink="/strategies" class="breadcrumb__back">Strategies</a>
       </nav>
 
       @if (loading()) {
@@ -53,15 +53,15 @@ const BACKEND_URL = '/api';
       } @else if (!strategy()) {
         <div class="empty">
           <svg class="empty__icon" width="24" height="24"><use href="#alert-circle"/></svg>
-          <div class="empty__title">Estratégia não encontrada</div>
-          <a routerLink="/dashboard" class="btn btn--primary">Voltar ao Dashboard</a>
+          <div class="empty__title">Strategy not found</div>
+          <a routerLink="/dashboard" class="btn btn--primary">Back to Dashboard</a>
         </div>
       } @else {
         <header style="display:flex; align-items:flex-end; justify-content:space-between; padding-bottom:8px; border-bottom: 1px solid var(--border);">
           <h1 class="page-h1">{{ strategy()!.name }}</h1>
           <a [routerLink]="['/strategies', strategy()!.id, 'edit']" class="btn btn--sm">
             <svg class="ico" width="12" height="12"><use href="#pencil"/></svg>
-            Editar
+            Edit
           </a>
         </header>
 
@@ -103,7 +103,7 @@ const BACKEND_URL = '/api';
                 <svg class="ico" width="11" height="11" [class.spin]="reportRegenerating()">
                   <use href="#refresh"/>
                 </svg>
-                @if (reportRegenerating()) { Gerando… } @else { Regenerar }
+                @if (reportRegenerating()) { Generating... } @else { Regenerate }
               </button>
             </div>
             <h3 class="report-card__headline">{{ rep.headline }}</h3>
@@ -114,10 +114,10 @@ const BACKEND_URL = '/api';
         <div class="tabs" role="tablist">
           <button class="tab" role="tab"
                   [class.tab--active]="tab() === 'main'"
-                  (click)="setTab('main')">Principal</button>
+                  (click)="setTab('main')">Main</button>
           <button class="tab" role="tab"
                   [class.tab--active]="tab() === 'indicators'"
-                  (click)="setTab('indicators')">Indicadores</button>
+                  (click)="setTab('indicators')">Indicators</button>
         </div>
 
         @if (tab() === 'main') {
@@ -234,9 +234,9 @@ export class StrategyDetailComponent implements OnInit {
     return ({
       on: 'risk on',
       off: 'risk off',
-      near_on: 'perto de virar on',
-      near_off: 'perto de virar off',
-      unknown: 'sem dados',
+      near_on: 'near flipping on',
+      near_off: 'near flipping off',
+      unknown: 'no data',
     } as Record<string, string>)[state ?? ''] ?? '·';
   }
 
@@ -296,7 +296,7 @@ export class StrategyDetailComponent implements OnInit {
       .post<BacktestResult>(url, {})
       .pipe(
         catchError((err) => {
-          this.backtestError.set(err?.error?.detail ?? 'Falha ao calcular backtest');
+          this.backtestError.set(err?.error?.detail ?? 'Failed to compute backtest');
           return of(null);
         }),
       )

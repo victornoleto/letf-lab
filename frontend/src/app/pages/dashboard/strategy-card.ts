@@ -118,7 +118,7 @@ export class StrategyCardComponent {
   cardState = computed<CardState>(() => stateOf(this.strategy()));
 
   stateLabel = computed(() => ({
-    on: 'Risk on', off: 'Risk off', borderline: 'No fio',
+    on: 'Risk on', off: 'Risk off', borderline: 'Borderline',
   } as Record<CardState, string>)[this.cardState()]);
 
   badgeClass = computed(() => ({
@@ -158,8 +158,8 @@ export class StrategyCardComponent {
     return ({
       on: 'risk on',
       off: 'risk off',
-      near_on: 'perto on',
-      near_off: 'perto off',
+      near_on: 'near on',
+      near_off: 'near off',
       unknown: '·',
     } as Record<string, string>)[state ?? ''] ?? '·';
   }
@@ -179,7 +179,7 @@ export class StrategyCardComponent {
 
   headroomTitle(r: { headroom_pct: number | null; gate_passed: boolean; indicator_name: string }): string {
     if (r.headroom_pct === null) return '';
-    const dir = r.headroom_pct >= 0 ? 'acima' : 'abaixo';
-    return `${r.indicator_name}: ${this.formatHeadroom(r.headroom_pct)} ${dir} do threshold (gate ${r.gate_passed ? 'passa' : 'falha'})`;
+    const dir = r.headroom_pct >= 0 ? 'above' : 'below';
+    return `${r.indicator_name}: ${this.formatHeadroom(r.headroom_pct)} ${dir} threshold (gate ${r.gate_passed ? 'passes' : 'fails'})`;
   }
 }

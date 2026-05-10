@@ -35,6 +35,6 @@ def regenerate_endpoint(
     if digest is None:
         raise HTTPException(
             status_code=503,
-            detail="Weekly digest indisponível (configure AI_CLI_COMMAND)",
+            detail="Weekly digest unavailable (configure AI_CLI_COMMAND)",
         )
     return WeeklyDigestDTO.model_validate(digest)

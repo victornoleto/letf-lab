@@ -24,6 +24,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsOption } from 'echarts';
 import { ApiService } from '../../core/api.service';
 import {
+  PortfolioConfig,
   PortfolioHistory,
   PortfolioSummary,
   Transaction,
@@ -62,24 +63,24 @@ function todayLocalIsoDate(): string {
     <div class="page">
       <header class="page-head">
         <div>
-          <h1 class="page-head__h1">Portfólio</h1>
+          <h1 class="page-head__h1">Portfolio</h1>
           <div class="page-head__sub">
-            Posições agregadas em {{ currency() }} a partir das transações registradas
+            Aggregate positions in {{ currency() }} from recorded transactions
             @if (portfolio()?.fx_rate_used) {
-              · USDBRL: {{ formatFxRate(portfolio()!.fx_rate_used!) }}
+              · {{ fxPairLabel() }}: {{ formatFxRate(portfolio()!.fx_rate_used!) }}
             }
           </div>
         </div>
         <div class="page-head__actions">
           <div class="pills">
-            <span class="pill" [class.pill--active]="currency() === 'USD'"
-                  (click)="setCurrency('USD')">USD</span>
-            <span class="pill" [class.pill--active]="currency() === 'BRL'"
-                  (click)="setCurrency('BRL')">BRL</span>
+            @for (c of displayCurrencyOptions(); track c) {
+              <span class="pill" [class.pill--active]="currency() === c"
+                    (click)="setCurrency(c)">{{ c }}</span>
+            }
           </div>
           <button class="btn btn--primary" (click)="openCreate()">
             <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
-            Nova transação
+            New transaction
           </button>
         </div>
       </header>
@@ -87,10 +88,10 @@ function todayLocalIsoDate(): string {
       <div class="tabs" role="tablist">
         <button class="tab" role="tab"
                 [class.tab--active]="tab() === 'positions'"
-                (click)="setTab('positions')">Posições</button>
+                (click)="setTab('positions')">Positions</button>
         <button class="tab" role="tab"
                 [class.tab--active]="tab() === 'transactions'"
-                (click)="setTab('transactions')">Transações</button>
+                (click)="setTab('transactions')">Transactions</button>
       </div>
 
       @if (tab() === 'positions') {
@@ -98,16 +99,16 @@ function todayLocalIsoDate(): string {
           <div class="skeleton skeleton--card" style="height: 200px;"></div>
         } @else if (!portfolio() || portfolio()!.positions.length === 0) {
           <div class="empty" style="padding: 48px 16px;">
-            <div class="empty__title">Nenhuma posição</div>
-            <div class="empty__copy">Adicione transações na aba ao lado.</div>
+            <div class="empty__title">No positions</div>
+            <div class="empty__copy">Add transactions in the adjacent tab.</div>
           </div>
         } @else {
           <section class="section">
             <header class="section__head portfolio-history-head">
               <div>
-                <h3 class="section__title">Evolução do portfólio</h3>
+                <h3 class="section__title">Portfolio evolution</h3>
                 <p class="section__sub">
-                  Valor de mercado em USD comparado ao benchmark com os mesmos fluxos de compra/venda.
+                  USD market value compared with the benchmark using the same buy/sell cash flows.
                 </p>
               </div>
               <label class="benchmark-field">
@@ -133,8 +134,8 @@ function todayLocalIsoDate(): string {
                 </div>
               } @else if (!history() || history()!.points.length === 0) {
                 <div class="empty" style="padding: 32px 16px;">
-                  <div class="empty__title">Histórico indisponível</div>
-                  <div class="empty__copy">Não há preços suficientes para montar a curva.</div>
+                  <div class="empty__title">History unavailable</div>
+                  <div class="empty__copy">Not enough prices to build the curve.</div>
                 </div>
               } @else {
                 <div #historyHost class="portfolio-history-chart"></div>
@@ -144,11 +145,11 @@ function todayLocalIsoDate(): string {
             <div class="section__body">
               <div class="portfolio-totals">
                 <div>
-                  <div class="label">Investido</div>
+                  <div class="label">Invested</div>
                   <div class="val mono">{{ usd(portfolio()!.invested_usd) }}</div>
                 </div>
                 <div>
-                  <div class="label">Mercado</div>
+                  <div class="label">Market</div>
                   <div class="val mono">{{ usd(portfolio()!.market_value_usd) }}</div>
                 </div>
                 <div>
@@ -171,10 +172,10 @@ function todayLocalIsoDate(): string {
                   <tr>
                     <th>Ticker</th>
                     <th class="th--num">Shares</th>
-                    <th class="th--num">Custo médio</th>
-                    <th class="th--num">Investido (USD)</th>
-                    <th class="th--num">Preço atual</th>
-                    <th class="th--num">Mercado (USD)</th>
+                    <th class="th--num">Avg. cost</th>
+                    <th class="th--num">Invested (USD)</th>
+                    <th class="th--num">Current price</th>
+                    <th class="th--num">Market (USD)</th>
                     <th class="th--num">P/L</th>
                   </tr>
                 </thead>
@@ -209,13 +210,13 @@ function todayLocalIsoDate(): string {
           <div class="skeleton skeleton--card" style="height: 200px;"></div>
         } @else if (transactions().length === 0) {
           <div class="empty" style="padding: 48px 16px;">
-            <div class="empty__title">Sem transações</div>
+            <div class="empty__title">No transactions</div>
             <div class="empty__copy">
-              Registre suas compras e vendas — usadas para o portfólio agregado.
+              Record your buys and sells. They are used for the aggregate portfolio.
             </div>
             <button class="btn btn--primary btn--sm" (click)="openCreate()" style="margin-top: 12px;">
               <svg class="ico" width="11" height="11"><use href="#plus"/></svg>
-              Nova transação
+              New transaction
             </button>
           </div>
         } @else {
@@ -223,15 +224,15 @@ function todayLocalIsoDate(): string {
             <table class="table">
               <thead>
                 <tr>
-                  <th>Data</th>
+                  <th>Date</th>
                   <th>Ticker</th>
                   <th>Side</th>
                   <th class="th--num">Shares</th>
-                  <th class="th--num">Preço</th>
-                  <th>Moeda</th>
-                  <th class="th--num">FX→USD</th>
+                  <th class="th--num">Price</th>
+                  <th>Currency</th>
+                  <th class="th--num">FX→{{ baseCurrency() }}</th>
                   <th class="th--num">Fees</th>
-                  <th>Notas</th>
+                  <th>Notes</th>
                   <th></th>
                 </tr>
               </thead>
@@ -252,7 +253,7 @@ function todayLocalIsoDate(): string {
                     <td class="td--num mono">{{ t.fees }}</td>
                     <td>{{ t.notes }}</td>
                     <td class="td--icon">
-                      <button class="icon-btn" (click)="remove(t)" aria-label="Excluir">
+                      <button class="icon-btn" (click)="remove(t)" aria-label="Delete">
                         <svg width="13" height="13"><use href="#trash"/></svg>
                       </button>
                     </td>
@@ -266,14 +267,14 @@ function todayLocalIsoDate(): string {
     </div>
 
     <app-modal [open]="showModal()"
-               [title]="'Nova transação'"
-               [subtitle]="'Registrar compra ou venda no portfólio'"
+               [title]="'New transaction'"
+               [subtitle]="'Record a portfolio buy or sell'"
                (close)="closeModal()">
       <form id="portfolio-tx-form" (submit)="$event.preventDefault(); save()">
 
-        <!-- Side: segmented control buy/sell -->
+          <!-- Side: segmented buy/sell control -->
         <div class="field">
-          <label class="label">Operação</label>
+          <label class="label">Operation</label>
           <div class="segmented" role="tablist">
             <button type="button" role="tab"
                     class="segmented__opt segmented__opt--buy"
@@ -288,7 +289,7 @@ function todayLocalIsoDate(): string {
 
         <div class="row-2">
           <div class="field">
-            <label class="label">Data</label>
+            <label class="label">Date</label>
             <input class="input" type="date"
                    [ngModel]="form.date()" (ngModelChange)="form.date.set($event)" name="date" />
           </div>
@@ -303,27 +304,27 @@ function todayLocalIsoDate(): string {
 
         <div class="row-3">
           <div class="field">
-            <label class="label">Preço da cota</label>
+            <label class="label">Share price</label>
             <div class="input-affix input-affix--suffix">
               <input class="input input--mono" type="number" step="0.0001" min="0"
                      [ngModel]="form.price_per_share()"
                      (ngModelChange)="setTradeAmount('price', $event)"
                      name="price" />
-              <span class="input-affix__suffix">{{ form.currency() || 'USD' }}</span>
+              <span class="input-affix__suffix">{{ form.currency() || baseCurrency() }}</span>
             </div>
           </div>
           <div class="field">
-            <label class="label">Valor pago</label>
+            <label class="label">Amount paid</label>
             <div class="input-affix input-affix--suffix">
               <input class="input input--mono" type="number" step="0.01" min="0"
                      [ngModel]="form.total_paid()"
                      (ngModelChange)="setTradeAmount('total', $event)"
                      name="total_paid" />
-              <span class="input-affix__suffix">{{ form.currency() || 'USD' }}</span>
+              <span class="input-affix__suffix">{{ form.currency() || baseCurrency() }}</span>
             </div>
           </div>
           <div class="field">
-            <label class="label">N. cotas</label>
+            <label class="label">Shares</label>
             <input class="input input--mono" type="number" step="0.00000001" min="0"
                    [ngModel]="form.n_shares()"
                    (ngModelChange)="setTradeAmount('shares', $event)"
@@ -335,19 +336,18 @@ function todayLocalIsoDate(): string {
 
         <div class="row-3">
           <div class="field">
-            <label class="label">Moeda</label>
+            <label class="label">Currency</label>
             <select class="input"
                     [ngModel]="form.currency()" (ngModelChange)="form.currency.set($event)" name="currency">
-              <option value="USD">USD</option>
-              <option value="BRL">BRL</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
+              @for (c of transactionCurrencyOptions(); track c) {
+                <option [value]="c">{{ c }}</option>
+              }
             </select>
           </div>
           <div class="field">
             <label class="label">
-              FX → USD
-              <span class="label__hint">1 se já é USD</span>
+              FX → {{ baseCurrency() }}
+              <span class="label__hint">1 if already {{ baseCurrency() }}</span>
             </label>
             <input class="input input--mono" type="number" step="0.0001" min="0"
                    [ngModel]="form.fx()" (ngModelChange)="form.fx.set(+$event)" name="fx" />
@@ -357,17 +357,17 @@ function todayLocalIsoDate(): string {
             <div class="input-affix input-affix--suffix">
               <input class="input input--mono" type="number" step="0.01" min="0"
                      [ngModel]="form.fees()" (ngModelChange)="form.fees.set(+$event)" name="fees" />
-              <span class="input-affix__suffix">{{ form.currency() || 'USD' }}</span>
+              <span class="input-affix__suffix">{{ form.currency() || baseCurrency() }}</span>
             </div>
           </div>
         </div>
 
         <div class="field">
           <label class="label">
-            Notas
-            <span class="label__hint">opcional</span>
+            Notes
+            <span class="label__hint">optional</span>
           </label>
-          <textarea class="input" rows="2" placeholder="Estratégia, observação, …"
+          <textarea class="input" rows="2" placeholder="Strategy, note, ..."
                     [ngModel]="form.notes()" (ngModelChange)="form.notes.set($event)" name="notes"></textarea>
         </div>
 
@@ -381,17 +381,17 @@ function todayLocalIsoDate(): string {
 
       <div modal-footer class="modal__foot">
         <span class="foot-hint">
-          <kbd>Esc</kbd> fechar · <kbd>⌘</kbd><kbd>↵</kbd> salvar
+          <kbd>Esc</kbd> close · <kbd>⌘</kbd><kbd>↵</kbd> save
         </span>
-        <button type="button" class="btn btn--ghost btn--md" (click)="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn--ghost btn--md" (click)="closeModal()">Cancel</button>
         <button type="button" class="btn btn--secondary btn--md"
                 [disabled]="!canSave() || saving()"
                 (click)="save(true)">
-          @if (saving()) { Salvando… } @else { Salvar e criar outra }
+          @if (saving()) { Saving... } @else { Save and create another }
         </button>
         <button type="submit" form="portfolio-tx-form" class="btn btn--primary btn--md"
                 [disabled]="!canSave() || saving()">
-          @if (saving()) { Salvando… } @else { Salvar }
+          @if (saving()) { Saving... } @else { Save }
         </button>
       </div>
     </app-modal>
@@ -462,7 +462,14 @@ export class PortfolioComponent implements OnInit, OnDestroy {
   private historyHost = viewChild<ElementRef<HTMLDivElement>>('historyHost');
 
   tab = signal<Tab>('positions');
-  currency = signal<'USD' | 'BRL'>('USD');
+  portfolioConfig = signal<PortfolioConfig>({
+    base_currency: 'USD',
+    local_currency: 'BRL',
+    local_fx_ticker: 'BRL=X',
+    local_fx_invert: false,
+    locale: 'pt-BR',
+  });
+  currency = signal('USD');
   portfolio = signal<PortfolioSummary | null>(null);
   portfolioLoading = signal(true);
   history = signal<PortfolioHistory | null>(null);
@@ -494,6 +501,7 @@ export class PortfolioComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
+    this.loadPortfolioConfig();
     this.loadPortfolio();
     this.loadHistory();
     this.loadTransactions();
@@ -546,7 +554,7 @@ export class PortfolioComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.history.set(null);
-        this.historyError.set('Falha ao carregar histórico do portfólio');
+        this.historyError.set('Failed to load portfolio history');
         this.historyLoading.set(false);
       },
     });
@@ -559,10 +567,53 @@ export class PortfolioComponent implements OnInit, OnDestroy {
     this.loadHistory();
   }
 
-  setCurrency(c: 'USD' | 'BRL'): void {
+  setCurrency(c: string): void {
     if (this.currency() === c) return;
     this.currency.set(c);
     this.loadPortfolio();
+  }
+
+  loadPortfolioConfig(): void {
+    this.api.getPortfolioConfig().subscribe({
+      next: (cfg) => {
+        const base = (cfg.base_currency || 'USD').toUpperCase();
+        const local = (cfg.local_currency || base).toUpperCase();
+        this.portfolioConfig.set({
+          ...cfg,
+          base_currency: base,
+          local_currency: local,
+          local_fx_ticker: (cfg.local_fx_ticker || '').toUpperCase(),
+          locale: cfg.locale || 'en-US',
+        });
+        if (!this.displayCurrencyOptions().includes(this.currency())) {
+          this.currency.set(base);
+          this.loadPortfolio();
+        }
+      },
+    });
+  }
+
+  displayCurrencyOptions(): string[] {
+    const cfg = this.portfolioConfig();
+    return this.uniqueCurrencies([cfg.base_currency, cfg.local_currency]);
+  }
+
+  transactionCurrencyOptions(): string[] {
+    const cfg = this.portfolioConfig();
+    return this.uniqueCurrencies([cfg.base_currency, cfg.local_currency, 'USD', 'EUR', 'GBP', 'BRL']);
+  }
+
+  baseCurrency(): string {
+    return this.portfolioConfig().base_currency || 'USD';
+  }
+
+  fxPairLabel(): string {
+    const cfg = this.portfolioConfig();
+    return `${cfg.base_currency}${cfg.local_currency}`;
+  }
+
+  private uniqueCurrencies(values: string[]): string[] {
+    return [...new Set(values.map((v) => (v || '').trim().toUpperCase()).filter(Boolean))];
   }
 
   loadTransactions(): void {
@@ -581,7 +632,7 @@ export class PortfolioComponent implements OnInit, OnDestroy {
     this.form.n_shares.set(0);
     this.form.price_per_share.set(0);
     this.form.total_paid.set(0);
-    this.form.currency.set('USD');
+    this.form.currency.set(this.baseCurrency());
     this.form.fx.set(1);
     this.form.fees.set(0);
     this.form.notes.set('');
@@ -654,7 +705,7 @@ export class PortfolioComponent implements OnInit, OnDestroy {
       side: this.form.side(),
       n_shares: this.form.n_shares(),
       price_per_share: this.form.price_per_share(),
-      currency: this.form.currency().trim().toUpperCase() || 'USD',
+      currency: this.form.currency().trim().toUpperCase() || this.baseCurrency(),
       fx_rate_to_usd: this.form.fx(),
       fees: this.form.fees(),
       notes: this.form.notes() || null,
@@ -664,7 +715,7 @@ export class PortfolioComponent implements OnInit, OnDestroy {
         this.saving.set(false);
         if (createAnother) this.resetTransactionFields();
         else this.showModal.set(false);
-        this.toast.push({ variant: 'success', message: 'Transação registrada' });
+        this.toast.push({ variant: 'success', message: 'Transaction recorded' });
         this.loadTransactions();
         this.loadPortfolio();
         this.loadHistory();
@@ -675,7 +726,7 @@ export class PortfolioComponent implements OnInit, OnDestroy {
         const msg = typeof detail === 'string'
           ? detail
           : Array.isArray(detail) ? detail.map((d: any) => d.msg ?? JSON.stringify(d)).join('; ')
-          : 'Falha ao salvar';
+          : 'Failed to save';
         this.formError.set(msg);
       },
     });
@@ -694,10 +745,10 @@ export class PortfolioComponent implements OnInit, OnDestroy {
   }
 
   remove(t: Transaction): void {
-    if (!confirm(`Remover ${t.side} ${t.n_shares} ${t.asset_ticker}?`)) return;
+    if (!confirm(`Remove ${t.side} ${t.n_shares} ${t.asset_ticker}?`)) return;
     this.api.deleteTransaction(t.id).subscribe({
       next: () => {
-        this.toast.push({ variant: 'info', message: 'Removida' });
+        this.toast.push({ variant: 'info', message: 'Removed' });
         this.loadTransactions();
         this.loadPortfolio();
         this.loadHistory();
@@ -760,7 +811,7 @@ export class PortfolioComponent implements OnInit, OnDestroy {
       },
       series: [
         {
-          name: 'Portfólio',
+          name: 'Portfolio',
           type: 'line',
           showSymbol: false,
           lineStyle: { color: t.equity, width: 1.6 },
@@ -787,16 +838,19 @@ export class PortfolioComponent implements OnInit, OnDestroy {
   }
 
   usd(v: string | null): string {
-    // Despite the name, formats in whatever currency the portfolio came back
-    // in (USD by default, BRL when the user toggled the BRL view).
+    // Despite the name, formats in whatever currency the portfolio came back in.
     if (v === null || v === undefined) return '—';
     const n = typeof v === 'string' ? parseFloat(v) : v;
     if (Number.isNaN(n)) return '—';
-    const cur = this.portfolio()?.display_currency ?? 'USD';
-    if (cur === 'BRL') {
-      return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const cur = this.portfolio()?.display_currency ?? this.baseCurrency();
+    try {
+      return n.toLocaleString(this.portfolioConfig().locale || 'en-US', {
+        style: 'currency',
+        currency: cur,
+      });
+    } catch {
+      return `${cur} ${n.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
     }
-    return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   }
 
   usdNumber(v: number): string {

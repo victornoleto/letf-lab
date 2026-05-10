@@ -29,7 +29,7 @@ const MAX_TURNS = 60;
   template: `
     <button class="chat-fab"
             (click)="toggle()"
-            [attr.aria-label]="open() ? 'Fechar chat' : 'Abrir chat'"
+            [attr.aria-label]="open() ? 'Close chat' : 'Open chat'"
             [class.chat-fab--open]="open()">
       <svg width="18" height="18">
         @if (open()) {
@@ -41,15 +41,15 @@ const MAX_TURNS = 60;
     </button>
 
     @if (open()) {
-      <aside class="chat-drawer" role="dialog" aria-label="Chat com a carteira">
+      <aside class="chat-drawer" role="dialog" aria-label="Portfolio chat">
         <header class="chat-drawer__head">
           <div>
-            <div class="chat-drawer__title">Chat com a carteira</div>
+            <div class="chat-drawer__title">Portfolio chat</div>
             <div class="chat-drawer__sub">
-              Pergunte sobre estratégias, transições recentes, riscos.
+              Ask about strategies, recent transitions, and risks.
             </div>
           </div>
-          <button class="icon-btn" (click)="clear()" aria-label="Limpar conversa">
+          <button class="icon-btn" (click)="clear()" aria-label="Clear conversation">
             <svg width="13" height="13"><use href="#trash"/></svg>
           </button>
         </header>
@@ -57,11 +57,11 @@ const MAX_TURNS = 60;
         <div class="chat-drawer__transcript" #transcriptEl>
           @if (turns().length === 0) {
             <div class="chat-drawer__hint">
-              Exemplos:
+              Examples:
               <ul>
-                <li>"Qual minha estratégia mais vulnerável a um cenário tipo 2008?"</li>
-                <li>"Algum indicador está perto de virar?"</li>
-                <li>"Resumo das transitions da última semana."</li>
+                <li>"Which strategy is most vulnerable to a 2008-like scenario?"</li>
+                <li>"Is any indicator close to flipping?"</li>
+                <li>"Summarize last week's transitions."</li>
               </ul>
             </div>
           }
@@ -72,7 +72,7 @@ const MAX_TURNS = 60;
           }
           @if (loading()) {
             <div class="chat-bubble chat-bubble--assistant chat-bubble--loading">
-              pensando…
+              thinking...
             </div>
           }
         </div>
@@ -85,13 +85,13 @@ const MAX_TURNS = 60;
             [(ngModel)]="draft"
             name="draft"
             rows="2"
-            placeholder="Pergunte algo sobre sua carteira…"
+            placeholder="Ask something about your portfolio..."
             (keydown)="onInputKey($event)"
             [disabled]="loading()"
           ></textarea>
           <button type="submit" class="btn btn--primary btn--sm"
                   [disabled]="!canSend()">
-            Enviar
+            Send
           </button>
         </form>
       </aside>
@@ -280,8 +280,8 @@ export class ChatDrawerComponent {
       },
       error: (err) => {
         this.loading.set(false);
-        const msg = err?.error?.detail ?? 'Falha ao consultar a IA';
-        this.appendTurn({ role: 'assistant', text: `Erro: ${msg}`, ts: Date.now() });
+        const msg = err?.error?.detail ?? 'Failed to query AI';
+        this.appendTurn({ role: 'assistant', text: `Error: ${msg}`, ts: Date.now() });
         this.scrollToBottom();
       },
     });

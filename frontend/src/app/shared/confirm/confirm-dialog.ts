@@ -16,12 +16,12 @@ import { ModalComponent } from '../modal/modal';
         {{ cs.config()?.message }}
       </p>
       <div modal-footer style="display:flex; gap:8px; justify-content:flex-end; padding: 14px 20px; border-top: 1px solid var(--border-subtle); background: var(--bg);">
-        <button class="btn" (click)="cs.resolve(false)">{{ cs.config()?.cancelLabel ?? 'Cancelar' }}</button>
+        <button class="btn" (click)="cs.resolve(false)">{{ cs.config()?.cancelLabel ?? 'Cancel' }}</button>
         <button class="btn"
                 [class.btn--danger]="cs.config()?.variant === 'danger'"
                 [class.btn--primary]="cs.config()?.variant !== 'danger'"
                 (click)="cs.resolve(true)">
-          {{ cs.config()?.confirmLabel ?? 'Confirmar' }}
+          {{ cs.config()?.confirmLabel ?? 'Confirm' }}
         </button>
       </div>
     </app-modal>

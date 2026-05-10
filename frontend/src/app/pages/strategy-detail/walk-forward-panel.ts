@@ -21,13 +21,13 @@ import { WalkForwardReport, WalkForwardWindow } from '../../core/models';
         <div>
           <h2 class="section__title">Walk-Forward Validation</h2>
           <p class="section__sub">
-            8 janelas cronológicas não-sobrepostas. Uma janela passa quando a
-            estratégia ficou ≥50% dos dias acima do benchmark (gate G3 do estudo).
+            8 non-overlapping chronological windows. A window passes when the
+            strategy stayed above the benchmark for >=50% of days (study gate G3).
           </p>
         </div>
         @if (data(); as d) {
           <span class="wf-summary" [ngClass]="summaryCls(d.n_passed, d.windows.length)">
-            {{ d.n_passed }} de {{ d.windows.length }} janelas passam
+            {{ d.n_passed }} of {{ d.windows.length }} windows pass
           </span>
         }
       </header>
@@ -39,18 +39,18 @@ import { WalkForwardReport, WalkForwardWindow } from '../../core/models';
           <div class="empty"><div class="empty__title">{{ error() }}</div></div>
         } @else if (data(); as d) {
           @if (d.windows.length === 0) {
-            <div class="empty"><div class="empty__title">Histórico curto demais para 8 janelas</div></div>
+            <div class="empty"><div class="empty__title">History is too short for 8 windows</div></div>
           } @else {
             <div class="table-wrap">
               <table class="table wf-table">
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Período</th>
+                    <th>Period</th>
                     <th class="th--num">Sortino</th>
                     <th class="th--num">CAGR</th>
                     <th class="th--num">Max DD</th>
-                    <th class="th--num">% acima bench</th>
+                    <th class="th--num">% above bench</th>
                     <th>Verdict</th>
                   </tr>
                 </thead>
@@ -116,7 +116,7 @@ export class WalkForwardPanelComponent implements OnInit {
     this.api.walkForward(this.strategyId()).subscribe({
       next: (d) => { this.data.set(d); this.loading.set(false); },
       error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Falha ao calcular walk-forward');
+        this.error.set(err?.error?.detail ?? 'Failed to compute walk-forward');
         this.loading.set(false);
       },
     });

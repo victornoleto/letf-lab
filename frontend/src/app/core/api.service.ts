@@ -9,6 +9,7 @@ import {
   Indicator,
   IndicatorTypeInfo,
   PortfolioHistory,
+  PortfolioConfig,
   PortfolioSummary,
   RefreshStatus,
   RollingStress,
@@ -179,8 +180,12 @@ export class ApiService {
     return this.http.delete<void>(`${BASE_URL}/transactions/${id}`);
   }
 
-  getPortfolio(currency: 'USD' | 'BRL' = 'USD'): Observable<PortfolioSummary> {
+  getPortfolio(currency = 'USD'): Observable<PortfolioSummary> {
     return this.http.get<PortfolioSummary>(`${BASE_URL}/portfolio?currency=${currency}`);
+  }
+
+  getPortfolioConfig(): Observable<PortfolioConfig> {
+    return this.http.get<PortfolioConfig>(`${BASE_URL}/portfolio/config`);
   }
 
   getPortfolioHistory(benchmark = 'SPY'): Observable<PortfolioHistory> {

@@ -47,7 +47,7 @@ def test_generate_digest_force_recomputes(monkeypatch, db_session):
     monkeypatch.setattr(weekly_digest.ai_cli.settings, "ai_cli_command", "opencode")
     monkeypatch.setattr(
         weekly_digest.ai_cli, "run_prompt",
-        lambda *a, **kw: "**TL;DR**\n- Sintético",
+        lambda *a, **kw: "**TL;DR**\n- Synthetic",
     )
     week = date(2026, 5, 4)
 
@@ -57,7 +57,7 @@ def test_generate_digest_force_recomputes(monkeypatch, db_session):
 
     # Re-run with force=True should overwrite
     monkeypatch.setattr(
-        weekly_digest.ai_cli, "run_prompt", lambda *a, **kw: "novo body",
+        weekly_digest.ai_cli, "run_prompt", lambda *a, **kw: "new body",
     )
     out2 = weekly_digest.generate_digest(db_session, week_start=week, force=True)
-    assert out2.body == "novo body"
+    assert out2.body == "new body"

@@ -18,6 +18,7 @@ import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ai_swing.config import settings
 from ai_swing.data import get_price_service
 from ai_swing.db.models import Transaction, TransactionSide
 from ai_swing.schemas.transaction import (
@@ -39,18 +40,34 @@ def _latest_price_usd(ticker: str) -> Decimal | None:
         return None
 
 
-_BRL_TICKER = "BRL=X"  # yfinance: BRL per USD (e.g., 5.00 = R$5 per US$1)
+def _base_currency() -> str:
+    return settings.portfolio_base_currency.strip().upper() or "USD"
 
 
-def _latest_brl_per_usd() -> Decimal | None:
-    """Today's USDBRL close (BRL per USD). None if the cache hasn't been
-    primed and the network fetch fails."""
-    return _latest_price_usd(_BRL_TICKER)
+def _local_currency() -> str:
+    return settings.portfolio_local_currency.strip().upper() or "BRL"
+
+
+def _latest_local_per_base() -> Decimal | None:
+    """Return configured local currency units per base currency unit."""
+    ticker = settings.portfolio_local_fx_ticker.strip().upper()
+    if not ticker:
+        return None
+    rate = _latest_price_usd(ticker)
+    if rate is None:
+        return None
+    if settings.portfolio_local_fx_invert:
+        if rate == 0:
+            return None
+        return Decimal(1) / rate
+    return rate
 
 
 def compute_portfolio(
     db: Session, user_id: int, display_currency: str = "USD"
 ) -> PortfolioSummary:
+    base_currency = _base_currency()
+    local_currency = _local_currency()
     rows = db.scalars(
         select(Transaction)
         .where(Transaction.user_id == user_id)
@@ -134,19 +151,19 @@ def compute_portfolio(
         market_value_usd=total_market,
         pl_usd=total_pl,
         pl_pct=total_pl_pct,
-        display_currency="USD",
+        display_currency=base_currency,
         fx_rate_used=None,
     )
 
-    if display_currency.upper() != "BRL":
+    if display_currency.strip().upper() != local_currency or local_currency == base_currency:
         return summary
 
-    # BRL view: multiply every USD figure by today's BRL/USD close.
-    rate = _latest_brl_per_usd()
+    # Local-currency view: multiply every base-currency figure by the configured FX rate.
+    rate = _latest_local_per_base()
     if rate is None:
-        # Fallback gracefully: keep USD numbers but flag the currency so the
+        # Fallback gracefully: keep base-currency numbers but flag the currency so the
         # UI can warn the user instead of silently mixing units.
-        summary.display_currency = "USD"
+        summary.display_currency = base_currency
         return summary
 
     return PortfolioSummary(
@@ -167,7 +184,7 @@ def compute_portfolio(
         market_value_usd=summary.market_value_usd * rate,
         pl_usd=summary.pl_usd * rate,
         pl_pct=summary.pl_pct,
-        display_currency="BRL",
+        display_currency=local_currency,
         fx_rate_used=rate,
     )
 

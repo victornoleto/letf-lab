@@ -43,7 +43,7 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou senha inválidos",
+            detail="Invalid email or password",
         )
     token, expires_at = create_access_token(user.id)
     response.set_cookie(

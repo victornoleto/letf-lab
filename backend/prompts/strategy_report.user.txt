@@ -1,8 +1,8 @@
-Estratégia: {strategy_name}
+Strategy: {strategy_name}
 Benchmark: {benchmark} | Risk-on: {risk_on} | Risk-off: {risk_off}
-k mínimo: {k_threshold}
+Minimum k: {k_threshold}
 Snapshot: {snap_block}
-Indicadores (gate_passed + headroom até o threshold): {indicators_json}
-Estado heurístico calculado: {proximity}
+Indicators (gate_passed + headroom to threshold): {indicators_json}
+Calculated heuristic state: {proximity}
 
-Gere o JSON descrevendo: estado atual da estratégia em uma frase curta, se está perto de virar (entrar em risk-on / sair para risk-off) com base no headroom, e qual indicador está mais perto do flip.
+Generate JSON describing: the strategy's current state in one short sentence, whether it is close to flipping (entering risk-on / exiting to risk-off) based on headroom, and which indicator is closest to the flip.

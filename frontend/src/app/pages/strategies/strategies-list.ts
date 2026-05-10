@@ -16,17 +16,17 @@ import { ToastService } from '../../shared/toast/toast.service';
     <div class="page">
       <header class="page-head">
         <div>
-          <h1 class="page-head__h1">Estratégias</h1>
-          <p class="page-head__sub">{{ counts().total }} · {{ counts().on }} risk-on · {{ counts().borderline }} no fio · {{ counts().off }} risk-off</p>
+          <h1 class="page-head__h1">Strategies</h1>
+          <p class="page-head__sub">{{ counts().total }} · {{ counts().on }} risk-on · {{ counts().borderline }} borderline · {{ counts().off }} risk-off</p>
         </div>
         <div class="page-head__actions">
           <div class="search">
             <svg class="ico" width="13" height="13"><use href="#search"/></svg>
-            <input [(ngModel)]="searchTerm" placeholder="Buscar nome ou ticker…" />
+            <input [(ngModel)]="searchTerm" placeholder="Search name or ticker..." />
           </div>
           <a routerLink="/strategies/new" class="btn btn--primary">
             <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
-            Nova estratégia
+            New strategy
           </a>
         </div>
       </header>
@@ -36,11 +36,11 @@ import { ToastService } from '../../shared/toast/toast.service';
       } @else if (strategies().length === 0) {
         <div class="empty">
           <svg class="empty__icon" width="24" height="24"><use href="#strategies"/></svg>
-          <div class="empty__title">Nenhuma estratégia ainda</div>
-          <div class="empty__copy">Crie sua primeira para acompanhar transições risk-on/risk-off.</div>
+          <div class="empty__title">No strategies yet</div>
+          <div class="empty__copy">Create your first one to track risk-on/risk-off transitions.</div>
           <a routerLink="/strategies/new" class="btn btn--primary">
             <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
-            Nova estratégia
+            New strategy
           </a>
         </div>
       } @else {
@@ -48,12 +48,12 @@ import { ToastService } from '../../shared/toast/toast.service';
           <table class="table table--strategies">
             <thead>
               <tr>
-                <th>Nome</th>
+                <th>Name</th>
                 <th>Status</th>
                 <th>Score</th>
                 <th>Tickers</th>
                 <th class="th--num">k</th>
-                <th class="th--num">Indicadores</th>
+                <th class="th--num">Indicators</th>
                 <th></th>
               </tr>
             </thead>
@@ -86,16 +86,16 @@ import { ToastService } from '../../shared/toast/toast.service';
                   <td>
                     <div class="table__actions">
                       <a class="icon-btn" (click)="$event.stopPropagation()"
-                         [routerLink]="['/strategies', s.id, 'edit']" aria-label="Editar">
+                         [routerLink]="['/strategies', s.id, 'edit']" aria-label="Edit">
                         <svg width="13" height="13"><use href="#pencil"/></svg>
                       </a>
                       <button class="icon-btn"
                               (click)="$event.stopPropagation(); clone(s)"
                               [disabled]="cloning() === s.id"
-                              aria-label="Clonar">
+                              aria-label="Clone">
                         <svg width="13" height="13"><use href="#copy"/></svg>
                       </button>
-                      <button class="icon-btn" (click)="$event.stopPropagation(); remove(s)" aria-label="Remover">
+                      <button class="icon-btn" (click)="$event.stopPropagation(); remove(s)" aria-label="Remove">
                         <svg width="13" height="13"><use href="#trash"/></svg>
                       </button>
                     </div>
@@ -145,7 +145,7 @@ export class StrategiesListComponent implements OnInit {
 
   protected stateOf = stateOf;
   stateText(s: Strategy) {
-    return ({ on: 'Risk on', off: 'Risk off', borderline: 'No fio' } as Record<CardState, string>)[stateOf(s)];
+    return ({ on: 'Risk on', off: 'Risk off', borderline: 'Borderline' } as Record<CardState, string>)[stateOf(s)];
   }
 
   badgeCls(s: Strategy): string {
@@ -219,14 +219,14 @@ export class StrategiesListComponent implements OnInit {
     this.api.cloneStrategy(s.id).subscribe({
       next: (created) => {
         this.cloning.set(null);
-        this.toast.push({ variant: 'success', message: `Clone criado: ${created.name}` });
+        this.toast.push({ variant: 'success', message: `Clone created: ${created.name}` });
         this.router.navigate(['/strategies', created.id, 'edit']);
       },
       error: (err) => {
         this.cloning.set(null);
         this.toast.push({
           variant: 'danger',
-          message: err?.error?.detail ?? 'Erro ao clonar estratégia',
+          message: err?.error?.detail ?? 'Failed to clone strategy',
           duration: 8000,
         });
       },
@@ -235,21 +235,21 @@ export class StrategiesListComponent implements OnInit {
 
   async remove(s: Strategy): Promise<void> {
     const ok = await this.confirm.ask({
-      title: 'Remover estratégia',
-      message: `${s.name} será removida permanentemente. Esta ação não pode ser desfeita.`,
-      confirmLabel: 'Remover',
+      title: 'Remove strategy',
+      message: `${s.name} will be permanently removed. This action cannot be undone.`,
+      confirmLabel: 'Remove',
       variant: 'danger',
     });
     if (!ok) return;
     this.api.deleteStrategy(s.id).subscribe({
       next: () => {
-        this.toast.push({ variant: 'success', message: 'Estratégia removida' });
+        this.toast.push({ variant: 'success', message: 'Strategy removed' });
         this.load();
       },
       error: (err) =>
         this.toast.push({
           variant: 'danger',
-          message: err?.error?.detail ?? 'Erro ao remover',
+          message: err?.error?.detail ?? 'Failed to remove',
           duration: 8000,
         }),
     });

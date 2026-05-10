@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session
 from ai_swing.auth.security import get_current_user
 from ai_swing.db import get_db
 from ai_swing.db.models import Transaction, User
+from ai_swing.config import settings
 from ai_swing.schemas.transaction import (
+    PortfolioConfig,
     PortfolioHistory,
     PortfolioSummary,
     TransactionCreate,
@@ -83,6 +85,17 @@ def get_portfolio(
     user: User = Depends(get_current_user),
 ) -> PortfolioSummary:
     return compute_portfolio(db, user.id, display_currency=currency)
+
+
+@router.get("/portfolio/config", response_model=PortfolioConfig)
+def get_portfolio_config() -> PortfolioConfig:
+    return PortfolioConfig(
+        base_currency=settings.portfolio_base_currency.strip().upper() or "USD",
+        local_currency=settings.portfolio_local_currency.strip().upper() or "BRL",
+        local_fx_ticker=settings.portfolio_local_fx_ticker.strip().upper(),
+        local_fx_invert=settings.portfolio_local_fx_invert,
+        locale=settings.portfolio_locale.strip() or "en-US",
+    )
 
 
 @router.get("/portfolio/history", response_model=PortfolioHistory)

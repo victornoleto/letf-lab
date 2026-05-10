@@ -18,19 +18,19 @@ import { stateOf } from '../../shared/strategy-state';
           <h1 class="page-head__h1">Dashboard</h1>
           <p class="page-head__sub">
             {{ counts().on }}/{{ counts().total }} risk-on
-            @if (counts().borderline > 0) { · {{ counts().borderline }} no fio }
+            @if (counts().borderline > 0) { · {{ counts().borderline }} borderline }
             @if (asof()) { · asof <span class="mono">{{ asof() }}</span> }
           </p>
         </div>
         <div class="page-head__actions">
           <div class="pills">
-            <span class="pill" [class.pill--active]="filter() === 'all'" (click)="setFilter('all')">Todas</span>
+            <span class="pill" [class.pill--active]="filter() === 'all'" (click)="setFilter('all')">All</span>
             <span class="pill" [class.pill--active]="filter() === 'on'"  (click)="setFilter('on')">Risk-on</span>
             <span class="pill" [class.pill--active]="filter() === 'off'" (click)="setFilter('off')">Risk-off</span>
           </div>
           <a routerLink="/strategies/new" class="btn btn--primary">
             <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
-            Nova estratégia
+            New strategy
           </a>
         </div>
       </header>
@@ -55,18 +55,18 @@ import { stateOf } from '../../shared/strategy-state';
       } @else if (strategies().length === 0) {
         <div class="empty">
           <svg class="empty__icon" width="24" height="24"><use href="#strategies"/></svg>
-          <div class="empty__title">Nenhuma estratégia ainda</div>
-          <div class="empty__copy">Crie sua primeira para acompanhar transições risk-on/risk-off.</div>
+          <div class="empty__title">No strategies yet</div>
+          <div class="empty__copy">Create your first one to track risk-on/risk-off transitions.</div>
           <a routerLink="/strategies/new" class="btn btn--primary">
             <svg class="ico" width="12" height="12"><use href="#plus"/></svg>
-            Nova estratégia
+            New strategy
           </a>
         </div>
       } @else if (filteredStrategies().length === 0) {
         <div class="empty">
           <svg class="empty__icon" width="24" height="24"><use href="#filter"/></svg>
-          <div class="empty__title">Nenhum resultado</div>
-          <button class="btn" (click)="setFilter('all')">Limpar filtros</button>
+          <div class="empty__title">No results</div>
+          <button class="btn" (click)="setFilter('all')">Clear filters</button>
         </div>
       } @else {
         <div class="grid">

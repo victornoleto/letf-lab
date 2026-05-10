@@ -11,7 +11,7 @@ export interface EquityPoint { date: string; equity: number; bench: number; }
  */
 export function equityOptions(series: EquityPoint[], t: ChartTokens): EChartsOption {
   return {
-    // top:28 reserves a row above the plot for the legend (Estratégia /
+    // top:28 reserves a row above the plot for the legend (Strategy /
     // Buy & Hold). Without it the topmost y-axis label collides with the
     // legend text in the top-right corner — visible as overlapping glyphs.
     grid: { left: 4, right: 8, top: 28, bottom: 48, containLabel: true },
@@ -78,7 +78,7 @@ export function equityOptions(series: EquityPoint[], t: ChartTokens): EChartsOpt
     ],
     series: [
       {
-        name: 'Estratégia',
+        name: 'Strategy',
         type: 'line',
         showSymbol: false,
         smooth: false,

@@ -37,9 +37,9 @@ CRISIS_WINDOWS: dict[str, tuple[str, str]] = {
 
 CRISIS_LABELS: dict[str, str] = {
     "2000_dotcom": "Dotcom (2000–2002)",
-    "2008_gfc":    "Crise Financeira (2008–2009)",
+    "2008_gfc":    "Global Financial Crisis (2008-2009)",
     "2020_covid":  "COVID (2020)",
-    "2022_rates":  "Alta de juros (2022)",
+    "2022_rates":  "Rate hikes (2022)",
 }
 
 _PCT_ABOVE_BAR = 0.50  # study's threshold for "beats"

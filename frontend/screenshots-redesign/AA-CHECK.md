@@ -71,8 +71,8 @@ Compared to the v1 captures in `prints/` (IBM Plex / 8-12px radii / 3px card bor
 
 - **Sharper corners** — cards/buttons now use 5–6px radii (e.g. `--radius-md: 5px`) vs 8–12px in v1. Visible everywhere; most obvious on cards and the primary button.
 - **Inter typography** — body and headings switched from IBM Plex Sans to Inter (mono labels still IBM Plex Mono). Headings read tighter and more "Linear-app".
-- **Indigo accent** — `--accent` now `rgb(94,106,210)`. Visible on primary button (`+ Nova`/`+ Nova estratégia`), focus rings, palette selected row, command palette `kbd` chips. v1 used a teal-leaning primary.
-- **Sidebar with inline kbd hints** — `G 1`, `G 2`, `G 3` chips visible on every nav item. Status footer ("Atualizado 02:57 ET" + Refresh button) anchored at the bottom of the sidebar. v1 had no kbd hints.
+- **Indigo accent** — `--accent` now `rgb(94,106,210)`. Visible on primary button (`+ New`/`+ New strategy`), focus rings, palette selected row, command palette `kbd` chips. v1 used a teal-leaning primary.
+- **Sidebar with inline kbd hints** — `G 1`, `G 2`, `G 3` chips visible on every nav item. Status footer ("Updated 02:57 ET" + Refresh button) anchored at the bottom of the sidebar. v1 had no kbd hints.
 - **Cards with 2px stripe** — strategy cards on `/dashboard` use a 2px left stripe (success / warn / danger by state) vs v1's 3px solid border-left.
 - **Score-bar 5 segments** — `Score 4/4 · k≥2` line now followed by 5 small segments visible to the right (4 filled, 1 empty for 4/5 etc.). v1 had a numeric-only score.
 - **Tables: status-cell dot** — the `STATUS` column shows a small green/red dot + "Risk on" inline text rather than a v1-style filled badge pill. Cleaner row rhythm.

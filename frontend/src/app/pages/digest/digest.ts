@@ -21,7 +21,7 @@ import { ToastService } from '../../shared/toast/toast.service';
         <div>
           <h1 class="page-head__h1">Weekly Digest</h1>
           <p class="page-head__sub">
-            Resumo IA por segunda-feira (gerado automaticamente 9h ET).
+            AI summary every Monday (generated automatically at 9am ET).
           </p>
         </div>
         <div class="page-head__actions">
@@ -30,7 +30,7 @@ import { ToastService } from '../../shared/toast/toast.service';
             <svg class="ico" width="12" height="12" [class.spin]="generating()">
               <use href="#refresh"/>
             </svg>
-            @if (generating()) { Gerando… } @else { Gerar para esta semana }
+            @if (generating()) { Generating... } @else { Generate for this week }
           </button>
         </div>
       </header>
@@ -39,9 +39,9 @@ import { ToastService } from '../../shared/toast/toast.service';
         <div class="skeleton skeleton--card" style="height: 200px;"></div>
       } @else if (digests().length === 0) {
         <div class="empty">
-          <div class="empty__title">Sem digests ainda</div>
+          <div class="empty__title">No digests yet</div>
           <div class="empty__copy">
-            O cron gera todo segunda 9h ET. Use o botão acima pra gerar manualmente.
+            Cron generates one every Monday at 9am ET. Use the button above to generate one manually.
           </div>
         </div>
       } @else {
@@ -49,7 +49,7 @@ import { ToastService } from '../../shared/toast/toast.service';
           <article class="digest-card">
             <header class="digest-card__head">
               <div class="digest-card__week">
-                Semana de {{ d.week_start }}
+                Week of {{ d.week_start }}
               </div>
               <div class="digest-card__meta mono">
                 {{ d.model }} · {{ formatGenerated(d.generated_at) }}
@@ -135,12 +135,12 @@ export class DigestComponent implements OnInit {
     this.api.regenerateWeeklyDigest().subscribe({
       next: () => {
         this.generating.set(false);
-        this.toast.push({ variant: 'success', message: 'Digest gerado' });
+        this.toast.push({ variant: 'success', message: 'Digest generated' });
         this.load();
       },
       error: (err) => {
         this.generating.set(false);
-        const msg = err?.error?.detail ?? 'Falha ao gerar digest';
+        const msg = err?.error?.detail ?? 'Failed to generate digest';
         this.toast.push({ variant: 'danger', message: msg, duration: 8000 });
       },
     });
@@ -149,7 +149,7 @@ export class DigestComponent implements OnInit {
   formatGenerated(ts: string): string {
     const d = new Date(ts);
     if (Number.isNaN(d.getTime())) return ts;
-    return d.toLocaleString('pt-BR', {
+    return d.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
