@@ -5,7 +5,7 @@
 }
 
 .table th {
-  text-align: left;
+  text-align: left !important;
   padding: 8px 14px;
   font-size: 10.5px;
   font-weight: var(--fw-medium);
@@ -20,7 +20,12 @@
   padding: 9px 14px;
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
-  text-align: left;
+  text-align: left !important;
+}
+
+.table .th--num,
+.table .td--num {
+  text-align: left !important;
 }
 
 .table tr:hover td { background: var(--bg); }

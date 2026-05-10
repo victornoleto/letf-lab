@@ -87,6 +87,7 @@ const RANGE_OPTIONS = [3, 5, 10, 20];
 const CHART_GROUP = 'backtest-charts';
 
 interface PerfRow {
+  order: number;
   label: string;
   cls: string;
   color: string;
@@ -94,6 +95,9 @@ interface PerfRow {
   max_dd: number;
   sortino: number;
 }
+
+type PerfSortKey = 'order' | 'label' | 'cagr' | 'max_dd' | 'sortino';
+type SortDir = 'asc' | 'desc';
 
 const RISK_ON_COLORS = [
   '#60a5fa', // soft blue
@@ -159,17 +163,37 @@ const RISK_ON_COLORS = [
             <table class="table perf-table">
               <thead>
                 <tr>
-                  <th class="th--num">#</th>
-                  <th>Comparison</th>
-                  <th class="th--num">CAGR</th>
-                  <th class="th--num">Max. DD</th>
-                  <th class="th--num">Sortino</th>
+                  <th class="th--num">
+                    <button type="button" class="sort-head sort-head--num" (click)="setPerfSort('order')">
+                      # <span>{{ sortMark('order') }}</span>
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" class="sort-head" (click)="setPerfSort('label')">
+                      Comparison <span>{{ sortMark('label') }}</span>
+                    </button>
+                  </th>
+                  <th class="th--num">
+                    <button type="button" class="sort-head sort-head--num" (click)="setPerfSort('cagr')">
+                      CAGR <span>{{ sortMark('cagr') }}</span>
+                    </button>
+                  </th>
+                  <th class="th--num">
+                    <button type="button" class="sort-head sort-head--num" (click)="setPerfSort('max_dd')">
+                      Max. DD <span>{{ sortMark('max_dd') }}</span>
+                    </button>
+                  </th>
+                  <th class="th--num">
+                    <button type="button" class="sort-head sort-head--num" (click)="setPerfSort('sortino')">
+                      Sortino <span>{{ sortMark('sortino') }}</span>
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 @for (row of perfRows(); track row.label; let i = $index) {
                   <tr [class.perf-table__row--strategy]="i === 0">
-                    <td class="td--num mono">{{ i + 1 }}</td>
+                    <td class="td--num mono">{{ row.order }}</td>
                     <td>
                       <span class="perf-table__label" [ngClass]="row.cls" [style.color]="row.color">
                         {{ row.label }}
@@ -224,12 +248,31 @@ const RISK_ON_COLORS = [
   `,
   styles: [`
     .perf-table th, .perf-table td { white-space: nowrap; }
-    .perf-table .th--num, .perf-table .td--num { text-align: right; }
+    .perf-table .th--num, .perf-table .td--num { text-align: left; }
     .perf-table__row--strategy td { background: var(--surface-muted); }
     .perf-table__label { font-weight: var(--fw-medium); }
     .perf-table__label--strategy { color: var(--text-primary); }
     .perf-table__label--benchmark { color: var(--text-secondary); }
     .perf-table__label--letf { color: var(--text-secondary); }
+    .sort-head {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+    .sort-head--num { justify-content: flex-start; text-align: left; }
+    .sort-head span {
+      min-width: 8px;
+      color: var(--text-muted);
+      font-size: 10px;
+    }
 
     .perf-footnote { display: inline-flex; align-items: center; gap: 6px; }
     .perf-footnote__k {
@@ -258,6 +301,7 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
 
   rangeOptions = RANGE_OPTIONS;
   showNet = signal(false);
+  perfSort = signal<{ key: PerfSortKey; dir: SortDir }>({ key: 'cagr', dir: 'desc' });
 
   toggleNet(): void {
     this.showNet.update((v) => !v);
@@ -313,9 +357,11 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
     const r = this.result();
     if (!r) return [];
     const rows: PerfRow[] = [];
+    let order = 1;
     for (const [i, v] of r.variants.entries()) {
       const color = this.riskOnColor(i);
       rows.push({
+        order: order++,
         label: `Strategy · ${v.risk_on_ticker}`,
         cls: 'perf-table__label--strategy',
         color,
@@ -327,6 +373,7 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
           && v.metrics_strategy.cagr_net != null
           && v.metrics_strategy.sortino_net != null) {
         rows.push({
+          order: order++,
           label: `Strategy · ${v.risk_on_ticker} · Net`,
           cls: 'perf-table__label--strategy-net',
           color,
@@ -336,6 +383,7 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
         });
       }
       rows.push({
+        order: order++,
         label: `B&H · ${v.risk_on_ticker}`,
         cls: 'perf-table__label--letf',
         color,
@@ -345,6 +393,7 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
       });
     }
     rows.push({
+      order: order++,
       label: 'Benchmark',
       cls: 'perf-table__label--benchmark',
       color: 'var(--text-secondary)',
@@ -352,7 +401,31 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
       max_dd: r.metrics_benchmark.max_dd,
       sortino: r.metrics_benchmark.sortino,
     });
-    return rows;
+    return this.sortedPerfRows(rows);
+  }
+
+  setPerfSort(key: PerfSortKey): void {
+    this.perfSort.update((current) => ({
+      key,
+      dir: current.key === key && current.dir === 'desc' ? 'asc' : 'desc',
+    }));
+  }
+
+  sortMark(key: PerfSortKey): string {
+    const sort = this.perfSort();
+    if (sort.key !== key) return '';
+    return sort.dir === 'desc' ? '↓' : '↑';
+  }
+
+  private sortedPerfRows(rows: PerfRow[]): PerfRow[] {
+    const { key, dir } = this.perfSort();
+    const factor = dir === 'desc' ? -1 : 1;
+    return [...rows].sort((a, b) => {
+      const result = key === 'label'
+        ? a.label.localeCompare(b.label)
+        : a[key] - b[key];
+      return result === 0 ? a.order - b.order : result * factor;
+    });
   }
 
   primaryVariant(): BacktestVariant | null {
