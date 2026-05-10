@@ -35,6 +35,7 @@ Thumbs.db
 
 # Env
 .env
+.env.docker
 .env.local
 
 # Playwright MCP artifacts

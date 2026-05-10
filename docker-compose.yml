@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-letf_lab}
+      POSTGRES_USER: ${POSTGRES_USER:-letf_lab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev}
+    ports:
+      - "${POSTGRES_HOST_PORT:-15432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      target: backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-letf_lab}:${POSTGRES_PASSWORD:-dev}@db:5432/${POSTGRES_DB:-letf_lab}
+      PRICE_CACHE_DIR: /app/data/prices
+      REFRESH_HOUR_ET: ${REFRESH_HOUR_ET:-22}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ALLOW_ORIGINS: ${PUBLIC_ORIGIN:-http://localhost:8080}
+      API_PORT: 8001
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-change-me-to-a-long-random-string}
+      AUTH_TOKEN_TTL_HOURS: ${AUTH_TOKEN_TTL_HOURS:-24}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      RUN_SEED: ${RUN_SEED:-true}
+      SEED_USER_EMAIL: ${SEED_USER_EMAIL:-admin@example.com}
+      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-password}
+      AI_CLI_COMMAND: ${AI_CLI_COMMAND:-}
+      AI_CLI_MODEL: ${AI_CLI_MODEL:-openai/gpt-5.4-mini-fast}
+      AI_CLI_TIMEOUT_S: ${AI_CLI_TIMEOUT_S:-60}
+      AI_CLI_PROMPTS_DIR: ${AI_CLI_PROMPTS_DIR:-prompts}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - price_cache:/app/data/prices
+      - opencode_data:/root/.local/share/opencode
+      - opencode_config:/root/.config/opencode
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8001/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  frontend:
+    build:
+      context: .
+      target: frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_HOST_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  price_cache:
+  opencode_data:
+  opencode_config:

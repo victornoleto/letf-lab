@@ -32,6 +32,15 @@ make dev
 
 Open `http://localhost:4200` and log in with the seeded admin user unless you changed the seed env vars.
 
+## Docker
+
+```bash
+cp .env.docker.example .env.docker
+docker compose --env-file .env.docker up --build
+```
+
+Open `http://localhost:8080` by default. PostgreSQL is exposed on `localhost:15432` by default. Change `APP_HOST_PORT` and `POSTGRES_HOST_PORT` in `.env.docker` if those ports conflict with services on your host. See [Docker usage](./docs/docker.md) for OpenCode/AI setup inside the backend container.
+
 See [SETUP.md](./SETUP.md) for production/VPS instructions.
 
 ## Current Scope

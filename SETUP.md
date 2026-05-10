@@ -127,6 +127,38 @@ Open:
 - Frontend: `http://localhost:4200`
 - Backend: `http://localhost:8000/api/health`
 
+## 7b. Run With Docker
+
+The Docker setup builds the Angular frontend, runs the FastAPI backend, starts an isolated PostgreSQL 18 database, and includes the OpenCode CLI in the backend container.
+
+```bash
+cp .env.docker.example .env.docker
+docker compose --env-file .env.docker up --build
+```
+
+Defaults:
+
+- App: `http://localhost:8080`
+- API health through nginx: `http://localhost:8080/api/health`
+- Container Postgres exposed on host: `localhost:15432`
+
+Useful `.env.docker` settings:
+
+```env
+APP_HOST_PORT=8080
+POSTGRES_HOST_PORT=15432
+PUBLIC_ORIGIN=http://localhost:8080
+AUTH_JWT_SECRET=change-me-to-a-long-random-string
+SEED_USER_EMAIL=admin@example.com
+SEED_USER_PASSWORD=password
+```
+
+The backend waits for Postgres, runs `alembic upgrade head`, and runs the idempotent seed script before starting. Persistent Docker volumes are used for Postgres data and the price cache.
+
+For OpenCode/AI setup inside the backend container, see [Docker usage](./docs/docker.md).
+
+For HTTPS/domain deployments, set `PUBLIC_ORIGIN=https://your-domain.com` and `AUTH_COOKIE_SECURE=true`, then put your TLS reverse proxy in front of the exposed app port.
+
 ## 8. Manual Refresh
 
 After login, use the UI refresh action or call the API with an authenticated session.
