@@ -76,7 +76,7 @@ def _build_context(db: Session, week_start: date, week_end: date) -> dict[str, A
         strategy_blocks.append({
             "id": s.id,
             "name": s.name,
-            "tickers": f"{s.benchmark_ticker} → {s.risk_on_ticker} | {s.risk_off_ticker}",
+            "tickers": f"{s.benchmark_ticker} → {'/'.join(s.risk_on_tickers)} | {s.risk_off_ticker}",
             "k_threshold": s.k_threshold,
             "latest_snapshot": latest_dict,
         })

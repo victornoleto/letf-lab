@@ -11,7 +11,7 @@ The Strategies page manages LETF rotation definitions.
 ## Strategy Model
 
 - Benchmark ticker: the baseline to beat, such as `QQQ` or `SPY`.
-- Risk-on ticker: usually a leveraged ETF, such as `TQQQ`, `UPRO`, `SOXL`, or `TECL`.
+- Risk-on tickers: one or more leveraged ETFs driven by the same benchmark signal, such as `QLD/TQQQ` or `SSO/UPRO`.
 - Risk-off ticker: defensive asset, such as `ZROZ`, `TLT`, `IEF`, or cash-like alternatives.
 - Indicators: gates that vote for risk-on or risk-off.
 - `k_threshold`: minimum number of risk-on votes required.
@@ -26,5 +26,6 @@ The Strategies page manages LETF rotation definitions.
 
 ## UX Notes
 
-- Cloning exists to test strategy variants without rebuilding from scratch.
+- Cloning exists to test signal variants without rebuilding from scratch.
+- Multiple risk-on tickers share the same signal and are compared as separate backtest variants.
 - Strategy comparison was intentionally removed; future comparison flows should be redesigned from first principles.

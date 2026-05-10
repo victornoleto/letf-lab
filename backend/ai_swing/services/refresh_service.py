@@ -114,7 +114,8 @@ class RefreshService:
     def _collect_tickers(self, strategies: list[Strategy]) -> set[str]:
         out: set[str] = set()
         for s in strategies:
-            out.update([s.benchmark_ticker, s.risk_on_ticker, s.risk_off_ticker])
+            out.update([s.benchmark_ticker, s.risk_off_ticker])
+            out.update(s.risk_on_tickers)
         return out
 
     def _refresh_strategy_snapshot(self, db: Session, strategy: Strategy) -> bool:

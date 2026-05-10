@@ -72,7 +72,7 @@ def _build_context(db: Session, user_id: int, include_portfolio: bool = True) ->
             "id": s.id,
             "name": s.name,
             "benchmark": s.benchmark_ticker,
-            "risk_on": s.risk_on_ticker,
+            "risk_on": s.risk_on_tickers,
             "risk_off": s.risk_off_ticker,
             "k_threshold": s.k_threshold,
             "indicators": [si.indicator.name for si in s.indicators],

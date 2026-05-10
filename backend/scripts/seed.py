@@ -36,11 +36,24 @@ INDICATORS_SEED = [
 
 
 STRATEGIES_SEED = [
-    ("QQQ → QLD vote-of-2 sma250/100", "QQQ", "QLD", "ZROZ", 2),
-    ("SPY → UPRO vote-of-2", "SPY", "UPRO", "ZROZ", 2),
-    ("SMH → SOXL vote-of-2", "SMH", "SOXL", "ZROZ", 2),
-    ("MU → MUU vote-of-2", "MU", "MUU", "ZROZ", 2),
-    ("FTEC → TECL vote-of-2", "FTEC", "TECL", "ZROZ", 2),
+    ("SPY → SSO/UPRO vote-of-2", "SPY", ["SSO", "UPRO"], "ZROZ", 2),
+    ("QQQ → QLD/TQQQ vote-of-2", "QQQ", ["QLD", "TQQQ"], "ZROZ", 2),
+    ("SOXX → USD/SOXL vote-of-2", "SOXX", ["USD", "SOXL"], "ZROZ", 2),
+    ("GLD → UGL vote-of-2", "GLD", ["UGL"], "ZROZ", 2),
+    ("XLK → TECL vote-of-2", "XLK", ["TECL"], "ZROZ", 2),
+    ("DIA → DDM/UDOW vote-of-2", "DIA", ["DDM", "UDOW"], "ZROZ", 2),
+    ("IWM → UWM/TNA vote-of-2", "IWM", ["UWM", "TNA"], "ZROZ", 2),
+    ("XLF → UYG/FAS vote-of-2", "XLF", ["UYG", "FAS"], "ZROZ", 2),
+    ("XLE → DIG/ERX vote-of-2", "XLE", ["DIG", "ERX"], "ZROZ", 2),
+    ("TLT → UBT/TMF vote-of-2", "TLT", ["UBT", "TMF"], "ZROZ", 2),
+]
+
+OBSOLETE_STRATEGY_NAMES = [
+    "QQQ → QLD vote-of-2 sma250/100",
+    "SPY → UPRO vote-of-2",
+    "SMH → SOXL vote-of-2",
+    "MU → MUU vote-of-2",
+    "FTEC → TECL vote-of-2",
 ]
 
 
@@ -62,7 +75,7 @@ def _get_or_create_strategy(db, name, benchmark, risk_on, risk_off, k, indicator
     s = Strategy(
         name=name,
         benchmark_ticker=benchmark,
-        risk_on_ticker=risk_on,
+        risk_on_tickers=risk_on,
         risk_off_ticker=risk_off,
         k_threshold=k,
         enabled=True,
@@ -104,6 +117,11 @@ def main() -> None:
         db.commit()
 
         log.info("Seeding strategies...")
+        for name in OBSOLETE_STRATEGY_NAMES:
+            existing = db.scalars(select(Strategy).where(Strategy.name == name)).first()
+            if existing is not None:
+                db.delete(existing)
+                log.info("Removed obsolete strategy: %s", name)
         for name, benchmark, risk_on, risk_off, k in STRATEGIES_SEED:
             _get_or_create_strategy(db, name, benchmark, risk_on, risk_off, k, ind_objs)
         db.commit()

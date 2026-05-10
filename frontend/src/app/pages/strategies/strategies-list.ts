@@ -80,7 +80,7 @@ import { ToastService } from '../../shared/toast/toast.service';
                       </span>
                     </div>
                   </td>
-                  <td class="mono">{{ s.benchmark_ticker }} → {{ s.risk_on_ticker }}</td>
+                  <td class="mono">{{ s.benchmark_ticker }} → {{ s.risk_on_tickers.join('/') }}</td>
                   <td class="td--num mono">{{ s.k_threshold }}</td>
                   <td class="td--num mono">{{ s.indicators.length }}</td>
                   <td>
@@ -185,7 +185,7 @@ export class StrategiesListComponent implements OnInit {
     return all.filter(s =>
       s.name.toLowerCase().includes(q) ||
       s.benchmark_ticker.toLowerCase().includes(q) ||
-      s.risk_on_ticker.toLowerCase().includes(q) ||
+      s.risk_on_tickers.join(' ').toLowerCase().includes(q) ||
       s.risk_off_ticker.toLowerCase().includes(q)
     );
   });

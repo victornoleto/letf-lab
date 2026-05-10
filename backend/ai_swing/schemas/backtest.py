@@ -28,18 +28,23 @@ class BacktestMetrics(BaseModel):
     tax_drag_pp: float | None = None
 
 
+class BacktestVariantDTO(BaseModel):
+    risk_on_ticker: str
+    equity_strategy: list[BacktestPoint]
+    equity_strategy_net: list[BacktestPoint] = []
+    equity_riskon_buyhold: list[BacktestPoint]
+    equity_ratio_vs_benchmark: list[BacktestPoint]
+    metrics_strategy: BacktestMetrics
+    metrics_riskon: BacktestMetrics
+
+
 class BacktestResultDTO(BaseModel):
     range_start: date
     range_end: date
     range_years: int
     asof_date: date
     cached: bool
-    equity_strategy: list[BacktestPoint]
-    equity_strategy_net: list[BacktestPoint] = []
     equity_benchmark_buyhold: list[BacktestPoint]
-    equity_riskon_buyhold: list[BacktestPoint]
-    equity_ratio_vs_benchmark: list[BacktestPoint]
-    metrics_strategy: BacktestMetrics
     metrics_benchmark: BacktestMetrics
-    metrics_riskon: BacktestMetrics
     transitions: list[BacktestTransition]
+    variants: list[BacktestVariantDTO]

@@ -43,7 +43,7 @@ def _make_strategy() -> Strategy:
     s = Strategy(
         name="test",
         benchmark_ticker="BENCH",
-        risk_on_ticker="RISKON",
+        risk_on_tickers=["RISKON"],
         risk_off_ticker="RISKOFF",
         k_threshold=2,
         enabled=True,
@@ -68,14 +68,16 @@ def test_run_backtest_smoke(synthetic_prices):
     result = run_backtest(s, range_years=5)
     assert result.range_years == 5
     assert result.range_end >= result.range_start
-    assert len(result.equity_strategy) > 100
+    variant = result.variants[0]
+    assert variant.risk_on_ticker == "RISKON"
+    assert len(variant.equity_strategy) > 100
     assert len(result.equity_benchmark_buyhold) > 100
-    assert len(result.equity_riskon_buyhold) > 100
-    assert result.metrics_strategy is not None
-    assert isinstance(result.metrics_strategy.cagr, float)
-    assert -1 < result.metrics_strategy.max_dd <= 0
+    assert len(variant.equity_riskon_buyhold) > 100
+    assert variant.metrics_strategy is not None
+    assert isinstance(variant.metrics_strategy.cagr, float)
+    assert -1 < variant.metrics_strategy.max_dd <= 0
     # Position must have some flips
-    assert result.metrics_strategy.n_trades is not None
+    assert variant.metrics_strategy.n_trades is not None
 
 
 def test_backtest_no_indicators_raises(synthetic_prices):

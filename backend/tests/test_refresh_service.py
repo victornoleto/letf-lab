@@ -26,7 +26,7 @@ def two_strategies(db_session):
     out = []
     for name in ("Strat A", "Strat B"):
         s = Strategy(
-            name=name, benchmark_ticker="SPY", risk_on_ticker="QQQ",
+            name=name, benchmark_ticker="SPY", risk_on_tickers=["QQQ"],
             risk_off_ticker="ZROZ", k_threshold=1, enabled=True,
         )
         db_session.add(s)

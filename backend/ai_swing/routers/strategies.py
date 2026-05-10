@@ -88,7 +88,7 @@ def create_endpoint(body: StrategyCreate, db: Session = Depends(get_db)) -> Stra
     s = Strategy(
         name=body.name,
         benchmark_ticker=body.benchmark_ticker,
-        risk_on_ticker=body.risk_on_ticker,
+        risk_on_tickers=body.risk_on_tickers,
         risk_off_ticker=body.risk_off_ticker,
         k_threshold=body.k_threshold,
         enabled=body.enabled,
@@ -118,8 +118,8 @@ def update_endpoint(
         s.name = body.name
     if body.benchmark_ticker is not None:
         s.benchmark_ticker = body.benchmark_ticker
-    if body.risk_on_ticker is not None:
-        s.risk_on_ticker = body.risk_on_ticker
+    if body.risk_on_tickers is not None:
+        s.risk_on_tickers = body.risk_on_tickers
     if body.risk_off_ticker is not None:
         s.risk_off_ticker = body.risk_off_ticker
     if body.enabled is not None:

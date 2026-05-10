@@ -24,7 +24,7 @@ def strategy(db_session):
     db_session.add(ind)
     db_session.flush()
     s = Strategy(
-        name="Test", benchmark_ticker="SPY", risk_on_ticker="QQQ",
+        name="Test", benchmark_ticker="SPY", risk_on_tickers=["QQQ"],
         risk_off_ticker="ZROZ", k_threshold=1, enabled=True,
     )
     db_session.add(s)

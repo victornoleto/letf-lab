@@ -18,7 +18,7 @@ import { stateOf, type CardState } from '../../shared/strategy-state';
         <div class="ticker">
           <span>{{ strategy().benchmark_ticker }}</span>
           <span class="arrow">→</span>
-          <span [ngClass]="cardState() === 'off' ? 'off' : 'on'">{{ strategy().risk_on_ticker }}</span>
+          <span [ngClass]="cardState() === 'off' ? 'off' : 'on'">{{ strategy().risk_on_tickers.join('/') }}</span>
         </div>
         <span class="badge" [ngClass]="badgeClass()">{{ stateLabel() }}</span>
       </header>

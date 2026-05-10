@@ -49,11 +49,11 @@ type Touched = { name: boolean; benchmark: boolean; riskOn: boolean; riskOff: bo
 
           <div class="row-2">
             <div class="field">
-              <label class="label" for="riskOn">Risk-on ticker</label>
-              <input id="riskOn" class="input input--mono" [(ngModel)]="model.risk_on_ticker"
-                     name="risk_on" maxlength="6"
-                     (input)="model.risk_on_ticker = $any($event.target).value.toUpperCase()" />
-              <p class="hint">When indicators are active</p>
+              <label class="label" for="riskOn">Risk-on tickers</label>
+              <input id="riskOn" class="input input--mono" [(ngModel)]="model.risk_on_tickers"
+                      name="risk_on" maxlength="64"
+                      (input)="model.risk_on_tickers = $any($event.target).value.toUpperCase()" />
+              <p class="hint">When indicators are active, separated by comma or slash</p>
             </div>
             <div class="field">
               <label class="label" for="riskOff">Risk-off ticker</label>
@@ -132,7 +132,7 @@ export class StrategyFormComponent implements OnInit {
   model = {
     name: '',
     benchmark_ticker: '',
-    risk_on_ticker: '',
+    risk_on_tickers: '',
     risk_off_ticker: 'ZROZ',
     enabled: true,
   };
@@ -166,7 +166,7 @@ export class StrategyFormComponent implements OnInit {
     this.model = {
       name: s.name,
       benchmark_ticker: s.benchmark_ticker,
-      risk_on_ticker: s.risk_on_ticker,
+      risk_on_tickers: s.risk_on_tickers.join('/'),
       risk_off_ticker: s.risk_off_ticker,
       enabled: s.enabled,
     };
@@ -175,6 +175,18 @@ export class StrategyFormComponent implements OnInit {
   }
 
   validName() { return this.model.name.trim().length > 0; }
+
+  riskOnTickers(): string[] {
+    const seen = new Set<string>();
+    return this.model.risk_on_tickers
+      .split(/[\s,/]+/)
+      .map((x) => x.trim().toUpperCase())
+      .filter((x) => {
+        if (!x || seen.has(x)) return false;
+        seen.add(x);
+        return true;
+      });
+  }
 
   isSelected(id: number) { return this.indicatorIds().includes(id); }
 
@@ -190,7 +202,7 @@ export class StrategyFormComponent implements OnInit {
   canSave(): boolean {
     return this.validName()
       && this.model.benchmark_ticker.length > 0
-      && this.model.risk_on_ticker.length > 0
+      && this.riskOnTickers().length > 0
       && this.model.risk_off_ticker.length > 0
       && this.indicatorIds().length > 0
       && this.kThreshold() >= 1
@@ -204,6 +216,7 @@ export class StrategyFormComponent implements OnInit {
     const id = this.strategyId();
     const body = {
       ...this.model,
+      risk_on_tickers: this.riskOnTickers(),
       k_threshold: this.kThreshold(),
       indicator_ids: this.indicatorIds(),
     };

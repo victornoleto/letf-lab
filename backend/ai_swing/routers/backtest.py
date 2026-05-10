@@ -17,6 +17,7 @@ from ai_swing.schemas.backtest import (
     BacktestPoint,
     BacktestResultDTO,
     BacktestTransition,
+    BacktestVariantDTO,
 )
 from ai_swing.schemas.rolling_stress import (
     RollingCellDTO,
@@ -37,25 +38,31 @@ def _result_to_dto(result, cached: bool) -> BacktestResultDTO:
         range_years=result.range_years,
         asof_date=result.asof_date,
         cached=cached,
-        equity_strategy=[BacktestPoint(date=p.date, value=p.value) for p in result.equity_strategy],
-        equity_strategy_net=[
-            BacktestPoint(date=p.date, value=p.value) for p in result.equity_strategy_net
-        ],
         equity_benchmark_buyhold=[
             BacktestPoint(date=p.date, value=p.value) for p in result.equity_benchmark_buyhold
         ],
-        equity_riskon_buyhold=[
-            BacktestPoint(date=p.date, value=p.value) for p in result.equity_riskon_buyhold
-        ],
-        equity_ratio_vs_benchmark=[
-            BacktestPoint(date=p.date, value=p.value) for p in result.equity_ratio_vs_benchmark
-        ],
-        metrics_strategy=BacktestMetrics(**result.metrics_strategy.__dict__),
         metrics_benchmark=BacktestMetrics(**result.metrics_benchmark.__dict__),
-        metrics_riskon=BacktestMetrics(**result.metrics_riskon.__dict__),
         transitions=[
             BacktestTransition(date=t.date, from_state=t.from_state, to_state=t.to_state)
             for t in result.transitions
+        ],
+        variants=[
+            BacktestVariantDTO(
+                risk_on_ticker=v.risk_on_ticker,
+                equity_strategy=[BacktestPoint(date=p.date, value=p.value) for p in v.equity_strategy],
+                equity_strategy_net=[
+                    BacktestPoint(date=p.date, value=p.value) for p in v.equity_strategy_net
+                ],
+                equity_riskon_buyhold=[
+                    BacktestPoint(date=p.date, value=p.value) for p in v.equity_riskon_buyhold
+                ],
+                equity_ratio_vs_benchmark=[
+                    BacktestPoint(date=p.date, value=p.value) for p in v.equity_ratio_vs_benchmark
+                ],
+                metrics_strategy=BacktestMetrics(**v.metrics_strategy.__dict__),
+                metrics_riskon=BacktestMetrics(**v.metrics_riskon.__dict__),
+            )
+            for v in result.variants
         ],
     )
 

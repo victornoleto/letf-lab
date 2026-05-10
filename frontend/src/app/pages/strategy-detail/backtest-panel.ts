@@ -25,9 +25,8 @@ import {
   AxisPointerComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import { readChartTokens } from '../../shared/charts/chart-tokens';
-import { equityOptions } from '../../shared/charts/equity-options';
-import { ratioOptions } from '../../shared/charts/ratio-options';
+import { readChartTokens, tok } from '../../shared/charts/chart-tokens';
+import { axisTooltipFormatter } from '../../shared/charts/tooltip-formatter';
 
 echarts.use([
   LineChart,
@@ -68,15 +67,20 @@ export interface BacktestResult {
   range_years: number;
   asof_date: string;
   cached: boolean;
+  equity_benchmark_buyhold: EquityPoint[];
+  metrics_benchmark: BacktestMetrics;
+  transitions: BacktestTransition[];
+  variants: BacktestVariant[];
+}
+
+export interface BacktestVariant {
+  risk_on_ticker: string;
   equity_strategy: EquityPoint[];
   equity_strategy_net: EquityPoint[];
-  equity_benchmark_buyhold: EquityPoint[];
   equity_riskon_buyhold: EquityPoint[];
   equity_ratio_vs_benchmark: EquityPoint[];
   metrics_strategy: BacktestMetrics;
-  metrics_benchmark: BacktestMetrics;
   metrics_riskon: BacktestMetrics;
-  transitions: BacktestTransition[];
 }
 
 const RANGE_OPTIONS = [3, 5, 10, 20];
@@ -85,10 +89,20 @@ const CHART_GROUP = 'backtest-charts';
 interface PerfRow {
   label: string;
   cls: string;
+  color: string;
   cagr: number;
   max_dd: number;
   sortino: number;
 }
+
+const RISK_ON_COLORS = [
+  '#60a5fa', // soft blue
+  '#f87171', // soft red
+  '#fb923c', // orange
+  '#f472b6', // pink
+  '#a78bfa', // violet
+  '#34d399', // emerald
+];
 
 @Component({
   selector: 'app-backtest-panel',
@@ -157,7 +171,9 @@ interface PerfRow {
                   <tr [class.perf-table__row--strategy]="i === 0">
                     <td class="td--num mono">{{ i + 1 }}</td>
                     <td>
-                      <span class="perf-table__label" [ngClass]="row.cls">{{ row.label }}</span>
+                      <span class="perf-table__label" [ngClass]="row.cls" [style.color]="row.color">
+                        {{ row.label }}
+                      </span>
                     </td>
                     <td class="td--num mono" [ngClass]="numCls(row.cagr)">{{ pct(row.cagr) }}</td>
                     <td class="td--num mono" [ngClass]="numCls(row.max_dd)">{{ pct(row.max_dd) }}</td>
@@ -181,22 +197,22 @@ interface PerfRow {
         </div>
 
         <div class="section__foot">
-          @if (result()!.metrics_strategy.n_trades != null) {
+          @if (primaryVariant()?.metrics_strategy?.n_trades != null) {
             <span class="perf-footnote">
               <span class="perf-footnote__k">Trades</span>
-              <span class="mono">{{ result()!.metrics_strategy.n_trades }}</span>
+              <span class="mono">{{ primaryVariant()!.metrics_strategy.n_trades }}</span>
             </span>
           }
-          @if (result()!.metrics_strategy.hit_rate_vs_benchmark != null) {
+          @if (primaryVariant()?.metrics_strategy?.hit_rate_vs_benchmark != null) {
             <span class="perf-footnote">
               <span class="perf-footnote__k">Hit vs B&amp;H</span>
-              <span class="mono">{{ pct(result()!.metrics_strategy.hit_rate_vs_benchmark!) }}</span>
+              <span class="mono">{{ pct(primaryVariant()!.metrics_strategy.hit_rate_vs_benchmark!) }}</span>
             </span>
           }
-          @if (showNet() && result()!.metrics_strategy.tax_drag_pp != null) {
+          @if (showNet() && primaryVariant()?.metrics_strategy?.tax_drag_pp != null) {
             <span class="perf-footnote">
               <span class="perf-footnote__k">Tax drag</span>
-              <span class="mono num--neg">−{{ num(result()!.metrics_strategy.tax_drag_pp!) }} Sortino</span>
+              <span class="mono num--neg">−{{ num(primaryVariant()!.metrics_strategy.tax_drag_pp!) }} Sortino</span>
             </span>
           }
           <span class="perf-footnote perf-footnote--hint">
@@ -296,43 +312,55 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
   perfRows(): PerfRow[] {
     const r = this.result();
     if (!r) return [];
-    const rows: PerfRow[] = [
-      {
-        label: 'Strategy',
-        cls: 'perf-table__label--strategy',
-        cagr: r.metrics_strategy.cagr,
-        max_dd: r.metrics_strategy.max_dd,
-        sortino: r.metrics_strategy.sortino,
-      },
-    ];
-    if (this.showNet()
-        && r.metrics_strategy.cagr_net != null
-        && r.metrics_strategy.sortino_net != null) {
+    const rows: PerfRow[] = [];
+    for (const [i, v] of r.variants.entries()) {
+      const color = this.riskOnColor(i);
       rows.push({
-        label: 'Strategy · Net',
-        cls: 'perf-table__label--strategy-net',
-        cagr: r.metrics_strategy.cagr_net,
-        max_dd: r.metrics_strategy.max_dd,  // MaxDD is structural, ~unchanged
-        sortino: r.metrics_strategy.sortino_net,
+        label: `Strategy · ${v.risk_on_ticker}`,
+        cls: 'perf-table__label--strategy',
+        color,
+        cagr: v.metrics_strategy.cagr,
+        max_dd: v.metrics_strategy.max_dd,
+        sortino: v.metrics_strategy.sortino,
+      });
+      if (this.showNet()
+          && v.metrics_strategy.cagr_net != null
+          && v.metrics_strategy.sortino_net != null) {
+        rows.push({
+          label: `Strategy · ${v.risk_on_ticker} · Net`,
+          cls: 'perf-table__label--strategy-net',
+          color,
+          cagr: v.metrics_strategy.cagr_net,
+          max_dd: v.metrics_strategy.max_dd,
+          sortino: v.metrics_strategy.sortino_net,
+        });
+      }
+      rows.push({
+        label: `B&H · ${v.risk_on_ticker}`,
+        cls: 'perf-table__label--letf',
+        color,
+        cagr: v.metrics_riskon.cagr,
+        max_dd: v.metrics_riskon.max_dd,
+        sortino: v.metrics_riskon.sortino,
       });
     }
-    rows.push(
-      {
-        label: 'Benchmark',
-        cls: 'perf-table__label--benchmark',
-        cagr: r.metrics_benchmark.cagr,
-        max_dd: r.metrics_benchmark.max_dd,
-        sortino: r.metrics_benchmark.sortino,
-      },
-      {
-        label: 'LETF',
-        cls: 'perf-table__label--letf',
-        cagr: r.metrics_riskon.cagr,
-        max_dd: r.metrics_riskon.max_dd,
-        sortino: r.metrics_riskon.sortino,
-      },
-    );
+    rows.push({
+      label: 'Benchmark',
+      cls: 'perf-table__label--benchmark',
+      color: 'var(--text-secondary)',
+      cagr: r.metrics_benchmark.cagr,
+      max_dd: r.metrics_benchmark.max_dd,
+      sortino: r.metrics_benchmark.sortino,
+    });
     return rows;
+  }
+
+  primaryVariant(): BacktestVariant | null {
+    return this.result()?.variants[0] ?? null;
+  }
+
+  private riskOnColor(index: number): string {
+    return RISK_ON_COLORS[index % RISK_ON_COLORS.length];
   }
 
   private disposeCharts(): void {
@@ -349,18 +377,81 @@ export class BacktestPanelComponent implements OnInit, OnDestroy {
     if (!r || !this.equityChart || !this.ratioChart) return;
     const t = readChartTokens();
 
-    const equityData = r.equity_strategy.map((p, i) => ({
-      date: p.date,
-      equity: p.value,
-      bench: r.equity_benchmark_buyhold[i]?.value ?? p.value,
-    }));
-    const ratioData = r.equity_ratio_vs_benchmark.map((p) => ({
-      date: p.date,
-      ratio: p.value,
+    const baseChart = {
+      grid: { left: 4, right: 8, top: 28, bottom: 48, containLabel: true },
+      animation: false,
+      textStyle: { fontFamily: t.fontMono, fontSize: 11, color: t.textMuted },
+      xAxis: {
+        type: 'time',
+        axisLine: { lineStyle: { color: t.border } },
+        axisTick: { show: false },
+        axisLabel: { color: t.textMuted, fontSize: 10, hideOverlap: true },
+        splitLine: { show: false },
+      },
+      yAxis: {
+        type: 'value',
+        position: 'right',
+        scale: true,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: t.textMuted, fontSize: 10, formatter: (v: number) => `${v}%` },
+        splitLine: { lineStyle: { color: t.grid, type: [3, 3] } },
+      },
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: tok('--surface-elevated'),
+        borderColor: t.border,
+        borderWidth: 1,
+        padding: [10, 12],
+        textStyle: { color: t.textPrimary, fontSize: 12, fontFamily: t.fontMono },
+        axisPointer: { lineStyle: { color: t.border, width: 1, type: 'solid' } },
+        formatter: axisTooltipFormatter(),
+      },
+      legend: {
+        top: 0, left: 0,
+        itemWidth: 14, itemHeight: 2, itemGap: 16,
+        textStyle: { color: t.textMuted, fontSize: 11, fontFamily: tok('--font-sans') },
+      },
+      dataZoom: [
+        { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true, moveOnMouseWheel: false },
+        {
+          type: 'slider', xAxisIndex: 0, height: 18, bottom: 4, borderColor: 'transparent',
+          backgroundColor: 'transparent', fillerColor: tok('--surface-muted'), handleSize: '70%',
+          handleStyle: { color: t.equity, borderColor: t.equity }, moveHandleStyle: { color: t.border },
+          textStyle: { color: t.textMuted, fontSize: 10 },
+          labelFormatter: (_v: number, str: string) => (str ? str.slice(0, 7) : ''),
+        },
+      ],
+    };
+
+    const equitySeries: any[] = [{
+      name: 'Benchmark', type: 'line', showSymbol: false, smooth: false,
+      lineStyle: { color: t.textMuted, width: 1, type: [4, 3] },
+      data: r.equity_benchmark_buyhold.map((p) => [p.date, p.value]),
+    }];
+    for (const [i, v] of r.variants.entries()) {
+      const color = this.riskOnColor(i);
+      equitySeries.push({
+        name: `Strategy ${v.risk_on_ticker}`, type: 'line', showSymbol: false, smooth: false,
+        lineStyle: { color, width: 1.5 },
+        data: (this.showNet() ? v.equity_strategy_net : v.equity_strategy).map((p) => [p.date, p.value]),
+      });
+      equitySeries.push({
+        name: `B&H ${v.risk_on_ticker}`, type: 'line', showSymbol: false, smooth: false,
+        lineStyle: { color, width: 1, type: [2, 3] },
+        data: v.equity_riskon_buyhold.map((p) => [p.date, p.value]),
+      });
+    }
+
+    const ratioSeries = r.variants.map((v, i) => ({
+      name: `Strategy ${v.risk_on_ticker}/benchmark`, type: 'line', showSymbol: false, smooth: false,
+      lineStyle: { color: this.riskOnColor(i), width: 1.4 },
+      data: v.equity_ratio_vs_benchmark.map((p) => [p.date, p.value]),
+      markLine: { silent: true, symbol: 'none', data: [{ yAxis: 1 }], lineStyle: { color: t.border, type: [4, 4] } },
     }));
 
-    this.equityChart.setOption(equityOptions(equityData, t), true);
-    this.ratioChart.setOption(ratioOptions(ratioData, t), true);
+    this.equityChart.setOption({ ...baseChart, series: equitySeries }, true);
+    this.ratioChart.setOption({ ...baseChart, series: ratioSeries }, true);
   }
 
   pct(v: number): string {

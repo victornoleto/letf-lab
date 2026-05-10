@@ -72,7 +72,7 @@ const BACKEND_URL = '/api';
           </div>
           <div>
             <div class="label">Risk-on</div>
-            <div class="val val--success">{{ strategy()!.risk_on_ticker }}</div>
+            <div class="val val--success">{{ strategy()!.risk_on_tickers.join('/') }}</div>
           </div>
           <div>
             <div class="label">Risk-off</div>

@@ -106,7 +106,7 @@ def test_engine_populates_net_metrics():
     s = Strategy(
         name="t",
         benchmark_ticker="QQQ",
-        risk_on_ticker="TQQQ",
+        risk_on_tickers=["TQQQ"],
         risk_off_ticker="ZROZ",
         k_threshold=1,
         enabled=True,
@@ -120,11 +120,12 @@ def test_engine_populates_net_metrics():
     with mock.patch.object(engine_module, "get_price_service", return_value=fake):
         result = engine_module.run_backtest(s, range_years=10)
 
-    assert result.metrics_strategy.sortino_net is not None
-    assert result.metrics_strategy.cagr_net is not None
-    assert result.metrics_strategy.tax_drag_pp is not None
+    variant = result.variants[0]
+    assert variant.metrics_strategy.sortino_net is not None
+    assert variant.metrics_strategy.cagr_net is not None
+    assert variant.metrics_strategy.tax_drag_pp is not None
     # Tax drag must be non-negative for a net-profitable strategy.
-    assert result.metrics_strategy.tax_drag_pp >= 0
+    assert variant.metrics_strategy.tax_drag_pp >= 0
     # Net Sortino is bounded by gross Sortino.
-    assert result.metrics_strategy.sortino_net <= result.metrics_strategy.sortino + 1e-9
-    assert len(result.equity_strategy_net) > 0
+    assert variant.metrics_strategy.sortino_net <= variant.metrics_strategy.sortino + 1e-9
+    assert len(variant.equity_strategy_net) > 0

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from ai_swing.backtest.engine import (
     BacktestResult,
     BacktestTransition,
+    BacktestVariant,
     EquityPoint,
 )
 from ai_swing.backtest.metrics import Metrics
@@ -32,7 +33,7 @@ def _config_signature(strategy: Strategy, range_years: int, asof: date) -> dict:
     return {
         "strategy_id": strategy.id,
         "benchmark": strategy.benchmark_ticker,
-        "risk_on": strategy.risk_on_ticker,
+        "risk_on": strategy.risk_on_tickers,
         "risk_off": strategy.risk_off_ticker,
         "k": strategy.k_threshold,
         "indicators": indicators,
@@ -53,22 +54,33 @@ def serialize_result(result: BacktestResult) -> dict:
         "range_end": result.range_end.isoformat(),
         "range_years": result.range_years,
         "asof_date": result.asof_date.isoformat(),
-        "equity_strategy": [{"date": p.date.isoformat(), "value": p.value} for p in result.equity_strategy],
         "equity_benchmark_buyhold": [
             {"date": p.date.isoformat(), "value": p.value} for p in result.equity_benchmark_buyhold
         ],
-        "equity_riskon_buyhold": [
-            {"date": p.date.isoformat(), "value": p.value} for p in result.equity_riskon_buyhold
-        ],
-        "equity_ratio_vs_benchmark": [
-            {"date": p.date.isoformat(), "value": p.value} for p in result.equity_ratio_vs_benchmark
-        ],
-        "metrics_strategy": asdict(result.metrics_strategy) if result.metrics_strategy else None,
         "metrics_benchmark": asdict(result.metrics_benchmark) if result.metrics_benchmark else None,
-        "metrics_riskon": asdict(result.metrics_riskon) if result.metrics_riskon else None,
         "transitions": [
             {"date": t.date.isoformat(), "from_state": t.from_state, "to_state": t.to_state}
             for t in result.transitions
+        ],
+        "variants": [
+            {
+                "risk_on_ticker": v.risk_on_ticker,
+                "equity_strategy": [
+                    {"date": p.date.isoformat(), "value": p.value} for p in v.equity_strategy
+                ],
+                "equity_strategy_net": [
+                    {"date": p.date.isoformat(), "value": p.value} for p in v.equity_strategy_net
+                ],
+                "equity_riskon_buyhold": [
+                    {"date": p.date.isoformat(), "value": p.value} for p in v.equity_riskon_buyhold
+                ],
+                "equity_ratio_vs_benchmark": [
+                    {"date": p.date.isoformat(), "value": p.value} for p in v.equity_ratio_vs_benchmark
+                ],
+                "metrics_strategy": asdict(v.metrics_strategy) if v.metrics_strategy else None,
+                "metrics_riskon": asdict(v.metrics_riskon) if v.metrics_riskon else None,
+            }
+            for v in result.variants
         ],
     }
 
@@ -80,23 +92,36 @@ def deserialize_result(data: dict) -> BacktestResult:
         range_end=parse_date(data["range_end"]),
         range_years=data["range_years"],
         asof_date=parse_date(data["asof_date"]),
-        equity_strategy=[EquityPoint(parse_date(p["date"]), p["value"]) for p in data["equity_strategy"]],
         equity_benchmark_buyhold=[
             EquityPoint(parse_date(p["date"]), p["value"]) for p in data["equity_benchmark_buyhold"]
         ],
-        equity_riskon_buyhold=[
-            EquityPoint(parse_date(p["date"]), p["value"]) for p in data["equity_riskon_buyhold"]
-        ],
-        equity_ratio_vs_benchmark=[
-            EquityPoint(parse_date(p["date"]), p["value"])
-            for p in data.get("equity_ratio_vs_benchmark", [])
-        ],
-        metrics_strategy=Metrics(**data["metrics_strategy"]) if data.get("metrics_strategy") else None,
         metrics_benchmark=Metrics(**data["metrics_benchmark"]) if data.get("metrics_benchmark") else None,
-        metrics_riskon=Metrics(**data["metrics_riskon"]) if data.get("metrics_riskon") else None,
         transitions=[
             BacktestTransition(parse_date(t["date"]), t["from_state"], t["to_state"])
             for t in data["transitions"]
+        ],
+        variants=[
+            BacktestVariant(
+                risk_on_ticker=v["risk_on_ticker"],
+                equity_strategy=[
+                    EquityPoint(parse_date(p["date"]), p["value"]) for p in v["equity_strategy"]
+                ],
+                equity_strategy_net=[
+                    EquityPoint(parse_date(p["date"]), p["value"])
+                    for p in v.get("equity_strategy_net", [])
+                ],
+                equity_riskon_buyhold=[
+                    EquityPoint(parse_date(p["date"]), p["value"])
+                    for p in v["equity_riskon_buyhold"]
+                ],
+                equity_ratio_vs_benchmark=[
+                    EquityPoint(parse_date(p["date"]), p["value"])
+                    for p in v.get("equity_ratio_vs_benchmark", [])
+                ],
+                metrics_strategy=Metrics(**v["metrics_strategy"]) if v.get("metrics_strategy") else None,
+                metrics_riskon=Metrics(**v["metrics_riskon"]) if v.get("metrics_riskon") else None,
+            )
+            for v in data.get("variants", [])
         ],
     )
 

@@ -128,7 +128,9 @@ export class CommandPaletteComponent implements AfterViewInit {
     // read query so this recomputes when it changes
     void this.query();
     const stratItems: Item[] = this.strategies()
-      .filter(s => this.matches(s.name) || this.matches(s.benchmark_ticker))
+      .filter(s => this.matches(s.name)
+        || this.matches(s.benchmark_ticker)
+        || this.matches(s.risk_on_tickers.join(' ')))
       .map(s => ({
         type: 'strategy' as const,
         label: s.name,

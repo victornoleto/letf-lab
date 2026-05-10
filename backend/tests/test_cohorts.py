@@ -16,7 +16,7 @@ def _make_strategy() -> Strategy:
     s = Strategy(
         name="t",
         benchmark_ticker="QQQ",
-        risk_on_ticker="TQQQ",
+        risk_on_tickers=["TQQQ"],
         risk_off_ticker="ZROZ",
         k_threshold=1,
         enabled=True,

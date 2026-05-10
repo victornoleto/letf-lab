@@ -113,7 +113,7 @@ def _build_user_prompt(strategy: Strategy, snap: SignalSnapshot | None,
     return template.format(
         strategy_name=strategy.name,
         benchmark=strategy.benchmark_ticker,
-        risk_on=strategy.risk_on_ticker,
+        risk_on="/".join(strategy.risk_on_tickers),
         risk_off=strategy.risk_off_ticker,
         k_threshold=strategy.k_threshold,
         snap_block=snap_block,

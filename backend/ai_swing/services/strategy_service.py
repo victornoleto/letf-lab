@@ -122,7 +122,7 @@ def clone_strategy(db: Session, strategy_id: int) -> Strategy:
     clone = Strategy(
         name=_unique_clone_name(db, src.name),
         benchmark_ticker=src.benchmark_ticker,
-        risk_on_ticker=src.risk_on_ticker,
+        risk_on_tickers=list(src.risk_on_tickers),
         risk_off_ticker=src.risk_off_ticker,
         k_threshold=src.k_threshold,
         enabled=src.enabled,
@@ -149,7 +149,7 @@ def strategy_to_dto(strategy: Strategy, current_signal: SignalSnapshotDTO | None
         id=strategy.id,
         name=strategy.name,
         benchmark_ticker=strategy.benchmark_ticker,
-        risk_on_ticker=strategy.risk_on_ticker,
+        risk_on_tickers=strategy.risk_on_tickers,
         risk_off_ticker=strategy.risk_off_ticker,
         k_threshold=strategy.k_threshold,
         enabled=strategy.enabled,

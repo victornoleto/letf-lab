@@ -32,20 +32,26 @@ class BacktestTransition:
 
 
 @dataclass
+class BacktestVariant:
+    risk_on_ticker: str
+    equity_strategy: list[EquityPoint] = field(default_factory=list)
+    equity_strategy_net: list[EquityPoint] = field(default_factory=list)
+    equity_riskon_buyhold: list[EquityPoint] = field(default_factory=list)
+    equity_ratio_vs_benchmark: list[EquityPoint] = field(default_factory=list)
+    metrics_strategy: Metrics | None = None
+    metrics_riskon: Metrics | None = None
+
+
+@dataclass
 class BacktestResult:
     range_start: date
     range_end: date
     range_years: int
     asof_date: date
-    equity_strategy: list[EquityPoint] = field(default_factory=list)
-    equity_strategy_net: list[EquityPoint] = field(default_factory=list)
     equity_benchmark_buyhold: list[EquityPoint] = field(default_factory=list)
-    equity_riskon_buyhold: list[EquityPoint] = field(default_factory=list)
-    equity_ratio_vs_benchmark: list[EquityPoint] = field(default_factory=list)
-    metrics_strategy: Metrics | None = None
     metrics_benchmark: Metrics | None = None
-    metrics_riskon: Metrics | None = None
     transitions: list[BacktestTransition] = field(default_factory=list)
+    variants: list[BacktestVariant] = field(default_factory=list)
 
 
 def _to_equity_points(series: pd.Series) -> list[EquityPoint]:
@@ -88,7 +94,9 @@ class StrategyCurves:
     equity_riskon: pd.Series
 
 
-def compute_strategy_curves(strategy: Strategy, range_years: int = 10) -> StrategyCurves:
+def compute_strategy_curves(
+    strategy: Strategy, range_years: int = 10, risk_on_ticker: str | None = None
+) -> StrategyCurves:
     """Run the rotation engine and return the raw daily curves.
 
     Public helper used by both `run_backtest` (which downsamples for the API
@@ -104,7 +112,8 @@ def compute_strategy_curves(strategy: Strategy, range_years: int = 10) -> Strate
     ps: PriceService = get_price_service()
 
     bench = ps.get_close_series(strategy.benchmark_ticker)
-    risk_on = ps.get_close_series(strategy.risk_on_ticker)
+    risk_on_name = risk_on_ticker or strategy.risk_on_ticker
+    risk_on = ps.get_close_series(risk_on_name)
     risk_off = ps.get_close_series(strategy.risk_off_ticker)
 
     if bench.empty or risk_on.empty or risk_off.empty:
@@ -180,10 +189,14 @@ def compute_strategy_curves(strategy: Strategy, range_years: int = 10) -> Strate
 
 def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
     """API-facing backtest: returns BacktestResult with downsampled equity points."""
-    curves = compute_strategy_curves(strategy, range_years=range_years)
+    risk_on_tickers = strategy.risk_on_tickers or [strategy.risk_on_ticker]
+    curves_by_ticker = [
+        (ticker, compute_strategy_curves(strategy, range_years=range_years, risk_on_ticker=ticker))
+        for ticker in risk_on_tickers
+    ]
+    _, curves = curves_by_ticker[0]
 
     valid_idx = curves.equity_strategy.index
-    equity_ratio = curves.equity_strategy / curves.equity_bench
 
     transitions: list[BacktestTransition] = []
     composite_clean = curves.composite.dropna().astype(int)
@@ -198,45 +211,47 @@ def run_backtest(strategy: Strategy, range_years: int = 10) -> BacktestResult:
                 )
             )
 
-    strategy_returns_window = curves.strategy_returns.loc[valid_idx]
-    metrics_strategy = compute_metrics(
-        curves.equity_strategy,
-        strategy_returns_window,
-        benchmark_equity=curves.equity_bench,
-        positions=curves.positions.loc[valid_idx],
-    )
     metrics_benchmark = compute_metrics(
         curves.equity_bench, curves.df["bench"].pct_change().loc[valid_idx]
     )
-    metrics_riskon = compute_metrics(
-        curves.equity_riskon, curves.df["risk_on"].pct_change().loc[valid_idx]
-    )
 
-    # Tax-aware net curve (Lei 14.754, annual_realize). Compounding shape is
-    # preserved; the DARF deduction lands on the last bar of each calendar
-    # year. We re-run compute_metrics on the net equity to get sortino_net /
-    # cagr_net and report the gross→net Sortino drag in pp.
-    equity_strategy_net = apply_annual_darf(
-        curves.equity_strategy, strategy_returns_window
-    )
-    net_returns = equity_strategy_net.pct_change().fillna(0.0)
-    metrics_net = compute_metrics(equity_strategy_net, net_returns)
-    metrics_strategy.cagr_net = metrics_net.cagr
-    metrics_strategy.sortino_net = metrics_net.sortino
-    metrics_strategy.tax_drag_pp = metrics_strategy.sortino - metrics_net.sortino
+    variants: list[BacktestVariant] = []
+    for ticker, c in curves_by_ticker:
+        valid = c.equity_strategy.index
+        ratio = c.equity_strategy / c.equity_bench
+        returns_window = c.strategy_returns.loc[valid]
+        strategy_metrics = compute_metrics(
+            c.equity_strategy,
+            returns_window,
+            benchmark_equity=c.equity_bench,
+            positions=c.positions.loc[valid],
+        )
+        riskon_metrics = compute_metrics(
+            c.equity_riskon, c.df["risk_on"].pct_change().loc[valid]
+        )
+        net_equity = apply_annual_darf(c.equity_strategy, returns_window)
+        net_returns = net_equity.pct_change().fillna(0.0)
+        net_metrics = compute_metrics(net_equity, net_returns)
+        strategy_metrics.cagr_net = net_metrics.cagr
+        strategy_metrics.sortino_net = net_metrics.sortino
+        strategy_metrics.tax_drag_pp = strategy_metrics.sortino - net_metrics.sortino
+        variants.append(BacktestVariant(
+            risk_on_ticker=ticker,
+            equity_strategy=_to_equity_points(_downsample(c.equity_strategy)),
+            equity_strategy_net=_to_equity_points(_downsample(net_equity)),
+            equity_riskon_buyhold=_to_equity_points(_downsample(c.equity_riskon)),
+            equity_ratio_vs_benchmark=_to_equity_points(_downsample(ratio)),
+            metrics_strategy=strategy_metrics,
+            metrics_riskon=riskon_metrics,
+        ))
 
     return BacktestResult(
         range_start=curves.range_start,
         range_end=curves.range_end,
         range_years=range_years,
         asof_date=curves.asof_date,
-        equity_strategy=_to_equity_points(_downsample(curves.equity_strategy)),
-        equity_strategy_net=_to_equity_points(_downsample(equity_strategy_net)),
         equity_benchmark_buyhold=_to_equity_points(_downsample(curves.equity_bench)),
-        equity_riskon_buyhold=_to_equity_points(_downsample(curves.equity_riskon)),
-        equity_ratio_vs_benchmark=_to_equity_points(_downsample(equity_ratio)),
-        metrics_strategy=metrics_strategy,
         metrics_benchmark=metrics_benchmark,
-        metrics_riskon=metrics_riskon,
         transitions=transitions,
+        variants=variants,
     )

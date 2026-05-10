@@ -103,7 +103,7 @@ def test_strategy_creation_with_indicators(client):
         json={
             "name": "test",
             "benchmark_ticker": "qqq",
-            "risk_on_ticker": "tqqq",
+            "risk_on_tickers": ["tqqq"],
             "risk_off_ticker": "zroz",
             "k_threshold": 1,
             "indicator_ids": [ind_id],
@@ -127,7 +127,7 @@ def test_strategy_k_threshold_validation(client):
         json={
             "name": "bad",
             "benchmark_ticker": "qqq",
-            "risk_on_ticker": "tqqq",
+            "risk_on_tickers": ["tqqq"],
             "risk_off_ticker": "zroz",
             "k_threshold": 5,
             "indicator_ids": [ind_id],
@@ -148,7 +148,7 @@ def test_strategy_clone_copies_indicators_and_picks_unique_name(client):
         json={
             "name": "qqq vote-2",
             "benchmark_ticker": "qqq",
-            "risk_on_ticker": "tqqq",
+            "risk_on_tickers": ["tqqq"],
             "risk_off_ticker": "zroz",
             "k_threshold": 1,
             "indicator_ids": [ind_id],
@@ -163,7 +163,7 @@ def test_strategy_clone_copies_indicators_and_picks_unique_name(client):
     assert clone["id"] != src_id
     assert clone["name"] == "qqq vote-2 (clone)"
     assert clone["benchmark_ticker"] == "QQQ"
-    assert clone["risk_on_ticker"] == "TQQQ"
+    assert clone["risk_on_tickers"] == ["TQQQ"]
     assert clone["k_threshold"] == 1
     assert [i["id"] for i in clone["indicators"]] == [ind_id]
 
@@ -190,7 +190,7 @@ def test_indicator_in_use_blocks_delete(client):
         json={
             "name": "s",
             "benchmark_ticker": "qqq",
-            "risk_on_ticker": "tqqq",
+            "risk_on_tickers": ["tqqq"],
             "risk_off_ticker": "zroz",
             "k_threshold": 1,
             "indicator_ids": [ind_id],

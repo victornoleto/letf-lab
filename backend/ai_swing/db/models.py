@@ -52,7 +52,7 @@ class Strategy(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
     benchmark_ticker: Mapped[str] = mapped_column(String(16), nullable=False)
-    risk_on_ticker: Mapped[str] = mapped_column(String(16), nullable=False)
+    risk_on_tickers: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     risk_off_ticker: Mapped[str] = mapped_column(String(16), nullable=False)
     k_threshold: Mapped[int] = mapped_column(Integer, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -61,6 +61,11 @@ class Strategy(Base):
     indicators: Mapped[list[StrategyIndicator]] = relationship(
         back_populates="strategy", cascade="all, delete-orphan", order_by="StrategyIndicator.order"
     )
+
+    @property
+    def risk_on_ticker(self) -> str:
+        """Primary risk-on ticker for analytics that compare one asset at a time."""
+        return self.risk_on_tickers[0] if self.risk_on_tickers else ""
 
 
 class StrategyIndicator(Base):

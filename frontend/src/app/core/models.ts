@@ -56,7 +56,7 @@ export interface Strategy {
   id: number;
   name: string;
   benchmark_ticker: string;
-  risk_on_ticker: string;
+  risk_on_tickers: string[];
   risk_off_ticker: string;
   k_threshold: number;
   enabled: boolean;
@@ -89,7 +89,7 @@ export interface RefreshStatus {
 export interface StrategyCreate {
   name: string;
   benchmark_ticker: string;
-  risk_on_ticker: string;
+  risk_on_tickers: string[];
   risk_off_ticker: string;
   k_threshold: number;
   enabled?: boolean;
