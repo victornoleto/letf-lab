@@ -41,7 +41,7 @@ Edit `backend/.env`:
 ```env
 DATABASE_URL=postgresql+psycopg://letf_lab:CHANGE_ME@localhost:5432/letf_lab
 PRICE_CACHE_DIR=../data/prices
-REFRESH_HOUR_ET=22
+REFRESH_HOUR_ET=17
 LOG_LEVEL=INFO
 ALLOW_ORIGINS=https://your-domain.com,http://localhost:4200
 

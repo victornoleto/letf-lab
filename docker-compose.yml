@@ -24,7 +24,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-letf_lab}:${POSTGRES_PASSWORD:-dev}@db:5432/${POSTGRES_DB:-letf_lab}
       PRICE_CACHE_DIR: /app/data/prices
-      REFRESH_HOUR_ET: ${REFRESH_HOUR_ET:-22}
+      REFRESH_HOUR_ET: ${REFRESH_HOUR_ET:-17}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       ALLOW_ORIGINS: ${PUBLIC_ORIGIN:-http://localhost:8080}
       PORTFOLIO_BASE_CURRENCY: ${PORTFOLIO_BASE_CURRENCY:-USD}

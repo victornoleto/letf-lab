@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///../data/letf_lab.db"
     price_cache_dir: str = "../data/prices"
-    refresh_hour_et: int = 22
+    refresh_hour_et: int = 17
     log_level: str = "INFO"
     allow_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
 
