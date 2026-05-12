@@ -4,6 +4,8 @@ LETF Lab is a private research and portfolio-management app for leveraged ETF st
 
 It helps evaluate risk-on/risk-off LETF rotations with signals, backtests, benchmark-relative windows, cohort analysis, validation gates, portfolio tracking, and AI-assisted reports.
 
+![LETF Lab dashboard](./letf-lab-dashboard.png)
+
 ## Quick Links
 
 - [Setup and VPS deployment](./SETUP.md)
