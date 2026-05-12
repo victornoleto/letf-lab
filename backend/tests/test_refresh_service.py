@@ -1,6 +1,7 @@
 """Tests covering the refresh_service.refresh_all hook for gates."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
@@ -61,3 +62,13 @@ def test_refresh_all_continues_when_gates_fail_for_one_strategy(db_session, two_
 
     assert gate_call.call_count == 2
     assert log.status == "ok"
+
+
+def test_debounce_accepts_naive_last_run_timestamp():
+    svc = RefreshService()
+    svc._last_run_started = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    ok, wait = svc.can_run_now()
+
+    assert ok is False
+    assert wait > 0
