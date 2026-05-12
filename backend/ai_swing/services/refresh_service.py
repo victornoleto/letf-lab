@@ -37,8 +37,9 @@ class RefreshService:
             return True, 0
         last_run_started = self._last_run_started
         if last_run_started.tzinfo is None:
-            last_run_started = last_run_started.replace(tzinfo=timezone.utc)
-        elapsed = (datetime.now(timezone.utc) - last_run_started).total_seconds()
+            elapsed = (datetime.now() - last_run_started).total_seconds()
+        else:
+            elapsed = (datetime.now(timezone.utc) - last_run_started).total_seconds()
         if elapsed >= _DEBOUNCE_SECONDS:
             return True, 0
         return False, int(_DEBOUNCE_SECONDS - elapsed)
